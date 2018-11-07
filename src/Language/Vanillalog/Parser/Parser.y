@@ -61,9 +61,9 @@ TERM :: { Term }
 | SYM  { TSym $ $1 }
 
 SYM :: { Sym }
-: str  { SText $1 }
-| int  { SInt  $1 }
-| bool { SBool $1 }
+: str  { SymText $1 }
+| int  { SymInt  $1 }
+| bool { SymBool $1 }
 
 {
 parseError :: [ Token ] -> a

@@ -21,6 +21,6 @@ data Term = TVar Var | TSym Sym
 
 newtype Var = Var BS.ByteString
 data Sym =
-    SInt  Int
-  | SText BS.ByteString
-  | SBool Bool
+    SymInt  Int
+  | SymText BS.ByteString
+  | SymBool Bool

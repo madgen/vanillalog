@@ -43,10 +43,10 @@ instance Pretty Var where
   pretty (Var v) = pretty v
 
 instance Pretty Sym where
-  pretty (SInt i) = int i
-  pretty (SText bs) = doubleQuotes $ pretty bs
-  pretty (SBool True) = "true"
-  pretty (SBool False) = "false"
+  pretty (SymInt i) = int i
+  pretty (SymText bs) = doubleQuotes $ pretty bs
+  pretty (SymBool True) = "true"
+  pretty (SymBool False) = "false"
 
 -- Generic instances
 
