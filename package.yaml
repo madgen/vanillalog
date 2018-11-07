@@ -1,0 +1,63 @@
+name:                vanillalog
+version:             0.1.0.0
+github:              "madgen/vanillalog"
+license:             BSD3
+author:              "Mistral Contrastin"
+maintainer:          "madgenhetic@gmail.com"
+copyright:           "2018"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Language
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/madgen/vanillalog#readme>
+
+default-extensions:
+- NoImplicitPrelude
+- LambdaCase
+- OverloadedStrings
+
+build-tools:
+  alex: 3.2.4
+
+dependencies:
+- base >= 4.7 && < 5
+- protolude >= 0.2 && < 0.3
+- bytestring >= 0.10 && < 0.11
+- pretty >= 1.1 && < 1.2
+
+library:
+  source-dirs: src
+  dependencies:
+  - exalog-engine
+  - array >= 0.5 && < 0.6
+
+executables:
+  vanillalog-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - optparse-applicative >= 0.14 && < 0.15
+    - vanillalog
+
+tests:
+  vanillalog-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - vanillalog

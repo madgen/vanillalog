@@ -1,0 +1,12 @@
+resolver: lts-12.9
+
+packages:
+- .
+- location:
+    git: https://github.com/madgen/exalog.git
+    commit: 87483d14036acfd2cf00a622540ed0417db3b27a
+  extra-dep: true
+- location:
+    git: git@github.com:clash-lang/ghc-typelits-natnormalise
+    commit: 45080a9f50b040178e145c0e9b489c26c17a6d52
+  extra-dep: true
