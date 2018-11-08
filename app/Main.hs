@@ -92,7 +92,14 @@ prettyPrint PPOptions{..} = do
       case programParser bs of
         Right ast -> putStrLn . pp $ ast
         Left err -> panic . fromString $ err
-    Exalog -> panic "Exalog output pretty printing not yet supported."
+    Exalog ->
+      case programParser bs of
+        Right ast -> do
+          let (exalogProgram, initEDB) = compile ast
+          putStrLn $ pp exalogProgram
+          putStrLn ("" :: Text)
+          putStrLn $ pp initEDB
+        Left err -> panic . fromString $ err
 
 main :: IO ()
 main = do
