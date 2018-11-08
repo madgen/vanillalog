@@ -4,7 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
-module Language.Vanillalog.Compile
+module Language.Vanillalog.Compiler
   ( compile
   ) where
 

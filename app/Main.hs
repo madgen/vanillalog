@@ -8,6 +8,10 @@ import Protolude hiding (fromStrict)
 import Data.ByteString.Lazy.Char8 (fromStrict)
 import Data.String (fromString)
 
+import           Language.Exalog.Pretty ()
+import qualified Language.Exalog.Solver as S
+
+import Language.Vanillalog.Compiler (compile)
 import Language.Vanillalog.Pretty (pp)
 import Language.Vanillalog.Parser.Lexer (lex)
 import Language.Vanillalog.Parser.Parser (programParser)
@@ -64,7 +68,14 @@ opts = subparser
 -- Functionality to run
 
 run :: RunOptions-> IO ()
-run opts = panic "Running a file is not yet supported."
+run RunOptions{..} = do
+  bs <- fromStrict . encodeUtf8 <$> readFile file
+  case programParser bs of
+    Right ast -> do
+      let (exalogProgram, initEDB) = compile ast
+      finalEDB <- S.solve exalogProgram initEDB
+      putStrLn $ pp finalEDB
+    Left err -> panic . fromString $ err
 
 repl :: ReplOptions -> IO ()
 repl opts = panic "REPL is not yet supported."
