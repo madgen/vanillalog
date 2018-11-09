@@ -17,6 +17,7 @@ token :-
 <0> ")"          { basic TRightPar }
 <0> "."          { basic TDot }
 <0> ","          { basic TComma }
+<0> ";"          { basic TSemicolon }
 <0> ":-"         { basic TRule }
 <0> "!"          { basic TNeg }
 
@@ -35,6 +36,7 @@ data Token =
   | TRightPar
   | TDot
   | TComma
+  | TSemicolon
   | TRule
   | TNeg
   | TID   BS.ByteString

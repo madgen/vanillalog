@@ -74,10 +74,14 @@ instance Compilable Clause where
 instance Compilable Subgoal where
   type Output Subgoal = NE.NonEmpty (E.Literal 'E.ABase)
   compile (SAtom atom) = compile atom NE.:| []
-  compile (SNeg (SAtom atom)) =
-    (compile atom) { E.polarity = E.Negative } NE.:| []
-  compile (SNeg _) = panic "Arbitrary negation is not yet supported."
-  compile (SComma sub1 sub2) = compile sub1 `append` compile sub2
+  compile (SNeg s)
+    | SAtom atom <- s =
+      (compile atom) { E.polarity = E.Negative } NE.:| []
+    | otherwise = panic
+      "Impossible: Negation over non-atoms should be eliminated at this point."
+  compile (SConj sub1 sub2) = compile sub1 `append` compile sub2
+  compile SDisj{} =
+    panic "Impossible: Disjunctions should be eliminated at this point."
 
 instance Compilable AtomicFormula where
   type Output AtomicFormula = E.Literal 'E.ABase

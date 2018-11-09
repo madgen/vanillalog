@@ -12,6 +12,7 @@ import           Language.Exalog.Pretty ()
 import qualified Language.Exalog.Solver as S
 
 import Language.Vanillalog.Compiler (compile)
+import Language.Vanillalog.Normaliser (normalise)
 import Language.Vanillalog.Pretty (pp)
 import Language.Vanillalog.Parser.Lexer (lex)
 import Language.Vanillalog.Parser.Parser (programParser)
@@ -28,7 +29,7 @@ data PPOptions = PPOptions
   , stage :: Stage
   }
 
-data Stage = VanillaLex | VanillaParse | Exalog
+data Stage = VanillaLex | VanillaParse | VanillaNormal | Exalog
 
 -- Little option parsers
 
@@ -52,6 +53,8 @@ ppOptions = PPOptions <$> fileParser <*>
  <|>
      flag' VanillaLex (long "vanilla-lex" <> help "Tokens of the input")
  <|>
+     flag' VanillaNormal (long "vanilla-normal" <> help "Normal form")
+ <|>
      flag' Exalog (long "exalog" <> help "For the compiled exalog program")
    )
 
@@ -72,7 +75,7 @@ run RunOptions{..} = do
   bs <- fromStrict . encodeUtf8 <$> readFile file
   case programParser bs of
     Right ast -> do
-      let (exalogProgram, initEDB) = compile ast
+      let (exalogProgram, initEDB) = compile . normalise $ ast
       finalEDB <- S.solve exalogProgram initEDB
       putStrLn $ pp finalEDB
     Left err -> panic . fromString $ err
@@ -91,6 +94,10 @@ prettyPrint PPOptions{..} = do
     VanillaParse ->
       case programParser bs of
         Right ast -> putStrLn . pp $ ast
+        Left err -> panic . fromString $ err
+    VanillaNormal ->
+      case programParser bs of
+        Right ast -> putStrLn . pp . normalise $ ast
         Left err -> panic . fromString $ err
     Exalog ->
       case programParser bs of

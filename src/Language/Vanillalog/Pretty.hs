@@ -5,6 +5,7 @@ module Language.Vanillalog.Pretty (pp) where
 import Protolude hiding ((<>), empty, head)
 
 import qualified Data.ByteString.Lazy.Char8 as BS
+import           Data.Functor.Foldable (Base, para, project)
 
 import Text.PrettyPrint
 
@@ -27,9 +28,28 @@ instance Pretty Fact where
   pretty (Fact atom) = pretty atom <> "."
 
 instance Pretty Subgoal where
-  pretty (SAtom atom) = pretty atom
-  pretty (SNeg sub) = "!" <> parens (pretty sub)
-  pretty (SComma sub1 sub2) = pretty sub1 <> comma <+> pretty sub2
+  pretty = para alg
+    where
+    basePrecedence :: Base Subgoal a -> Int
+    basePrecedence SAtomF{} = 1
+    basePrecedence SNegF{}  = 1
+    basePrecedence SConjF{} = 2
+    basePrecedence SDisjF{} = 3
+
+    alg :: Base Subgoal (Subgoal, Doc) -> Doc
+    alg (SAtomF atom) = pretty atom
+    alg s@(SNegF (ch,doc)) =
+      "!" <> mParens s ch doc
+    alg s@(SConjF (ch,doc) (ch',doc')) =
+      mParens s ch doc <> comma <+> mParens s ch' doc'
+    alg s@(SDisjF (ch,doc) (ch',doc')) =
+      mParens s ch doc <> semi <+> mParens s ch' doc'
+
+    mParens :: Base Subgoal a -> Subgoal -> Doc -> Doc
+    mParens s ch doc =
+      if basePrecedence s < (basePrecedence . project $ ch)
+        then parens doc
+        else doc
 
 instance Pretty AtomicFormula where
   pretty (AtomicFormula name terms) =

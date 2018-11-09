@@ -17,6 +17,7 @@ import Language.Vanillalog.Parser.Lexer (Token(..), lex)
   ")"      { TRightPar }
   "."      { TDot }
   ","      { TComma }
+  ";"      { TSemicolon }
   ":-"     { TRule }
   "!"      { TNeg }
 
@@ -26,6 +27,7 @@ import Language.Vanillalog.Parser.Lexer (Token(..), lex)
   bool     { TBool $$ }
   eof      { TEOF }
 
+%left ";"
 %left ","
 %left "!"
 
@@ -46,7 +48,8 @@ SUBGOAL :: { Subgoal }
 : ATOMIC_FORMULA      { SAtom $1 }
 | "!" SUBGOAL         { SNeg $2 }
 | "(" SUBGOAL ")"     { $2 }
-| SUBGOAL "," SUBGOAL { SComma $1 $3 }
+| SUBGOAL "," SUBGOAL { SConj $1 $3 }
+| SUBGOAL ";" SUBGOAL { SDisj $1 $3 }
 
 ATOMIC_FORMULA :: { AtomicFormula }
 : id "(" TERMS ")" { AtomicFormula $1 (reverse $3) }
