@@ -19,6 +19,7 @@ token :-
 <0> ","          { basic TComma }
 <0> ";"          { basic TSemicolon }
 <0> ":-"         { basic TRule }
+<0> "?-"         { basic TQuery }
 <0> "!"          { basic TNeg }
 
 <0> [a-zA-Z_]+   { useInput TID  }
@@ -38,6 +39,7 @@ data Token =
   | TComma
   | TSemicolon
   | TRule
+  | TQuery
   | TNeg
   | TID   BS.ByteString
   | TStr  BS.ByteString

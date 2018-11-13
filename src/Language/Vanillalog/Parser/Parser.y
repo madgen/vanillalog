@@ -19,6 +19,7 @@ import Language.Vanillalog.Parser.Lexer (Token(..), lex)
   ","      { TComma }
   ";"      { TSemicolon }
   ":-"     { TRule }
+  "?-"     { TQuery }
   "!"      { TNeg }
 
   id       { TID $$ }
@@ -36,13 +37,14 @@ import Language.Vanillalog.Parser.Lexer (Token(..), lex)
 PROGRAM :: { Program }
 : CLAUSES eof { Program . reverse $ $1 }
 
-CLAUSES :: { [ Either Clause Fact ] }
+CLAUSES :: { [ Sentence ] }
 : CLAUSES CLAUSE { $2 : $1 }
 |                { [] }
 
-CLAUSE :: { Either Clause Fact }
-: ATOMIC_FORMULA ":-" SUBGOAL "." { Left  $ Clause $1 $3 }
-| ATOMIC_FORMULA "."              { Right $ Fact $1 }
+CLAUSE :: { Sentence }
+: ATOMIC_FORMULA ":-" SUBGOAL "." { SClause $ Clause $1 $3 }
+| ATOMIC_FORMULA "."              { SFact   $ Fact $1 }
+| "?-" SUBGOAL "."                { SQuery  $ Query Nothing $2 }
 
 SUBGOAL :: { Subgoal }
 : ATOMIC_FORMULA      { SAtom $1 }

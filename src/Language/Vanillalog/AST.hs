@@ -3,16 +3,29 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 
 module Language.Vanillalog.AST where
 
 import Protolude
 
+import Data.Functor.Foldable
 import Data.Functor.Foldable.TH (makeBaseFunctor)
 
 import qualified Data.ByteString.Lazy.Char8 as BS
 
-newtype Program = Program [ Either Clause Fact ]
+newtype Program = Program [ Sentence ]
+
+data Sentence =
+    SClause Clause
+  | SFact Fact
+  | SQuery Query
+  deriving (Eq)
+
+data Query = Query
+  { head :: Maybe AtomicFormula
+  , body :: Subgoal
+  } deriving (Eq)
 
 data Clause = Clause
   { head :: AtomicFormula
@@ -40,3 +53,13 @@ data Sym =
   deriving (Eq)
 
 makeBaseFunctor ''Subgoal
+
+vars :: Subgoal -> [ Var ]
+vars = cata alg
+  where
+  alg :: Base Subgoal [ Var ] -> [ Var ]
+  alg (SAtomF (AtomicFormula _ terms)) =
+    mapMaybe (\case {TVar v -> Just v; _ -> Nothing}) terms
+  alg (SNegF vars) = vars
+  alg (SConjF vars1 vars2) = vars1 ++ vars2
+  alg (SDisjF vars1 vars2) = vars1 ++ vars2

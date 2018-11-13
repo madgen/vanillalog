@@ -8,7 +8,7 @@ module Language.Vanillalog.Compiler
   ( compile
   ) where
 
-import Protolude
+import Protolude hiding (head)
 
 import qualified Data.ByteString.Lazy.Char8 as BS
 import qualified Data.List.NonEmpty as NE
@@ -28,16 +28,21 @@ class Compilable a where
 
 instance Compilable Program where
   type Output Program = (E.Program 'E.ABase, R.Solution 'E.ABase)
-  compile (Program clausesAndFacts) =
+  compile (Program sentences) =
     ( E.Program
         { annotation = E.ProgABase
-        , clauses = map compile clauses
+        , clauses    = map compile clauses ++ map compile queries
+        , queryPreds = queryPreds
         }
     , R.fromList $ map compile facts
     )
     where
-    clauses = lefts clausesAndFacts
-    facts = rights clausesAndFacts
+    clauses = [ clause | SClause clause <- sentences ]
+    facts   = [ fact   | SFact fact     <- sentences ]
+    queries = [ query  | SQuery query   <- sentences ]
+
+    clausifiedQueries = map compile queries
+    queryPreds = map (E.predicateBox . E.head) $ clausifiedQueries
 
 instance Compilable Fact where
   type Output Fact = R.Relation E.ABase
@@ -70,6 +75,11 @@ instance Compilable Clause where
     , head = compile head
     , body = compile body
     }
+
+instance Compilable Query where
+  type Output Query = E.Clause 'E.ABase
+  compile (Query (Just head) body) = compile (Clause head body)
+  compile _ = panic "Impossible: Unnamed query found during compilation."
 
 instance Compilable Subgoal where
   type Output Subgoal = NE.NonEmpty (E.Literal 'E.ABase)

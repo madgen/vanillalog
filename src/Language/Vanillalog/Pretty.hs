@@ -14,18 +14,24 @@ import Language.Exalog.Pretty.Helper
 import Language.Vanillalog.AST
 
 instance Pretty Program where
-  pretty (Program clauses) = vcat . prettyC $ clauses
+  pretty (Program sentences) = vcat . prettyC $ sentences
 
-instance Pretty (Either Clause Fact) where
-  pretty (Left cl) = pretty cl
-  pretty (Right fact) = pretty fact
+instance Pretty Sentence where
+  pretty (SClause clause) = pretty clause
+  pretty (SFact fact)     = pretty fact
+  pretty (SQuery query)   = pretty query
 
 instance Pretty Clause where
   pretty (Clause head body) =
-    pretty head <+> ":-" <+> (pretty body) <> "."
+    pretty head <+> ":-" <+> pretty body <> "."
 
 instance Pretty Fact where
   pretty (Fact atom) = pretty atom <> "."
+
+instance Pretty Query where
+  pretty (Query mHead body) =
+    case mHead of { Just head -> pretty head; _ -> empty }
+    <+>  "?-" <+> pretty body <> "."
 
 instance Pretty Subgoal where
   pretty = para alg

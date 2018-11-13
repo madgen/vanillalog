@@ -3,19 +3,21 @@
 
 module Main where
 
-import Protolude hiding (fromStrict)
+import Protolude
 
-import Data.ByteString.Lazy.Char8 (fromStrict)
-import Data.String (fromString)
+import qualified Data.ByteString.Lazy.Char8 as BS
+import           Data.String (fromString)
 
 import           Language.Exalog.Pretty ()
 import qualified Language.Exalog.Solver as S
 
+import Language.Vanillalog.AST (Program)
 import Language.Vanillalog.Compiler (compile)
 import Language.Vanillalog.Normaliser (normalise)
 import Language.Vanillalog.Pretty (pp)
 import Language.Vanillalog.Parser.Lexer (lex)
 import Language.Vanillalog.Parser.Parser (programParser)
+import Language.Vanillalog.Query (nameQueries)
 
 import Options.Applicative
 
@@ -72,41 +74,51 @@ opts = subparser
 
 run :: RunOptions-> IO ()
 run RunOptions{..} = do
-  bs <- fromStrict . encodeUtf8 <$> readFile file
-  case programParser bs of
-    Right ast -> do
-      let (exalogProgram, initEDB) = compile . normalise $ ast
-      finalEDB <- S.solve exalogProgram initEDB
-      putStrLn $ pp finalEDB
-    Left err -> panic . fromString $ err
+  bs <- BS.fromStrict . encodeUtf8 <$> readFile file
+  parseOrDie bs $ \ast -> do
+    let (exalogProgram, initEDB) = compile
+                                 . normalise
+                                 . nameQueries
+                                 $ ast
+    finalEDB <- S.solve exalogProgram initEDB
+    putStrLn $ pp finalEDB
 
 repl :: ReplOptions -> IO ()
 repl opts = panic "REPL is not yet supported."
 
 prettyPrint :: PPOptions -> IO ()
 prettyPrint PPOptions{..} = do
-  bs <- fromStrict . encodeUtf8 <$> readFile file
+  bs <- BS.fromStrict . encodeUtf8 <$> readFile file
   case stage of
     VanillaLex ->
       case lex bs of
         Right tokens -> print tokens
         Left err -> panic . fromString $ err
     VanillaParse ->
-      case programParser bs of
-        Right ast -> putStrLn . pp $ ast
-        Left err -> panic . fromString $ err
+      parseOrDie bs $ \ast -> putStrLn
+                            . pp
+                            $ ast
     VanillaNormal ->
-      case programParser bs of
-        Right ast -> putStrLn . pp . normalise $ ast
-        Left err -> panic . fromString $ err
+      parseOrDie bs $ \ast -> putStrLn
+                            . pp
+                            . normalise
+                            . nameQueries
+                            $ ast
     Exalog ->
-      case programParser bs of
-        Right ast -> do
-          let (exalogProgram, initEDB) = compile ast
-          putStrLn $ pp exalogProgram
-          putStrLn ("" :: Text)
-          putStrLn $ pp initEDB
-        Left err -> panic . fromString $ err
+      parseOrDie bs $ \ast -> do
+        let (exalogProgram, initEDB) = compile
+                                     . normalise
+                                     . nameQueries
+                                     $ ast
+        putStrLn $ pp exalogProgram
+        putStrLn ("" :: Text)
+        putStrLn $ pp initEDB
+
+parseOrDie :: BS.ByteString -> (Program -> IO a) -> IO a
+parseOrDie bs action = do
+  case programParser bs of
+    Right ast -> action ast
+    Left err -> panic . fromString $ err
 
 main :: IO ()
 main = do

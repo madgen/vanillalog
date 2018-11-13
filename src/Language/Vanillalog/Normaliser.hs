@@ -17,11 +17,13 @@ normalise = separateTopLevelDisjunctions
           . pushNegation
 
 peephole :: (Subgoal -> Subgoal) -> Program -> Program
-peephole transformation (Program clausesNFacts) =
-  Program (map (first pnClause) clausesNFacts)
+peephole transformation (Program sentences) =
+  Program (map goS sentences)
   where
-  pnClause :: Clause -> Clause
-  pnClause Clause{..} = Clause{body = transformation body, ..}
+  goS :: Sentence -> Sentence
+  goS (SClause Clause{..}) = SClause Clause{body = transformation body, ..}
+  goS (SQuery  Query{..})  = SQuery  Query{body = transformation body, ..}
+  goS s = s
 
 pushNegation :: Program -> Program
 pushNegation = peephole pnSub
@@ -56,18 +58,25 @@ bubbleUpDisjunction = peephole budSub
   alg s = embed s
 
 separateTopLevelDisjunctions :: Program -> Program
-separateTopLevelDisjunctions (Program clausesNFacts) =
-  Program (yakk $ clausesNFacts)
+separateTopLevelDisjunctions (Program sentences) =
+  Program (yakk sentences)
   where
-  yakk :: [ Either Clause Fact ] -> [ Either Clause Fact ]
+  yakk :: [ Sentence ] -> [ Sentence ]
   yakk = fix
     (\f sol ->
       let newSol = join . map step $ sol
       in if sol == newSol then newSol else f newSol)
 
-  step :: Either Clause Fact -> [ Either Clause Fact ]
-  step fact@Right{} = [ fact ]
-  step (Left (Clause head (SDisj s1 s2))) =
-    [ Left (Clause head s1)
-    , Left (Clause head s2) ]
-  step cl@Left{} = [ cl ]
+  step :: Sentence -> [ Sentence ]
+  step fact@SFact{} = [ fact ]
+  step sentence@(SClause clause)
+    | Clause head (SDisj s1 s2) <- clause =
+      SClause <$> [ Clause head s1, Clause head s2 ]
+    | otherwise = [ sentence ]
+  step sentence@(SQuery query)
+    | Query head@(Just{}) body <- query =
+      case body of
+        SDisj s1 s2 -> SQuery <$> [ Query head s1, Query head s2 ]
+        _ -> [ sentence ]
+    | otherwise = panic
+      "Impossible: There should be no unnamed queries at this point."
