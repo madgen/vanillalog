@@ -1,96 +1,67 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE ExistentialQuantification #-}
 
-module Language.Vanillalog.AST where
+module Language.Vanillalog.AST
+  ( Program(..)
+  , Sentence(..)
+  , Query(..)
+  , Clause(..)
+  , AG.Fact(..)
+  , VanillaSubgoal
+  , AG.Subgoal(AG.SAtom)
+  , AG.SubgoalF(AG.SAtomF)
+  , pattern SNeg, pattern SConj, pattern SDisj
+  , pattern SNegF, pattern SConjF, pattern SDisjF
+  , Op(..), AG.OpKind(..), AG.SomeOp(..)
+  , AG.AtomicFormula(..)
+  , AG.Term(..)
+  , AG.Var(..)
+  , AG.Sym(..)
+  , AG.vars
+  , AG.operation
+  ) where
 
 import Protolude
 
-import Data.Functor.Foldable
-import Data.Functor.Foldable.TH (makeBaseFunctor)
-
 import qualified Data.ByteString.Lazy.Char8 as BS
+
+import qualified Language.Vanillalog.AST.Generic as AG
 
 newtype Program = Program [ Sentence ]
 
 data Sentence =
     SClause Clause
-  | SFact Fact
+  | SFact AG.Fact
   | SQuery Query
   deriving (Eq)
 
 data Query = Query
-  { head :: Maybe AtomicFormula
+  { head :: Maybe AG.AtomicFormula
   , body :: VanillaSubgoal
   } deriving (Eq)
 
 data Clause = Clause
-  { head :: AtomicFormula
+  { head :: AG.AtomicFormula
   , body :: VanillaSubgoal
   } deriving (Eq)
 
-newtype Fact = Fact AtomicFormula deriving (Eq)
+type VanillaSubgoal = AG.Subgoal Op
 
-type VanillaSubgoal = Subgoal Op
-
-data Subgoal op =
-    SAtom AtomicFormula
-  | SUnOp  (op 'Unary)  (Subgoal op)
-  | SBinOp (op 'Binary) (Subgoal op) (Subgoal op)
-
-deriving instance (Eq (op 'Unary), Eq (op 'Binary)) => Eq (Subgoal op)
-
-data SomeOp (op :: OpKind -> *) = NoOp | forall opKind . SomeOp (op opKind)
-
-data OpKind = Binary | Unary
-
-data Op (k :: OpKind) where
-  Negation    :: Op Unary
-  Conjunction :: Op Binary
-  Disjunction :: Op Binary
+data Op (k :: AG.OpKind) where
+  Negation    :: Op 'AG.Unary
+  Conjunction :: Op 'AG.Binary
+  Disjunction :: Op 'AG.Binary
 
 deriving instance Eq (Op opKind)
 
-pattern SNeg sub = SUnOp Negation sub
-pattern SConj sub1 sub2 = SBinOp Conjunction sub1 sub2
-pattern SDisj sub1 sub2 = SBinOp Disjunction sub1 sub2
+pattern SNeg sub        = AG.SUnOp Negation sub
+pattern SConj sub1 sub2 = AG.SBinOp Conjunction sub1 sub2
+pattern SDisj sub1 sub2 = AG.SBinOp Disjunction sub1 sub2
 
-data AtomicFormula = AtomicFormula BS.ByteString [ Term ] deriving (Eq)
-
-data Term = TVar Var | TSym Sym deriving (Eq)
-
-newtype Var = Var BS.ByteString deriving (Eq)
-data Sym =
-    SymInt  Int
-  | SymText BS.ByteString
-  | SymBool Bool
-  deriving (Eq)
-
-makeBaseFunctor ''Subgoal
-
-pattern SNegF sub = SUnOpF Negation sub
-pattern SConjF sub1 sub2 = SBinOpF Conjunction sub1 sub2
-pattern SDisjF sub1 sub2 = SBinOpF Disjunction sub1 sub2
-
-operation :: Subgoal op -> SomeOp op
-operation SAtom{}         = NoOp
-operation (SUnOp op _)    = SomeOp op
-operation (SBinOp op _ _) = SomeOp op
-
-vars :: Subgoal a -> [ Var ]
-vars = cata alg
-  where
-  alg :: Base (Subgoal a) [ Var ] -> [ Var ]
-  alg (SAtomF (AtomicFormula _ terms)) =
-    mapMaybe (\case {TVar v -> Just v; _ -> Nothing}) terms
-  alg (SUnOpF _ vars) = vars
-  alg (SBinOpF _ vars1 vars2) = vars1 ++ vars2
+pattern SNegF sub        = AG.SUnOpF Negation sub
+pattern SConjF sub1 sub2 = AG.SBinOpF Conjunction sub1 sub2
+pattern SDisjF sub1 sub2 = AG.SBinOpF Disjunction sub1 sub2

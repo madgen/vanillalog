@@ -16,7 +16,8 @@ import Text.PrettyPrint
 
 import Language.Exalog.Pretty.Helper
 
-import Language.Vanillalog.AST
+import           Language.Vanillalog.AST
+import qualified Language.Vanillalog.AST.Generic as AG
 
 instance Pretty Program where
   pretty (Program sentences) = vcat . prettyC $ sentences
@@ -46,9 +47,9 @@ instance ( Pretty (op 'Unary)
     where
     alg :: Base (Subgoal op) ((Subgoal op), Doc) -> Doc
     alg (SAtomF atom) = pretty atom
-    alg s@(SUnOpF op (ch,doc)) =
+    alg s@(AG.SUnOpF op (ch,doc)) =
       pretty op <> mParens (SomeOp op) (operation ch) doc
-    alg s@(SBinOpF op (ch,doc) (ch',doc')) =
+    alg s@(AG.SBinOpF op (ch,doc) (ch',doc')) =
           mParens (SomeOp op) (operation ch) doc
        <> pretty op
       <+> mParens (SomeOp op) (operation ch') doc'
