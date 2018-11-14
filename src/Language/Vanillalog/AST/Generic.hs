@@ -20,6 +20,29 @@ import Data.Functor.Foldable.TH (makeBaseFunctor)
 
 import qualified Data.ByteString.Lazy.Char8 as BS
 
+newtype Program op = Program [ Sentence op ]
+
+data Sentence op =
+    SClause (Clause op)
+  | SFact   Fact
+  | SQuery  (Query op)
+
+deriving instance (Eq (op 'Unary), Eq (op 'Binary)) => Eq (Sentence op)
+
+data Query op = Query
+  { head :: Maybe AtomicFormula
+  , body :: Subgoal op
+  }
+
+deriving instance (Eq (op 'Unary), Eq (op 'Binary)) => Eq (Query op)
+
+data Clause op = Clause
+  { head :: AtomicFormula
+  , body :: Subgoal op
+  }
+
+deriving instance (Eq (op 'Unary), Eq (op 'Binary)) => Eq (Clause op)
+
 newtype Fact = Fact AtomicFormula deriving (Eq)
 
 data Subgoal op =
