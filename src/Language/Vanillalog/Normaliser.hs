@@ -11,11 +11,11 @@ import           Language.Vanillalog.AST
 import qualified Language.Vanillalog.AST.Generic as G
 
 type Algebra f a = f a -> a
+type Coalgebra f a = a -> f a
 
 normalise :: Program -> Program
 normalise = separateTopLevelDisjunctions
           . bubbleUpDisjunction
-          . elimDoubleNegation
           . pushNegation
 
 peephole :: (Subgoal -> Subgoal) -> Program -> Program
@@ -27,6 +27,7 @@ peephole transformation (G.Program sentences) =
   goS (G.SQuery  G.Query{..})  = G.SQuery  G.Query{body = transformation body, ..}
   goS s = s
 
+{-
 pushNegation :: Program -> Program
 pushNegation = peephole pnSub
   where
@@ -37,16 +38,27 @@ pushNegation = peephole pnSub
   alg (SNegF (SConj sub1 sub2)) = SDisj (pnSub $ SNeg sub1) (pnSub $ SNeg sub2)
   alg (SNegF (SDisj sub1 sub2)) = SConj (pnSub $ SNeg sub1) (pnSub $ SNeg sub2)
   alg s = embed $ fmap pnSub s
+-}
 
-elimDoubleNegation :: Program -> Program
-elimDoubleNegation = peephole ednSub
+pushNegation :: Program -> Program
+pushNegation = peephole pnSub
   where
-  ednSub :: Subgoal -> Subgoal
-  ednSub = cata alg
+  pnSub :: Subgoal -> Subgoal
+  pnSub = ana coalg
 
-  alg :: Algebra (Base Subgoal) Subgoal
-  alg (SNegF (SNeg sub)) = sub
-  alg s = embed s
+  coalg :: Coalgebra (Base Subgoal) Subgoal
+  coalg (SNeg (SConj s1 s2)) = SDisjF (elimNeg $ SNeg s1) (elimNeg $ SNeg s2)
+  coalg (SNeg (SDisj s1 s2)) = SConjF (elimNeg $ SNeg s1) (elimNeg $ SNeg s2)
+  coalg s = project (elimNeg s)
+
+-- | Repeatedly eliminates immediate double negation top-down but does not
+-- traverse the tree all the way down if it sees a non-negation node.
+elimNegation :: Subgoal -> Subgoal
+elimNegation = apo rcoalg
+  where
+  rcoalg :: Subgoal -> Base Subgoal (Either Subgoal Subgoal)
+  rcoalg (SNeg (SNeg sub)) = Left  <$> project sub
+  rcoalg s                 = Right <$> project s
 
 bubbleUpDisjunction :: Program -> Program
 bubbleUpDisjunction = peephole budSub
