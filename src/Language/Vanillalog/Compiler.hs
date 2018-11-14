@@ -91,13 +91,13 @@ instance Compilable VanillaSubgoal where
     alg :: Base VanillaSubgoal (VanillaSubgoal, Output VanillaSubgoal)
         -> Output VanillaSubgoal
     alg (SAtomF atom) = compile atom NE.:| []
-    alg (SUnOpF Negation rec)
+    alg (SNegF rec)
       | (SAtom{}, core NE.:| []) <- rec =
         core { E.polarity = E.Negative } NE.:| []
       | otherwise = panic
          "Impossible: Negation over non-atoms should be eliminated at this point."
-    alg (SBinOpF Conjunction (_,core1) (_,core2)) = core1 `append` core2
-    alg (SBinOpF Disjunction _ _) =
+    alg (SConjF (_,core1) (_,core2)) = core1 `append` core2
+    alg (SDisjF _ _) =
       panic "Impossible: Disjunctions should be eliminated at this point."
 
 instance Compilable AtomicFormula where

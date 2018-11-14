@@ -3,6 +3,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE StandaloneDeriving #-}
@@ -59,6 +60,10 @@ data Op (k :: OpKind) where
 
 deriving instance Eq (Op opKind)
 
+pattern SNeg sub = SUnOp Negation sub
+pattern SConj sub1 sub2 = SBinOp Conjunction sub1 sub2
+pattern SDisj sub1 sub2 = SBinOp Disjunction sub1 sub2
+
 data AtomicFormula = AtomicFormula BS.ByteString [ Term ] deriving (Eq)
 
 data Term = TVar Var | TSym Sym deriving (Eq)
@@ -71,6 +76,10 @@ data Sym =
   deriving (Eq)
 
 makeBaseFunctor ''Subgoal
+
+pattern SNegF sub = SUnOpF Negation sub
+pattern SConjF sub1 sub2 = SBinOpF Conjunction sub1 sub2
+pattern SDisjF sub1 sub2 = SBinOpF Disjunction sub1 sub2
 
 operation :: Subgoal op -> SomeOp op
 operation SAtom{}         = NoOp
