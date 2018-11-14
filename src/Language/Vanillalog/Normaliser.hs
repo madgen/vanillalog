@@ -54,6 +54,11 @@ bubbleUpDisjunction = peephole budSub
   budSub = cata alg
 
   alg :: Algebra (Base VanillaSubgoal) VanillaSubgoal
+  alg (SConjF (SDisj s1 s2) (SDisj s3 s4)) =
+    SDisj (SConj s1 s3)
+          (SDisj (SConj s1 s4)
+                 (SDisj (SConj s2 s3)
+                        (SConj s2 s4)))
   alg (SConjF (SDisj s1 s2) s3) = SDisj (SConj s1 s3) (SConj s2 s3)
   alg (SConjF s1 (SDisj s2 s3)) = SDisj (SConj s1 s2) (SConj s1 s3)
   alg s = embed s
