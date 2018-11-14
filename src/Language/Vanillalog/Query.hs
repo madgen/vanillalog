@@ -4,12 +4,12 @@ import Protolude
 
 import qualified Data.ByteString.Lazy.Char8 as BS
 
-import Language.Vanillalog.AST
+import Language.Vanillalog.AST.Generic
 
-nameQueries :: Program -> Program
+nameQueries :: Program op -> Program op
 nameQueries pr = evalState (sentential nameQuery pr) 0
 
-nameQuery :: Sentence -> State Int Sentence
+nameQuery :: Sentence op -> State Int (Sentence op)
 nameQuery (SQuery (Query Nothing body)) =
   SQuery <$> (Query <$> (Just <$> ac) <*> pure body)
   where
@@ -25,5 +25,6 @@ nameQuery (SQuery (Query Nothing body)) =
 nameQuery SQuery{} = panic "Impossible: Query has already been named."
 nameQuery s = return s
 
-sentential :: Monad m => (Sentence -> m Sentence) -> Program -> m Program
+sentential :: Monad m
+           => (Sentence op -> m (Sentence op)) -> Program op -> m (Program op)
 sentential f (Program sentences) = Program <$> (traverse f $ sentences)

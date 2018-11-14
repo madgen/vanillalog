@@ -1,8 +1,10 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
@@ -23,14 +25,15 @@ import qualified Language.Exalog.Core as E
 import qualified Language.Exalog.Relation as R
 import qualified Language.Exalog.Tuples as T
 
-import Language.Vanillalog.AST
+import           Language.Vanillalog.AST.Generic
+import qualified Language.Vanillalog.AST as A
 
 class Compilable a where
   type Output a
   compile :: a -> Output a
 
-instance Compilable Program where
-  type Output Program = (E.Program 'E.ABase, R.Solution 'E.ABase)
+instance ClosureCompilable op => Compilable (Program op) where
+  type Output (Program op) = (E.Program 'E.ABase, R.Solution 'E.ABase)
   compile (Program sentences) =
     ( E.Program
         { annotation = E.ProgABase
@@ -71,34 +74,47 @@ instance Compilable Fact where
     fromTerm (E.TSym s) = s
 
 
-instance Compilable Clause where
-  type Output Clause = E.Clause 'E.ABase
+instance ClosureCompilable op => Compilable (Clause op) where
+  type Output (Clause op) = E.Clause 'E.ABase
   compile (Clause head body) = E.Clause
     { annotation = E.ClABase
     , head = compile head
     , body = compile body
     }
 
-instance Compilable Query where
-  type Output Query = E.Clause 'E.ABase
+instance ClosureCompilable op => Compilable (Query op) where
+  type Output (Query op) = E.Clause 'E.ABase
   compile (Query (Just head) body) = compile (Clause head body)
   compile _ = panic "Impossible: Unnamed query found during compilation."
 
-instance Compilable VanillaSubgoal where
-  type Output VanillaSubgoal = NE.NonEmpty (E.Literal 'E.ABase)
+instance ClosureCompilable op => Compilable (Subgoal op) where
+  type Output (Subgoal op) = E.Body 'E.ABase
+
   compile = para alg
     where
-    alg :: Base VanillaSubgoal (VanillaSubgoal, Output VanillaSubgoal)
-        -> Output VanillaSubgoal
-    alg (SAtomF atom) = compile atom NE.:| []
-    alg (SNegF rec)
-      | (SAtom{}, core NE.:| []) <- rec =
-        core { E.polarity = E.Negative } NE.:| []
-      | otherwise = panic
-         "Impossible: Negation over non-atoms should be eliminated at this point."
-    alg (SConjF (_,core1) (_,core2)) = core1 `append` core2
-    alg (SDisjF _ _) =
-      panic "Impossible: Disjunctions should be eliminated at this point."
+    alg :: Base (Subgoal op) (Subgoal op, Output (Subgoal op))
+        -> Output (Subgoal op)
+    alg (SAtomF atom)            = compile atom NE.:| []
+    alg (SUnOpF  op rec)         = cCompile (CUnary  op rec)
+    alg (SBinOpF op rec1 rec2)   = cCompile (CBinary op rec1 rec2)
+
+data Closure op =
+    CUnary  (op 'Unary)  (Subgoal op, Output (Subgoal op))
+  | CBinary (op 'Binary) (Subgoal op, Output (Subgoal op))
+                         (Subgoal op, Output (Subgoal op))
+
+class ClosureCompilable op where
+  cCompile :: Closure op -> E.Body 'E.ABase
+
+instance ClosureCompilable A.Op where
+  cCompile (CUnary A.Negation rec)
+    | (SAtom{}, core NE.:| []) <- rec =
+      core { E.polarity = E.Negative } NE.:| []
+    | otherwise = panic
+       "Impossible: Negation over non-atoms should be eliminated at this point."
+  cCompile (CBinary A.Conjunction (_,core1) (_,core2)) = core1 `append` core2
+  cCompile (CBinary A.Disjunction _ _) =
+    panic "Impossible: Disjunctions should be eliminated at this point."
 
 instance Compilable AtomicFormula where
   type Output AtomicFormula = E.Literal 'E.ABase

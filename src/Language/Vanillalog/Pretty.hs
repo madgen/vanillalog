@@ -17,39 +17,39 @@ import Text.PrettyPrint
 import Language.Exalog.Pretty.Helper
 
 import           Language.Vanillalog.AST
-import qualified Language.Vanillalog.AST.Generic as AG
+import qualified Language.Vanillalog.AST.Generic as G
 
 instance Pretty Program where
-  pretty (Program sentences) = vcat . prettyC $ sentences
+  pretty (G.Program sentences) = vcat . prettyC $ sentences
 
 instance Pretty Sentence where
-  pretty (SClause clause) = pretty clause
-  pretty (SFact fact)     = pretty fact
-  pretty (SQuery query)   = pretty query
+  pretty (G.SClause clause) = pretty clause
+  pretty (G.SFact fact)     = pretty fact
+  pretty (G.SQuery query)   = pretty query
 
 instance Pretty Clause where
-  pretty (Clause head body) =
+  pretty (G.Clause head body) =
     pretty head <+> ":-" <+> pretty body <> "."
 
 instance Pretty Fact where
   pretty (Fact atom) = pretty atom <> "."
 
 instance Pretty Query where
-  pretty (Query mHead body) =
+  pretty (G.Query mHead body) =
     case mHead of { Just head -> pretty head; _ -> empty }
     <+>  "?-" <+> pretty body <> "."
 
 instance ( Pretty (op 'Unary)
          , Pretty (op 'Binary)
          , HasPrecedence op
-         ) => Pretty (Subgoal op) where
+         ) => Pretty (G.Subgoal op) where
   pretty = para alg
     where
-    alg :: Base (Subgoal op) ((Subgoal op), Doc) -> Doc
+    alg :: Base (G.Subgoal op) ((G.Subgoal op), Doc) -> Doc
     alg (SAtomF atom) = pretty atom
-    alg s@(AG.SUnOpF op (ch,doc)) =
+    alg s@(G.SUnOpF op (ch,doc)) =
       pretty op <> mParens (SomeOp op) (operation ch) doc
-    alg s@(AG.SBinOpF op (ch,doc) (ch',doc')) =
+    alg s@(G.SBinOpF op (ch,doc) (ch',doc')) =
           mParens (SomeOp op) (operation ch) doc
        <> pretty op
       <+> mParens (SomeOp op) (operation ch') doc'

@@ -3,8 +3,9 @@ module Language.Vanillalog.Parser.Parser where
 
 import Prelude hiding (lex)
 
-import Language.Vanillalog.AST
-import Language.Vanillalog.Parser.Lexer (Token(..), lex)
+import           Language.Vanillalog.AST
+import qualified Language.Vanillalog.AST.Generic as G
+import           Language.Vanillalog.Parser.Lexer (Token(..), lex)
 }
 
 %name programParser1 PROGRAM
@@ -35,18 +36,18 @@ import Language.Vanillalog.Parser.Lexer (Token(..), lex)
 %%
 
 PROGRAM :: { Program }
-: CLAUSES eof { Program . reverse $ $1 }
+: CLAUSES eof { G.Program . reverse $ $1 }
 
 CLAUSES :: { [ Sentence ] }
 : CLAUSES CLAUSE { $2 : $1 }
 |                { [] }
 
 CLAUSE :: { Sentence }
-: ATOMIC_FORMULA ":-" SUBGOAL "." { SClause $ Clause $1 $3 }
-| ATOMIC_FORMULA "."              { SFact   $ Fact $1 }
-| "?-" SUBGOAL "."                { SQuery  $ Query Nothing $2 }
+: ATOMIC_FORMULA ":-" SUBGOAL "." { G.SClause $ G.Clause $1 $3 }
+| ATOMIC_FORMULA "."              { G.SFact   $ G.Fact $1 }
+| "?-" SUBGOAL "."                { G.SQuery  $ G.Query Nothing $2 }
 
-SUBGOAL :: { VanillaSubgoal }
+SUBGOAL :: { Subgoal }
 : ATOMIC_FORMULA      { SAtom $1 }
 | "!" SUBGOAL         { SNeg $2 }
 | "(" SUBGOAL ")"     { $2 }

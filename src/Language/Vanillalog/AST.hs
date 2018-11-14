@@ -11,11 +11,9 @@ module Language.Vanillalog.AST
   , Query(..)
   , Clause(..)
   , AG.Fact(..)
-  , VanillaSubgoal
-  , AG.Subgoal(AG.SAtom)
-  , AG.SubgoalF(AG.SAtomF)
-  , pattern SNeg, pattern SConj, pattern SDisj
-  , pattern SNegF, pattern SConjF, pattern SDisjF
+  , Subgoal
+  , pattern SAtom, pattern SNeg, pattern SConj, pattern SDisj
+  , pattern SAtomF, pattern SNegF, pattern SConjF, pattern SDisjF
   , Op(..), AG.OpKind(..), AG.SomeOp(..)
   , AG.AtomicFormula(..)
   , AG.Term(..)
@@ -31,25 +29,15 @@ import qualified Data.ByteString.Lazy.Char8 as BS
 
 import qualified Language.Vanillalog.AST.Generic as AG
 
-newtype Program = Program [ Sentence ]
+type Program = AG.Program Op
 
-data Sentence =
-    SClause Clause
-  | SFact AG.Fact
-  | SQuery Query
-  deriving (Eq)
+type Sentence = AG.Sentence Op
 
-data Query = Query
-  { head :: Maybe AG.AtomicFormula
-  , body :: VanillaSubgoal
-  } deriving (Eq)
+type Query = AG.Query Op
 
-data Clause = Clause
-  { head :: AG.AtomicFormula
-  , body :: VanillaSubgoal
-  } deriving (Eq)
+type Clause = AG.Clause Op
 
-type VanillaSubgoal = AG.Subgoal Op
+type Subgoal = AG.Subgoal Op
 
 data Op (k :: AG.OpKind) where
   Negation    :: Op 'AG.Unary
@@ -58,10 +46,12 @@ data Op (k :: AG.OpKind) where
 
 deriving instance Eq (Op opKind)
 
-pattern SNeg sub        = AG.SUnOp Negation sub
+pattern SAtom atom      = AG.SAtom atom
+pattern SNeg  sub       = AG.SUnOp Negation sub
 pattern SConj sub1 sub2 = AG.SBinOp Conjunction sub1 sub2
 pattern SDisj sub1 sub2 = AG.SBinOp Disjunction sub1 sub2
 
-pattern SNegF sub        = AG.SUnOpF Negation sub
-pattern SConjF sub1 sub2 = AG.SBinOpF Conjunction sub1 sub2
-pattern SDisjF sub1 sub2 = AG.SBinOpF Disjunction sub1 sub2
+pattern SAtomF atom          = AG.SAtomF atom
+pattern SNegF  child         = AG.SUnOpF Negation child
+pattern SConjF child1 child2 = AG.SBinOpF Conjunction child1 child2
+pattern SDisjF child1 child2 = AG.SBinOpF Disjunction child1 child2
