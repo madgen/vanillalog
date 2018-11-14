@@ -46,12 +46,12 @@ CLAUSE :: { Sentence }
 | ATOMIC_FORMULA "."              { SFact   $ Fact $1 }
 | "?-" SUBGOAL "."                { SQuery  $ Query Nothing $2 }
 
-SUBGOAL :: { Subgoal }
+SUBGOAL :: { VanillaSubgoal }
 : ATOMIC_FORMULA      { SAtom $1 }
-| "!" SUBGOAL         { SNeg $2 }
+| "!" SUBGOAL         { SUnOp Negation $2 }
 | "(" SUBGOAL ")"     { $2 }
-| SUBGOAL "," SUBGOAL { SConj $1 $3 }
-| SUBGOAL ";" SUBGOAL { SDisj $1 $3 }
+| SUBGOAL "," SUBGOAL { SBinOp Conjunction $1 $3 }
+| SUBGOAL ";" SUBGOAL { SBinOp Disjunction $1 $3 }
 
 ATOMIC_FORMULA :: { AtomicFormula }
 : id "(" TERMS ")" { AtomicFormula $1 (reverse $3) }

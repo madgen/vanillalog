@@ -1,9 +1,14 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE ExistentialQuantification #-}
 
 module Language.Vanillalog.AST where
 
@@ -24,22 +29,35 @@ data Sentence =
 
 data Query = Query
   { head :: Maybe AtomicFormula
-  , body :: Subgoal
+  , body :: VanillaSubgoal
   } deriving (Eq)
 
 data Clause = Clause
   { head :: AtomicFormula
-  , body :: Subgoal
+  , body :: VanillaSubgoal
   } deriving (Eq)
 
 newtype Fact = Fact AtomicFormula deriving (Eq)
 
-data Subgoal =
+type VanillaSubgoal = Subgoal Op
+
+data Subgoal op =
     SAtom AtomicFormula
-  | SNeg Subgoal
-  | SConj Subgoal Subgoal
-  | SDisj Subgoal Subgoal
-  deriving (Eq)
+  | SUnOp  (op 'Unary)  (Subgoal op)
+  | SBinOp (op 'Binary) (Subgoal op) (Subgoal op)
+
+deriving instance (Eq (op 'Unary), Eq (op 'Binary)) => Eq (Subgoal op)
+
+data SomeOp (op :: OpKind -> *) = NoOp | forall opKind . SomeOp (op opKind)
+
+data OpKind = Binary | Unary
+
+data Op (k :: OpKind) where
+  Negation    :: Op Unary
+  Conjunction :: Op Binary
+  Disjunction :: Op Binary
+
+deriving instance Eq (Op opKind)
 
 data AtomicFormula = AtomicFormula BS.ByteString [ Term ] deriving (Eq)
 
@@ -54,12 +72,16 @@ data Sym =
 
 makeBaseFunctor ''Subgoal
 
-vars :: Subgoal -> [ Var ]
+operation :: Subgoal op -> SomeOp op
+operation SAtom{}         = NoOp
+operation (SUnOp op _)    = SomeOp op
+operation (SBinOp op _ _) = SomeOp op
+
+vars :: Subgoal a -> [ Var ]
 vars = cata alg
   where
-  alg :: Base Subgoal [ Var ] -> [ Var ]
+  alg :: Base (Subgoal a) [ Var ] -> [ Var ]
   alg (SAtomF (AtomicFormula _ terms)) =
     mapMaybe (\case {TVar v -> Just v; _ -> Nothing}) terms
-  alg (SNegF vars) = vars
-  alg (SConjF vars1 vars2) = vars1 ++ vars2
-  alg (SDisjF vars1 vars2) = vars1 ++ vars2
+  alg (SUnOpF _ vars) = vars
+  alg (SBinOpF _ vars1 vars2) = vars1 ++ vars2

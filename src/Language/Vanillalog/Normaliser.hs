@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Language.Vanillalog.Normaliser (normalise) where
@@ -16,7 +17,7 @@ normalise = separateTopLevelDisjunctions
           . elimDoubleNegation
           . pushNegation
 
-peephole :: (Subgoal -> Subgoal) -> Program -> Program
+peephole :: (VanillaSubgoal -> VanillaSubgoal) -> Program -> Program
 peephole transformation (Program sentences) =
   Program (map goS sentences)
   where
@@ -28,33 +29,43 @@ peephole transformation (Program sentences) =
 pushNegation :: Program -> Program
 pushNegation = peephole pnSub
   where
-  pnSub :: Subgoal -> Subgoal
+  pnSub :: VanillaSubgoal -> VanillaSubgoal
   pnSub = cata alg
 
-  alg :: Algebra (Base Subgoal) Subgoal
-  alg (SNegF (SConj sub1 sub2)) = SDisj (pnSub $ SNeg sub1) (pnSub $ SNeg sub2)
-  alg (SNegF (SDisj sub1 sub2)) = SConj (pnSub $ SNeg sub1) (pnSub $ SNeg sub2)
+  alg :: Algebra (Base VanillaSubgoal) VanillaSubgoal
+  alg (SUnOpF Negation sub)
+    | SBinOp op sub1 sub2 <- sub
+    , op == Conjunction || op == Disjunction =
+      SBinOp (if op == Conjunction then Disjunction else Conjunction)
+        (pnSub $ SUnOp Negation sub1)
+        (pnSub $ SUnOp Negation sub2)
   alg s = embed $ fmap pnSub s
 
 elimDoubleNegation :: Program -> Program
 elimDoubleNegation = peephole ednSub
   where
-  ednSub :: Subgoal -> Subgoal
-  ednSub = alg . project
+  ednSub :: VanillaSubgoal -> VanillaSubgoal
+  ednSub = cata alg
 
-  alg :: Algebra (Base Subgoal) Subgoal
-  alg (SNegF (SNeg sub)) = ednSub sub
-  alg s = embed $ fmap ednSub s
+  alg :: Algebra (Base VanillaSubgoal) VanillaSubgoal
+  alg (SUnOpF Negation (SUnOp Negation sub)) = sub
+  alg s = embed s
 
 bubbleUpDisjunction :: Program -> Program
 bubbleUpDisjunction = peephole budSub
   where
-  budSub :: Subgoal -> Subgoal
+  budSub :: VanillaSubgoal -> VanillaSubgoal
   budSub = cata alg
 
-  alg :: Algebra (Base Subgoal) Subgoal
-  alg (SConjF (SDisj s1 s2) s3) = SDisj (SConj s1 s3) (SConj s2 s3)
-  alg (SConjF s1 (SDisj s2 s3)) = SDisj (SConj s1 s2) (SConj s1 s3)
+  alg :: Algebra (Base VanillaSubgoal) VanillaSubgoal
+  alg (SBinOpF Conjunction (SBinOp Disjunction s1 s2) s3) =
+    SBinOp Disjunction
+      (SBinOp Conjunction s1 s3)
+      (SBinOp Conjunction s2 s3)
+  alg (SBinOpF Conjunction s1 (SBinOp Disjunction s2 s3)) =
+    SBinOp Disjunction
+      (SBinOp Conjunction s1 s2)
+      (SBinOp Conjunction s1 s3)
   alg s = embed s
 
 separateTopLevelDisjunctions :: Program -> Program
@@ -70,13 +81,13 @@ separateTopLevelDisjunctions (Program sentences) =
   step :: Sentence -> [ Sentence ]
   step fact@SFact{} = [ fact ]
   step sentence@(SClause clause)
-    | Clause head (SDisj s1 s2) <- clause =
+    | Clause head (SBinOp Disjunction s1 s2) <- clause =
       SClause <$> [ Clause head s1, Clause head s2 ]
     | otherwise = [ sentence ]
   step sentence@(SQuery query)
     | Query head@(Just{}) body <- query =
       case body of
-        SDisj s1 s2 -> SQuery <$> [ Query head s1, Query head s2 ]
+        SBinOp Disjunction s1 s2 -> SQuery <$> [ Query head s1, Query head s2 ]
         _ -> [ sentence ]
     | otherwise = panic
       "Impossible: There should be no unnamed queries at this point."

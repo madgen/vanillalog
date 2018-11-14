@@ -1,7 +1,9 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
 module Language.Vanillalog.Compiler
@@ -11,6 +13,7 @@ module Language.Vanillalog.Compiler
 import Protolude hiding (head)
 
 import qualified Data.ByteString.Lazy.Char8 as BS
+import           Data.Functor.Foldable (Base, para)
 import qualified Data.List.NonEmpty as NE
 import           Data.Singletons (withSomeSing)
 import           Data.Singletons.TypeLits (SNat, withKnownNat)
@@ -81,17 +84,21 @@ instance Compilable Query where
   compile (Query (Just head) body) = compile (Clause head body)
   compile _ = panic "Impossible: Unnamed query found during compilation."
 
-instance Compilable Subgoal where
-  type Output Subgoal = NE.NonEmpty (E.Literal 'E.ABase)
-  compile (SAtom atom) = compile atom NE.:| []
-  compile (SNeg s)
-    | SAtom atom <- s =
-      (compile atom) { E.polarity = E.Negative } NE.:| []
-    | otherwise = panic
-      "Impossible: Negation over non-atoms should be eliminated at this point."
-  compile (SConj sub1 sub2) = compile sub1 `append` compile sub2
-  compile SDisj{} =
-    panic "Impossible: Disjunctions should be eliminated at this point."
+instance Compilable VanillaSubgoal where
+  type Output VanillaSubgoal = NE.NonEmpty (E.Literal 'E.ABase)
+  compile = para alg
+    where
+    alg :: Base VanillaSubgoal (VanillaSubgoal, Output VanillaSubgoal)
+        -> Output VanillaSubgoal
+    alg (SAtomF atom) = compile atom NE.:| []
+    alg (SUnOpF Negation rec)
+      | (SAtom{}, core NE.:| []) <- rec =
+        core { E.polarity = E.Negative } NE.:| []
+      | otherwise = panic
+         "Impossible: Negation over non-atoms should be eliminated at this point."
+    alg (SBinOpF Conjunction (_,core1) (_,core2)) = core1 `append` core2
+    alg (SBinOpF Disjunction _ _) =
+      panic "Impossible: Disjunctions should be eliminated at this point."
 
 instance Compilable AtomicFormula where
   type Output AtomicFormula = E.Literal 'E.ABase

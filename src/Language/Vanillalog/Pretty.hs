@@ -1,4 +1,9 @@
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Language.Vanillalog.Pretty (pp) where
 
@@ -33,29 +38,40 @@ instance Pretty Query where
     case mHead of { Just head -> pretty head; _ -> empty }
     <+>  "?-" <+> pretty body <> "."
 
-instance Pretty Subgoal where
+instance ( Pretty (op 'Unary)
+         , Pretty (op 'Binary)
+         , HasPrecedence op
+         ) => Pretty (Subgoal op) where
   pretty = para alg
     where
-    basePrecedence :: Base Subgoal a -> Int
-    basePrecedence SAtomF{} = 1
-    basePrecedence SNegF{}  = 1
-    basePrecedence SConjF{} = 2
-    basePrecedence SDisjF{} = 3
-
-    alg :: Base Subgoal (Subgoal, Doc) -> Doc
+    alg :: Base (Subgoal op) ((Subgoal op), Doc) -> Doc
     alg (SAtomF atom) = pretty atom
-    alg s@(SNegF (ch,doc)) =
-      "!" <> mParens s ch doc
-    alg s@(SConjF (ch,doc) (ch',doc')) =
-      mParens s ch doc <> comma <+> mParens s ch' doc'
-    alg s@(SDisjF (ch,doc) (ch',doc')) =
-      mParens s ch doc <> semi <+> mParens s ch' doc'
+    alg s@(SUnOpF op (ch,doc)) =
+      pretty op <> mParens (SomeOp op) (operation ch) doc
+    alg s@(SBinOpF op (ch,doc) (ch',doc')) =
+          mParens (SomeOp op) (operation ch) doc
+       <> pretty op
+      <+> mParens (SomeOp op) (operation ch') doc'
 
-    mParens :: Base Subgoal a -> Subgoal -> Doc -> Doc
-    mParens s ch doc =
-      if basePrecedence s < (basePrecedence . project $ ch)
+    mParens :: SomeOp op -> SomeOp op -> Doc -> Doc
+    mParens op1 op2 doc =
+      if precedence op1 < precedence op2
         then parens doc
         else doc
+
+class HasPrecedence (op :: OpKind -> *) where
+  precedence :: SomeOp op -> Int
+
+instance HasPrecedence Op where
+  precedence NoOp                 = 0
+  precedence (SomeOp Negation)    = 1
+  precedence (SomeOp Conjunction) = 2
+  precedence (SomeOp Disjunction) = 3
+
+instance Pretty (Op opKind) where
+  pretty Negation    = "!"
+  pretty Conjunction = ","
+  pretty Disjunction = ";"
 
 instance Pretty AtomicFormula where
   pretty (AtomicFormula name terms) =
