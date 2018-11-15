@@ -40,8 +40,8 @@ pushNegation = peephole pnSub
 
 -- | Repeatedly eliminates immediate double negation top-down but does not
 -- traverse the tree all the way down if it sees a non-negation node.
-elimNegation :: Subgoal -> Subgoal
-elimNegation = apo rcoalg
+elimNeg :: Subgoal -> Subgoal
+elimNeg = apo rcoalg
   where
   rcoalg :: Subgoal -> Base Subgoal (Either Subgoal Subgoal)
   rcoalg (SNeg (SNeg sub)) = Left  <$> project sub
