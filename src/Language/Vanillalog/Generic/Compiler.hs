@@ -8,8 +8,10 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
-module Language.Vanillalog.Compiler
+module Language.Vanillalog.Generic.Compiler
   ( compile
+  , Closure(..)
+  , ClosureCompilable(..)
   ) where
 
 import Protolude hiding (head)
@@ -26,7 +28,6 @@ import qualified Language.Exalog.Relation as R
 import qualified Language.Exalog.Tuples as T
 
 import           Language.Vanillalog.Generic.AST
-import qualified Language.Vanillalog.AST as A
 
 class Compilable a where
   type Output a
@@ -106,16 +107,6 @@ data Closure op =
 class ClosureCompilable op where
   cCompile :: Closure op -> E.Body 'E.ABase
 
-instance ClosureCompilable A.Op where
-  cCompile (CUnary A.Negation rec)
-    | (SAtom{}, core NE.:| []) <- rec =
-      core { E.polarity = E.Negative } NE.:| []
-    | otherwise = panic
-       "Impossible: Negation over non-atoms should be eliminated at this point."
-  cCompile (CBinary A.Conjunction (_,core1) (_,core2)) = core1 `append` core2
-  cCompile (CBinary A.Disjunction _ _) =
-    panic "Impossible: Disjunctions should be eliminated at this point."
-
 instance Compilable AtomicFormula where
   type Output AtomicFormula = E.Literal 'E.ABase
   compile (AtomicFormula name terms) =
@@ -151,8 +142,3 @@ instance Compilable Sym where
   compile (SymInt i)   = E.SymInt i
   compile (SymText bs) = E.SymText . decodeUtf8 . BS.toStrict $ bs
   compile (SymBool b)  = E.SymBool b
-
--- Util
-
-append :: NE.NonEmpty a -> NE.NonEmpty a -> NE.NonEmpty a
-append (a NE.:| as) (a' NE.:| as') = a NE.:| as ++ a' : as'

@@ -12,7 +12,7 @@ import           Language.Exalog.Pretty ()
 import qualified Language.Exalog.Solver as S
 
 import Language.Vanillalog.AST (Program)
-import Language.Vanillalog.Compiler (compile)
+import Language.Vanillalog.Generic.Compiler (compile)
 import Language.Vanillalog.Generic.Pretty (pp)
 import Language.Vanillalog.Generic.Query (nameQueries)
 import Language.Vanillalog.Normaliser (normalise)

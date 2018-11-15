@@ -26,8 +26,12 @@ module Language.Vanillalog.AST
 import Protolude
 
 import qualified Data.ByteString.Lazy.Char8 as BS
+import qualified Data.List.NonEmpty as NE
+
+import qualified Language.Exalog.Core as E
 
 import qualified Language.Vanillalog.Generic.AST as AG
+import           Language.Vanillalog.Generic.Compiler (ClosureCompilable(..), Closure(..))
 import           Language.Vanillalog.Generic.Pretty (Pretty(..), HasPrecedence(..))
 
 type Program = AG.Program Op
@@ -71,3 +75,20 @@ instance Pretty (Op opKind) where
   pretty Negation    = "!"
   pretty Conjunction = ","
   pretty Disjunction = ";"
+
+-------------------------------------------------------------------------------
+-- Compilation related instances
+-------------------------------------------------------------------------------
+
+instance ClosureCompilable Op where
+  cCompile (CUnary Negation rec)
+    | (SAtom{}, core NE.:| []) <- rec =
+      core { E.polarity = E.Negative } NE.:| []
+    | otherwise = panic
+       "Impossible: Negation over non-atoms should be eliminated at this point."
+  cCompile (CBinary Conjunction (_,core1) (_,core2)) = core1 `append` core2
+    where
+    append :: NE.NonEmpty a -> NE.NonEmpty a -> NE.NonEmpty a
+    append (a NE.:| as) (a' NE.:| as') = a NE.:| as ++ a' : as'
+  cCompile (CBinary Disjunction _ _) =
+    panic "Impossible: Disjunctions should be eliminated at this point."
