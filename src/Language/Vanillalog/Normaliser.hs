@@ -27,19 +27,6 @@ peephole transformation (G.Program sentences) =
   goS (G.SQuery  G.Query{..})  = G.SQuery  G.Query{body = transformation body, ..}
   goS s = s
 
-{-
-pushNegation :: Program -> Program
-pushNegation = peephole pnSub
-  where
-  pnSub :: Subgoal -> Subgoal
-  pnSub = cata alg
-
-  alg :: Algebra (Base Subgoal) Subgoal
-  alg (SNegF (SConj sub1 sub2)) = SDisj (pnSub $ SNeg sub1) (pnSub $ SNeg sub2)
-  alg (SNegF (SDisj sub1 sub2)) = SConj (pnSub $ SNeg sub1) (pnSub $ SNeg sub2)
-  alg s = embed $ fmap pnSub s
--}
-
 pushNegation :: Program -> Program
 pushNegation = peephole pnSub
   where
