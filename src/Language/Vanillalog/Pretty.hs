@@ -5,7 +5,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Language.Vanillalog.Pretty (pp) where
+module Language.Vanillalog.Pretty
+  ( pp
+  , HasPrecedence(..)
+  , Pretty(..)
+  ) where
 
 import Protolude hiding ((<>), empty, head)
 
@@ -16,40 +20,39 @@ import Text.PrettyPrint
 
 import Language.Exalog.Pretty.Helper
 
-import           Language.Vanillalog.AST
-import qualified Language.Vanillalog.AST.Generic as G
+import Language.Vanillalog.AST.Generic
 
-instance Pretty Program where
-  pretty (G.Program sentences) = vcat . prettyC $ sentences
+instance Pretty (Sentence op) => Pretty (Program op) where
+  pretty (Program sentences) = vcat . prettyC $ sentences
 
-instance Pretty Sentence where
-  pretty (G.SClause clause) = pretty clause
-  pretty (G.SFact fact)     = pretty fact
-  pretty (G.SQuery query)   = pretty query
+instance (Pretty (Clause op), Pretty (Query op)) => Pretty (Sentence op) where
+  pretty (SClause clause) = pretty clause
+  pretty (SFact fact)     = pretty fact
+  pretty (SQuery query)   = pretty query
 
-instance Pretty Clause where
-  pretty (G.Clause head body) =
+instance Pretty (Subgoal op) => Pretty (Clause op) where
+  pretty (Clause head body) =
     pretty head <+> ":-" <+> pretty body <> "."
 
 instance Pretty Fact where
   pretty (Fact atom) = pretty atom <> "."
 
-instance Pretty Query where
-  pretty (G.Query mHead body) =
+instance Pretty (Subgoal op) => Pretty (Query op) where
+  pretty (Query mHead body) =
     case mHead of { Just head -> pretty head; _ -> empty }
     <+>  "?-" <+> pretty body <> "."
 
 instance ( Pretty (op 'Unary)
          , Pretty (op 'Binary)
          , HasPrecedence op
-         ) => Pretty (G.Subgoal op) where
+         ) => Pretty (Subgoal op) where
   pretty = para alg
     where
-    alg :: Base (G.Subgoal op) ((G.Subgoal op), Doc) -> Doc
+    alg :: Base (Subgoal op) ((Subgoal op), Doc) -> Doc
     alg (SAtomF atom) = pretty atom
-    alg s@(G.SUnOpF op (ch,doc)) =
+    alg s@(SUnOpF op (ch,doc)) =
       pretty op <> mParens (SomeOp op) (operation ch) doc
-    alg s@(G.SBinOpF op (ch,doc) (ch',doc')) =
+    alg s@(SBinOpF op (ch,doc) (ch',doc')) =
           mParens (SomeOp op) (operation ch) doc
        <> pretty op
       <+> mParens (SomeOp op) (operation ch') doc'
@@ -62,17 +65,6 @@ instance ( Pretty (op 'Unary)
 
 class HasPrecedence (op :: OpKind -> *) where
   precedence :: SomeOp op -> Int
-
-instance HasPrecedence Op where
-  precedence NoOp                 = 0
-  precedence (SomeOp Negation)    = 1
-  precedence (SomeOp Conjunction) = 2
-  precedence (SomeOp Disjunction) = 3
-
-instance Pretty (Op opKind) where
-  pretty Negation    = "!"
-  pretty Conjunction = ","
-  pretty Disjunction = ";"
 
 instance Pretty AtomicFormula where
   pretty (AtomicFormula name terms) =
