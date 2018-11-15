@@ -25,7 +25,7 @@ import qualified Language.Exalog.Core as E
 import qualified Language.Exalog.Relation as R
 import qualified Language.Exalog.Tuples as T
 
-import           Language.Vanillalog.AST.Generic
+import           Language.Vanillalog.Generic.AST
 import qualified Language.Vanillalog.AST as A
 
 class Compilable a where

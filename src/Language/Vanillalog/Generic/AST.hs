@@ -11,7 +11,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE ExistentialQuantification #-}
 
-module Language.Vanillalog.AST.Generic where
+module Language.Vanillalog.Generic.AST where
 
 import Protolude
 

@@ -5,7 +5,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Language.Vanillalog.Pretty
+module Language.Vanillalog.Generic.Pretty
   ( pp
   , HasPrecedence(..)
   , Pretty(..)
@@ -20,7 +20,7 @@ import Text.PrettyPrint
 
 import Language.Exalog.Pretty.Helper
 
-import Language.Vanillalog.AST.Generic
+import Language.Vanillalog.Generic.AST
 
 instance Pretty (Sentence op) => Pretty (Program op) where
   pretty (Program sentences) = vcat . prettyC $ sentences

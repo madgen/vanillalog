@@ -1,10 +1,10 @@
-module Language.Vanillalog.Query (nameQueries) where
+module Language.Vanillalog.Generic.Query (nameQueries) where
 
 import Protolude
 
 import qualified Data.ByteString.Lazy.Char8 as BS
 
-import Language.Vanillalog.AST.Generic
+import Language.Vanillalog.Generic.AST
 
 nameQueries :: Program op -> Program op
 nameQueries pr = evalState (sentential nameQuery pr) 0

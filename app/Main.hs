@@ -13,11 +13,11 @@ import qualified Language.Exalog.Solver as S
 
 import Language.Vanillalog.AST (Program)
 import Language.Vanillalog.Compiler (compile)
+import Language.Vanillalog.Generic.Pretty (pp)
+import Language.Vanillalog.Generic.Query (nameQueries)
 import Language.Vanillalog.Normaliser (normalise)
-import Language.Vanillalog.Pretty (pp)
 import Language.Vanillalog.Parser.Lexer (lex)
 import Language.Vanillalog.Parser.Parser (programParser)
-import Language.Vanillalog.Query (nameQueries)
 
 import Options.Applicative
 

@@ -8,7 +8,7 @@ import Protolude
 import Data.Functor.Foldable
 
 import           Language.Vanillalog.AST
-import qualified Language.Vanillalog.AST.Generic as G
+import qualified Language.Vanillalog.Generic.AST as G
 
 type Algebra f a = f a -> a
 type Coalgebra f a = a -> f a

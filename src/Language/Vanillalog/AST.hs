@@ -27,8 +27,8 @@ import Protolude
 
 import qualified Data.ByteString.Lazy.Char8 as BS
 
-import qualified Language.Vanillalog.AST.Generic as AG
-import           Language.Vanillalog.Pretty (Pretty(..), HasPrecedence(..))
+import qualified Language.Vanillalog.Generic.AST as AG
+import           Language.Vanillalog.Generic.Pretty (Pretty(..), HasPrecedence(..))
 
 type Program = AG.Program Op
 
