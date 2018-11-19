@@ -19,6 +19,8 @@ import Language.Vanillalog.Normaliser (normalise)
 import Language.Vanillalog.Parser.Lexer (lex)
 import Language.Vanillalog.Parser.Parser (programParser)
 
+import Language.Vanillalog.Generic.CLI.Util
+
 import Options.Applicative
 
 data RunOptions = RunOptions
@@ -75,7 +77,7 @@ opts = subparser
 run :: RunOptions-> IO ()
 run RunOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile file
-  parseOrDie bs $ \ast -> do
+  parseOrDie programParser bs $ \ast -> do
     let (exalogProgram, initEDB) = compile
                                  . normalise
                                  . nameQueries
@@ -95,17 +97,17 @@ prettyPrint PPOptions{..} = do
         Right tokens -> print tokens
         Left err -> panic . fromString $ err
     VanillaParse ->
-      parseOrDie bs $ \ast -> putStrLn
+      parseOrDie programParser bs $ \ast -> putStrLn
                             . pp
                             $ ast
     VanillaNormal ->
-      parseOrDie bs $ \ast -> putStrLn
+      parseOrDie programParser bs $ \ast -> putStrLn
                             . pp
                             . normalise
                             . nameQueries
                             $ ast
     Exalog ->
-      parseOrDie bs $ \ast -> do
+      parseOrDie programParser bs $ \ast -> do
         let (exalogProgram, initEDB) = compile
                                      . normalise
                                      . nameQueries
@@ -113,12 +115,6 @@ prettyPrint PPOptions{..} = do
         putStrLn $ pp exalogProgram
         putStrLn ("" :: Text)
         putStrLn $ pp initEDB
-
-parseOrDie :: BS.ByteString -> (Program -> IO a) -> IO a
-parseOrDie bs action = do
-  case programParser bs of
-    Right ast -> action ast
-    Left err -> panic . fromString $ err
 
 main :: IO ()
 main = do
