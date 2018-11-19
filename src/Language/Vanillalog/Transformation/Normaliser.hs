@@ -1,7 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Language.Vanillalog.Normaliser (normalise) where
+module Language.Vanillalog.Transformation.Normaliser (normalise) where
 
 import Protolude
 

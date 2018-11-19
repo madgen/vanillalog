@@ -1,4 +1,4 @@
-module Language.Vanillalog.Generic.Query (nameQueries) where
+module Language.Vanillalog.Generic.Transformation.Query (nameQueries) where
 
 import Protolude
 
