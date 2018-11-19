@@ -6,7 +6,6 @@ module Main where
 import Protolude
 
 import qualified Data.ByteString.Lazy.Char8 as BS
-import           Data.String (fromString)
 
 import           Language.Exalog.Pretty ()
 import qualified Language.Exalog.Solver as S
