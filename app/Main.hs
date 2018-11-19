@@ -1,4 +1,3 @@
-{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Main where
@@ -32,8 +31,6 @@ stageParser =
  <|> stageFlag' VanillaNormal "vanilla-normal" "Transform to normal form"
  <|> stageFlag' Exalog        "exalog"         "Compile to Exalog"
    )
-
--- Functionality to run
 
 run :: RunOptions -> IO ()
 run RunOptions{..} = do
