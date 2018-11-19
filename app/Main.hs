@@ -36,10 +36,10 @@ stageParser =
 
 -- Functionality to run
 
-run :: RunOptions-> IO ()
+run :: RunOptions -> IO ()
 run RunOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile file
-  parseOrDie programParser bs $ \ast -> do
+  succeedOrDie programParser bs $ \ast -> do
     let (exalogProgram, initEDB) = compile
                                  . normalise
                                  . nameQueries
@@ -54,22 +54,15 @@ prettyPrint :: PPOptions Stage -> IO ()
 prettyPrint PPOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile file
   case stage of
-    VanillaLex ->
-      case lex bs of
-        Right tokens -> print tokens
-        Left err -> panic . fromString $ err
-    VanillaParse ->
-      parseOrDie programParser bs $ \ast -> putStrLn
-                            . pp
-                            $ ast
+    VanillaLex -> succeedOrDie lex bs print
+    VanillaParse -> succeedOrDie programParser bs $ putStrLn . pp
     VanillaNormal ->
-      parseOrDie programParser bs $ \ast -> putStrLn
-                            . pp
-                            . normalise
-                            . nameQueries
-                            $ ast
+      succeedOrDie programParser bs $ putStrLn
+                                    . pp
+                                    . normalise
+                                    . nameQueries
     Exalog ->
-      parseOrDie programParser bs $ \ast -> do
+      succeedOrDie programParser bs $ \ast -> do
         let (exalogProgram, initEDB) = compile
                                      . normalise
                                      . nameQueries

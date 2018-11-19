@@ -7,11 +7,11 @@ import           Data.String (fromString)
 
 import           Language.Vanillalog.Generic.AST
 
-parseOrDie :: (BS.ByteString -> Either [ Char ] (Program b))
-           -> BS.ByteString
-           -> (Program b -> IO a)
-           -> IO a
-parseOrDie programParser bs action = do
-  case programParser bs of
+succeedOrDie :: (BS.ByteString -> Either [ Char ] b)
+             -> BS.ByteString
+             -> (b -> IO a)
+             -> IO a
+succeedOrDie processor bs action = do
+  case processor bs of
     Right ast -> action ast
     Left err -> panic . fromString $ err
