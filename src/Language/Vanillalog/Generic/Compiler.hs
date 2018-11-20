@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -22,6 +23,8 @@ import           Data.Singletons (withSomeSing)
 import           Data.Singletons.TypeLits (SNat, withKnownNat)
 import qualified Data.Vector.Sized as V
 
+import Control.Monad.Trans.Writer (Writer, runWriter, tell)
+
 import qualified Language.Exalog.Core as E
 import qualified Language.Exalog.Relation as R
 import qualified Language.Exalog.Tuples as T
@@ -33,85 +36,100 @@ class Compilable a where
   compile :: a -> Output a
 
 instance ClosureCompilable op => Compilable (Program op) where
-  type Output (Program op) = (E.Program 'E.ABase, R.Solution 'E.ABase)
+  type Output (Program op) =
+    Either [ Text ] (E.Program 'E.ABase, R.Solution 'E.ABase)
   compile (Program sentences) =
-    ( E.Program
-        { annotation = E.ProgABase
-        , clauses    = map compile clauses ++ map compile queries
-        , queryPreds = queryPreds
-        }
-    , R.fromList $ map compile facts
-    )
+    case runWriter action of
+      (a, errs) | null errs -> Right a
+                | otherwise -> Left errs
     where
+    action = do
+      edb <- traverse compile facts
+      compiledClauses <- traverse compile clauses
+      compiledQueries <- traverse compile queries
+      return $
+        ( E.Program
+            { annotation = E.ProgABase
+            , clauses    = compiledClauses ++ compiledQueries
+            , queryPreds = queryPreds compiledQueries
+            }
+        , R.fromList edb
+        )
+
     clauses = [ clause | SClause clause <- sentences ]
     facts   = [ fact   | SFact fact     <- sentences ]
     queries = [ query  | SQuery query   <- sentences ]
 
-    clausifiedQueries = map compile queries
-    queryPreds = map (E.predicateBox . E.head) $ clausifiedQueries
+    queryPreds = map (E.predicateBox . E.head)
 
 instance Compilable Fact where
-  type Output Fact = R.Relation E.ABase
+  type Output Fact = Writer [ Text ] (R.Relation E.ABase)
   compile (Fact (AtomicFormula name terms)) =
     withSomeSing (fromInteger . toInteger . length $ terms) $
       \(arity :: SNat n) ->
-        withKnownNat arity $
-          R.Relation
+        withKnownNat arity $ do
+          tuples <-
+            case V.fromListN @n terms of
+              Just vec -> T.fromList . pure <$> traverse (fromTerm . compile) vec
+              Nothing -> do
+                tell [ "Impossible: length of terms is not the length of terms." ]
+                undefined
+          pure $ R.Relation
             E.Predicate
               { annotation = E.PredABase
               , fxSym = name
               , arity = arity
               , nature = E.Logical
               }
-            (T.fromList $
-              case V.fromListN @n terms of
-                Just vec -> [ fromTerm . compile <$> vec ]
-                Nothing -> panic
-                  "Impossible: length of terms is not the length of terms.")
+            tuples
     where
-    fromTerm :: E.Term -> E.Sym
-    fromTerm (E.TVar _) = panic "Facts cannot have variables."
-    fromTerm (E.TSym s) = s
+    fromTerm :: E.Term -> Writer [ Text ] E.Sym
+    fromTerm (E.TVar _) = tell [ "Facts cannot have variables." ] >> undefined
+    fromTerm (E.TSym s) = pure s
 
 
 instance ClosureCompilable op => Compilable (Clause op) where
-  type Output (Clause op) = E.Clause 'E.ABase
-  compile (Clause head body) = E.Clause
-    { annotation = E.ClABase
-    , head = compile head
-    , body = compile body
-    }
+  type Output (Clause op) = Writer [ Text ] (E.Clause 'E.ABase)
+  compile (Clause head body) =
+    E.Clause E.ClABase <$> compile head <*> compile body
 
 instance ClosureCompilable op => Compilable (Query op) where
-  type Output (Query op) = E.Clause 'E.ABase
+  type Output (Query op) = Writer [ Text ] (E.Clause 'E.ABase)
   compile (Query (Just head) body) = compile (Clause head body)
-  compile _ = panic "Impossible: Unnamed query found during compilation."
+  compile _ = tell [ "Impossible: Unnamed query found during compilation." ] >> undefined
 
 instance ClosureCompilable op => Compilable (Subgoal op) where
-  type Output (Subgoal op) = E.Body 'E.ABase
+  type Output (Subgoal op) = Writer [ Text ] (E.Body 'E.ABase)
 
   compile = para alg
     where
     alg :: Base (Subgoal op) (Subgoal op, Output (Subgoal op))
         -> Output (Subgoal op)
-    alg (SAtomF atom)            = compile atom NE.:| []
-    alg (SUnOpF  op rec)         = cCompile (CUnary  op rec)
-    alg (SBinOpF op rec1 rec2)   = cCompile (CBinary op rec1 rec2)
+    alg (SAtomF atom) = (NE.:| []) <$> compile atom
+    alg (SUnOpF  op (ch,m)) = cCompile =<< (CUnary op . (ch,) <$> m)
+    alg (SBinOpF op (ch1,m1) (ch2,m2)) =
+      cCompile =<< liftA2 (CBinary op) ((ch1,) <$> m1) ((ch2,) <$> m2)
 
 data Closure op =
-    CUnary  (op 'Unary)  (Subgoal op, Output (Subgoal op))
-  | CBinary (op 'Binary) (Subgoal op, Output (Subgoal op))
-                         (Subgoal op, Output (Subgoal op))
+    CUnary  (op 'Unary)  (Subgoal op, E.Body 'E.ABase)
+  | CBinary (op 'Binary) (Subgoal op, E.Body 'E.ABase)
+                         (Subgoal op, E.Body 'E.ABase)
 
 class ClosureCompilable op where
-  cCompile :: Closure op -> E.Body 'E.ABase
+  cCompile :: Closure op -> Writer [ Text ] (E.Body 'E.ABase)
 
 instance Compilable AtomicFormula where
-  type Output AtomicFormula = E.Literal 'E.ABase
+  type Output AtomicFormula = Writer [ Text ] (E.Literal 'E.ABase)
   compile (AtomicFormula name terms) =
     withSomeSing (fromInteger . toInteger $ length terms) $
-      \(arity :: SNat n) ->
-        E.Literal
+      \(arity :: SNat n) -> do
+        terms <- withKnownNat arity $
+          case V.fromListN @n terms of
+            Just vec -> pure $ fmap compile vec
+            Nothing -> do
+              tell ["Impossible: length of terms is not the length of terms."]
+              undefined
+        pure $ E.Literal
           { annotation = E.LitABase
           , polarity   = E.Positive
           , predicate  = E.Predicate
@@ -119,12 +137,7 @@ instance Compilable AtomicFormula where
               , fxSym      = name
               , arity      = arity
               , nature     = E.Logical }
-          , terms =
-              withKnownNat arity $
-                case V.fromListN @n terms of
-                  Just vec -> fmap compile vec
-                  Nothing -> panic
-                    "Impossible: length of terms is not the length of terms."
+          , terms = terms
           }
 
 instance Compilable Term where

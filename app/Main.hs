@@ -36,10 +36,10 @@ stageParser =
 run :: RunOptions -> IO ()
 run RunOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile file
-  succeedOrDie (programParser >=> nameQueries >=> normalise) bs $ \ast -> do
-    let (exalogProgram, initEDB) = compile ast
-    finalEDB <- S.solve exalogProgram initEDB
-    putStrLn $ pp finalEDB
+  succeedOrDie (programParser >=> nameQueries >=> normalise >=> compile) bs $
+    \(exalogProgram, initEDB) -> do
+      finalEDB <- S.solve exalogProgram initEDB
+      putStrLn $ pp finalEDB
 
 repl :: ReplOptions -> IO ()
 repl opts = panic "REPL is not yet supported."
@@ -54,11 +54,11 @@ prettyPrint PPOptions{..} = do
       succeedOrDie (programParser >=> nameQueries >=> normalise) bs $
         putStrLn . pp
     Exalog ->
-      succeedOrDie (programParser >=> nameQueries >=> normalise) bs $ \ast -> do
-        let (exalogProgram, initEDB) = compile ast
-        putStrLn $ pp exalogProgram
-        putStrLn ("" :: Text)
-        putStrLn $ pp initEDB
+      succeedOrDie (programParser >=> nameQueries >=> normalise >=> compile) bs $
+        \(exalogProgram, initEDB) -> do
+          putStrLn $ pp exalogProgram
+          putStrLn ("" :: Text)
+          putStrLn $ pp initEDB
 
 main :: IO ()
 main = do
