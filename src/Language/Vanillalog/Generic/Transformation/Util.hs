@@ -14,6 +14,9 @@ import Protolude
 
 import Language.Vanillalog.Generic.AST
 
+type Algebra f a = f a -> a
+type Coalgebra f a = a -> f a
+
 class Transformable a op where
   transformM :: Monad m => (a -> m a) -> Program op -> m (Program op)
   transform  ::            (a -> a)   -> Program op -> Program op

@@ -7,28 +7,23 @@ import Protolude
 
 import Data.Functor.Foldable
 
+import Control.Monad.Trans.Writer (Writer, runWriter, tell)
+
 import           Language.Vanillalog.AST
 import qualified Language.Vanillalog.Generic.AST as G
+import           Language.Vanillalog.Generic.Transformation.Util
 
-type Algebra f a = f a -> a
-type Coalgebra f a = a -> f a
-
-normalise :: Program -> Program
-normalise = separateTopLevelDisjunctions
-          . bubbleUpDisjunction
-          . pushNegation
-
-peephole :: (Subgoal -> Subgoal) -> Program -> Program
-peephole transformation (G.Program sentences) =
-  G.Program (map goS sentences)
-  where
-  goS :: Sentence -> Sentence
-  goS (G.SClause G.Clause{..}) = G.SClause G.Clause{body = transformation body, ..}
-  goS (G.SQuery  G.Query{..})  = G.SQuery  G.Query{body = transformation body, ..}
-  goS s = s
+normalise :: Program -> Either [ Text ] Program
+normalise pr =
+  case runWriter $ separateTopLevelDisjunctions
+                 . bubbleUpDisjunction
+                 . pushNegation
+                 $ pr of
+    (pr', errs) | null errs -> Right pr'
+                | otherwise -> Left errs
 
 pushNegation :: Program -> Program
-pushNegation = peephole pnSub
+pushNegation = transform pnSub
   where
   pnSub :: Subgoal -> Subgoal
   pnSub = ana coalg
@@ -48,7 +43,7 @@ elimNeg = apo rcoalg
   rcoalg s                 = Right <$> project s
 
 bubbleUpDisjunction :: Program -> Program
-bubbleUpDisjunction = peephole budSub
+bubbleUpDisjunction = transform budSub
   where
   budSub :: Subgoal -> Subgoal
   budSub = cata alg
@@ -63,26 +58,26 @@ bubbleUpDisjunction = peephole budSub
   alg (SConjF s1 (SDisj s2 s3)) = SDisj (SConj s1 s2) (SConj s1 s3)
   alg s = embed s
 
-separateTopLevelDisjunctions :: Program -> Program
+separateTopLevelDisjunctions :: Program -> Writer [ Text ] Program
 separateTopLevelDisjunctions (G.Program sentences) =
-  G.Program (yakk sentences)
+  G.Program <$> yakk sentences
   where
-  yakk :: [ Sentence ] -> [ Sentence ]
-  yakk = fix
-    (\f sol ->
-      let newSol = join . map step $ sol
-      in if sol == newSol then newSol else f newSol)
+  yakk :: [ Sentence ] -> Writer [ Text ] [ Sentence ]
+  yakk = fix $ \f sol -> do
+    newSol <- join <$> traverse step sol
+    if sol == newSol then pure newSol else f newSol
 
-  step :: Sentence -> [ Sentence ]
-  step fact@G.SFact{} = [ fact ]
+  step :: Sentence -> Writer [ Text ] [ Sentence ]
+  step fact@G.SFact{} = pure $ [ fact ]
   step sentence@(G.SClause clause)
     | G.Clause head (SDisj s1 s2) <- clause =
-      G.SClause <$> [ G.Clause head s1, G.Clause head s2 ]
-    | otherwise = [ sentence ]
+      pure $ G.SClause <$> [ G.Clause head s1, G.Clause head s2 ]
+    | otherwise = pure [ sentence ]
   step sentence@(G.SQuery query)
     | G.Query head@(Just{}) body <- query =
-      case body of
+      pure $ case body of
         SDisj s1 s2 -> G.SQuery <$> [ G.Query head s1, G.Query head s2 ]
-        _ -> [ sentence ]
-    | otherwise = panic
-      "Impossible: There should be no unnamed queries at this point."
+        _           -> [ sentence ]
+    | otherwise = do
+      tell [ "Impossible: There should be no unnamed queries at this point." ]
+      pure [ sentence ]
