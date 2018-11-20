@@ -1,6 +1,8 @@
 {-# OPTIONS_GHC -Wno-simplifiable-class-constraints #-}
 
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -13,48 +15,62 @@ import Protolude
 import Language.Vanillalog.Generic.AST
 
 class Transformable a op where
-  transform :: (a -> a) -> Program op -> Program op
+  transformM :: Monad m => (a -> m a) -> Program op -> m (Program op)
+  transform  ::            (a -> a)   -> Program op -> Program op
+  transform f p = runIdentity $ transformM (pure <$> f) p
 
 instance Transformable (Program op) op where
-  transform f p = f p
+  transformM f p = f p
 
 instance Transformable (Sentence op) op where
-  transform f (Program sentences) = Program (f <$> sentences)
+  transformM f (Program sentences) = Program <$> traverse f sentences
 
 instance Transformable (Clause op) op where
-  transform f = transform go
+  transformM :: forall m op. Monad m
+             => (Clause op -> m (Clause op)) -> Program op -> m (Program op)
+  transformM f = transformM go
     where
-    go :: Sentence op -> Sentence op
-    go (SClause cl) = SClause (f cl)
-    go s = s
+    go :: Sentence op -> m (Sentence op)
+    go (SClause cl) = SClause <$> f cl
+    go s            = pure s
 
 instance Transformable (Query op) op where
-  transform f = transform go
+  transformM :: forall m op. Monad m
+             => (Query op -> m (Query op)) -> Program op -> m (Program op)
+  transformM f = transformM go
     where
-    go :: Sentence op -> Sentence op
-    go (SQuery q) = SQuery (f q)
-    go s = s
+    go :: Sentence op -> m (Sentence op)
+    go (SQuery q) = SQuery <$> f q
+    go s          = pure s
 
 instance Transformable Fact op where
-  transform f = transform go
+  transformM :: forall m op. Monad m
+             => (Fact -> m Fact) -> Program op -> m (Program op)
+  transformM f = transformM go
     where
-    go :: Sentence op -> Sentence op
-    go (SFact fact) = SFact (f fact)
-    go s = s
+    go :: Sentence op -> m (Sentence op)
+    go (SFact fact) = SFact <$> f fact
+    go s            = pure s
 
 instance Transformable (Subgoal op) op where
-  transform f = transform go
+  transformM :: forall m op. Monad m
+             => (Subgoal op -> m (Subgoal op)) -> Program op -> m (Program op)
+  transformM f = transformM go
     where
-    go :: Sentence op -> Sentence op
-    go (SClause (Clause head body)) = SClause (Clause head (f body))
-    go (SQuery  (Query  head body)) = SQuery  (Query  head (f body))
-    go s                            = s
+    go :: Sentence op -> m (Sentence op)
+    go (SClause (Clause head body)) = SClause . Clause head <$> f body
+    go (SQuery  (Query  head body)) = SQuery  . Query  head <$> f body
+    go s                            = pure s
 
 -- |Transform only the atomic subgoals in clause/query bodies.
+peepholeM :: forall op m. (Transformable (Subgoal op) op, Monad m)
+          => (AtomicFormula -> m AtomicFormula) -> Program op -> m (Program op)
+peepholeM f = transformM go
+  where
+  go :: Subgoal op -> m (Subgoal op)
+  go (SAtom atom) = SAtom <$> f atom
+  go s            = pure s
+
 peephole :: forall op. Transformable (Subgoal op) op
          => (AtomicFormula -> AtomicFormula) -> Program op -> Program op
-peephole f = transform go
-  where
-  go :: Subgoal op -> Subgoal op
-  go (SAtom atom) = SAtom (f atom)
-  go s = s
+peephole f = runIdentity . peepholeM (pure <$> f)
