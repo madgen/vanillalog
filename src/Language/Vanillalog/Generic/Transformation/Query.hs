@@ -9,32 +9,27 @@ import Protolude
 
 import Data.Text (pack)
 
-import Control.Monad.Trans.Writer (Writer, runWriter, tell)
-
-import Language.Vanillalog.Generic.AST
-import Language.Vanillalog.Generic.Transformation.Util
+import           Language.Vanillalog.Generic.AST
+import qualified Language.Vanillalog.Generic.Logger as L
+import           Language.Vanillalog.Generic.Transformation.Util
 
 nameQueries :: forall op. Transformable (Subgoal op) op
             => Program op -> Either [ Text ] (Program op)
-nameQueries pr =
-  case runWriter $ evalStateT (transformM go pr) 0 of
-    (pr', errs) | null errs -> Right pr'
-                | otherwise -> Left errs
+nameQueries pr = L.runLogger $ evalStateT (transformM go pr) 0
   where
-  go :: Sentence op -> StateT Int (Writer [ Text ]) (Sentence op)
+  go :: Sentence op -> StateT Int L.LoggerM (Sentence op)
   go (SQuery (Query Nothing body)) =
     SQuery <$> (Query <$> (Just <$> ac) <*> pure body)
     where
-    ac :: StateT Int (Writer [ Text ]) AtomicFormula
+    ac :: StateT Int L.LoggerM AtomicFormula
     ac = do
       name <- freshQueryName
       pure $ AtomicFormula name $ TVar <$> vars body
 
-    freshQueryName :: StateT Int (Writer [ Text ]) Text
+    freshQueryName :: StateT Int L.LoggerM Text
     freshQueryName = do
       modify (+ 1)
       pack . ("query_" <>) . show <$> get
-  go s@SQuery{} = do
-    lift $ tell [ "Impossible: Query has already been named." ]
-    return s
-  go s = return s
+  go s@SQuery{} =
+    lift $ L.scream "Impossible: Query has already been named."
+  go s = pure s

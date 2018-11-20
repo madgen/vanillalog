@@ -7,20 +7,16 @@ import Protolude
 
 import Data.Functor.Foldable
 
-import Control.Monad.Trans.Writer (Writer, runWriter, tell)
-
 import           Language.Vanillalog.AST
 import qualified Language.Vanillalog.Generic.AST as G
+import qualified Language.Vanillalog.Generic.Logger as L
 import           Language.Vanillalog.Generic.Transformation.Util
 
 normalise :: Program -> Either [ Text ] Program
-normalise pr =
-  case runWriter $ separateTopLevelDisjunctions
-                 . bubbleUpDisjunction
-                 . pushNegation
-                 $ pr of
-    (pr', errs) | null errs -> Right pr'
-                | otherwise -> Left errs
+normalise = L.runLogger
+          . separateTopLevelDisjunctions
+          . bubbleUpDisjunction
+          . pushNegation
 
 pushNegation :: Program -> Program
 pushNegation = transform pnSub
@@ -58,16 +54,16 @@ bubbleUpDisjunction = transform budSub
   alg (SConjF s1 (SDisj s2 s3)) = SDisj (SConj s1 s2) (SConj s1 s3)
   alg s = embed s
 
-separateTopLevelDisjunctions :: Program -> Writer [ Text ] Program
+separateTopLevelDisjunctions :: Program -> L.LoggerM Program
 separateTopLevelDisjunctions (G.Program sentences) =
   G.Program <$> yakk sentences
   where
-  yakk :: [ Sentence ] -> Writer [ Text ] [ Sentence ]
+  yakk :: [ Sentence ] -> L.LoggerM [ Sentence ]
   yakk = fix $ \f sol -> do
     newSol <- join <$> traverse step sol
     if sol == newSol then pure newSol else f newSol
 
-  step :: Sentence -> Writer [ Text ] [ Sentence ]
+  step :: Sentence -> L.LoggerM [ Sentence ]
   step fact@G.SFact{} = pure $ [ fact ]
   step sentence@(G.SClause clause)
     | G.Clause head (SDisj s1 s2) <- clause =
@@ -78,6 +74,5 @@ separateTopLevelDisjunctions (G.Program sentences) =
       pure $ case body of
         SDisj s1 s2 -> G.SQuery <$> [ G.Query head s1, G.Query head s2 ]
         _           -> [ sentence ]
-    | otherwise = do
-      tell [ "Impossible: There should be no unnamed queries at this point." ]
-      pure [ sentence ]
+    | otherwise =
+      L.scream "Impossible: There should be no unnamed queries at this point."

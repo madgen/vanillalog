@@ -23,13 +23,12 @@ import           Data.Singletons (withSomeSing)
 import           Data.Singletons.TypeLits (SNat, withKnownNat)
 import qualified Data.Vector.Sized as V
 
-import Control.Monad.Trans.Writer (Writer, runWriter, tell)
-
 import qualified Language.Exalog.Core as E
 import qualified Language.Exalog.Relation as R
 import qualified Language.Exalog.Tuples as T
 
 import           Language.Vanillalog.Generic.AST
+import qualified Language.Vanillalog.Generic.Logger as L
 
 class Compilable a where
   type Output a
@@ -38,10 +37,7 @@ class Compilable a where
 instance ClosureCompilable op => Compilable (Program op) where
   type Output (Program op) =
     Either [ Text ] (E.Program 'E.ABase, R.Solution 'E.ABase)
-  compile (Program sentences) =
-    case runWriter action of
-      (a, errs) | null errs -> Right a
-                | otherwise -> Left errs
+  compile (Program sentences) = L.runLogger action
     where
     action = do
       edb <- traverse compile facts
@@ -63,7 +59,7 @@ instance ClosureCompilable op => Compilable (Program op) where
     queryPreds = map (E.predicateBox . E.head)
 
 instance Compilable Fact where
-  type Output Fact = Writer [ Text ] (R.Relation E.ABase)
+  type Output Fact = L.LoggerM (R.Relation E.ABase)
   compile (Fact (AtomicFormula name terms)) =
     withSomeSing (fromInteger . toInteger . length $ terms) $
       \(arity :: SNat n) ->
@@ -71,9 +67,8 @@ instance Compilable Fact where
           tuples <-
             case V.fromListN @n terms of
               Just vec -> T.fromList . pure <$> traverse (fromTerm . compile) vec
-              Nothing -> do
-                tell [ "Impossible: length of terms is not the length of terms." ]
-                undefined
+              Nothing -> L.scream
+                "Impossible: length of terms is not the length of terms."
           pure $ R.Relation
             E.Predicate
               { annotation = E.PredABase
@@ -83,23 +78,23 @@ instance Compilable Fact where
               }
             tuples
     where
-    fromTerm :: E.Term -> Writer [ Text ] E.Sym
-    fromTerm (E.TVar _) = tell [ "Facts cannot have variables." ] >> undefined
+    fromTerm :: E.Term -> L.LoggerM E.Sym
+    fromTerm (E.TVar _) = L.scream "Facts cannot have variables."
     fromTerm (E.TSym s) = pure s
 
 
 instance ClosureCompilable op => Compilable (Clause op) where
-  type Output (Clause op) = Writer [ Text ] (E.Clause 'E.ABase)
+  type Output (Clause op) = L.LoggerM (E.Clause 'E.ABase)
   compile (Clause head body) =
     E.Clause E.ClABase <$> compile head <*> compile body
 
 instance ClosureCompilable op => Compilable (Query op) where
-  type Output (Query op) = Writer [ Text ] (E.Clause 'E.ABase)
+  type Output (Query op) = L.LoggerM (E.Clause 'E.ABase)
   compile (Query (Just head) body) = compile (Clause head body)
-  compile _ = tell [ "Impossible: Unnamed query found during compilation." ] >> undefined
+  compile _ = L.scream "Impossible: Unnamed query found during compilation."
 
 instance ClosureCompilable op => Compilable (Subgoal op) where
-  type Output (Subgoal op) = Writer [ Text ] (E.Body 'E.ABase)
+  type Output (Subgoal op) = L.LoggerM (E.Body 'E.ABase)
 
   compile = para alg
     where
@@ -116,19 +111,18 @@ data Closure op =
                          (Subgoal op, E.Body 'E.ABase)
 
 class ClosureCompilable op where
-  cCompile :: Closure op -> Writer [ Text ] (E.Body 'E.ABase)
+  cCompile :: Closure op -> L.LoggerM (E.Body 'E.ABase)
 
 instance Compilable AtomicFormula where
-  type Output AtomicFormula = Writer [ Text ] (E.Literal 'E.ABase)
+  type Output AtomicFormula = L.LoggerM (E.Literal 'E.ABase)
   compile (AtomicFormula name terms) =
     withSomeSing (fromInteger . toInteger $ length terms) $
       \(arity :: SNat n) -> do
         terms <- withKnownNat arity $
           case V.fromListN @n terms of
             Just vec -> pure $ fmap compile vec
-            Nothing -> do
-              tell ["Impossible: length of terms is not the length of terms."]
-              undefined
+            Nothing ->
+              L.scream "Impossible: length of terms is not the length of terms."
         pure $ E.Literal
           { annotation = E.LitABase
           , polarity   = E.Positive

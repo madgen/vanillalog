@@ -27,12 +27,12 @@ import Protolude
 
 import qualified Data.List.NonEmpty as NE
 
-import           Control.Monad.Trans.Writer (tell)
 
 import qualified Language.Exalog.Core as E
 
 import qualified Language.Vanillalog.Generic.AST as AG
 import           Language.Vanillalog.Generic.Compiler (ClosureCompilable(..), Closure(..))
+import qualified Language.Vanillalog.Generic.Logger as L
 import           Language.Vanillalog.Generic.Pretty (Pretty(..), HasPrecedence(..))
 
 type Program = AG.Program Op
@@ -85,13 +85,11 @@ instance ClosureCompilable Op where
   cCompile (CUnary Negation rec)
     | (SAtom{}, core NE.:| []) <- rec =
       pure $ core { E.polarity = E.Negative } NE.:| []
-    | otherwise = do
-      tell [ "Impossible: Negation over non-atoms should be eliminated at this point." ]
-      undefined
+    | otherwise = L.scream
+      "Impossible: Negation over non-atoms should be eliminated at this point."
   cCompile (CBinary Conjunction (_,core1) (_,core2)) = pure $ append core1 core2
     where
     append :: NE.NonEmpty a -> NE.NonEmpty a -> NE.NonEmpty a
     append (a NE.:| as) (a' NE.:| as') = a NE.:| as ++ a' : as'
-  cCompile (CBinary Disjunction _ _) = do
-    tell [ "Impossible: Disjunctions should be eliminated at this point." ]
-    undefined
+  cCompile (CBinary Disjunction _ _) =
+    L.scream "Impossible: Disjunctions should be eliminated at this point."
