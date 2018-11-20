@@ -62,8 +62,9 @@ useInput f = token (\(_,_,inp,_) len -> f (BS.take len inp))
 alexEOF :: Alex (Token str)
 alexEOF = return TEOF
 
-lex :: BS.ByteString -> Either String [ Token Text ]
-lex text = bimap fromString (fmap (toStrict . decodeUtf8) <$>) $ runAlex text go
+lex :: BS.ByteString -> Either [ Text ] [ Token Text ]
+lex text =
+  bimap (pure . fromString) (fmap (toStrict . decodeUtf8) <$>) $ runAlex text go
   where
   go = do
     tok <- alexMonadScan

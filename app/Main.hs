@@ -36,12 +36,10 @@ stageParser =
 run :: RunOptions -> IO ()
 run RunOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile file
-  succeedOrDie programParser bs $ \ast -> do
-    case compile <$> (nameQueries >=> normalise) ast of
-      Right (exalogProgram, initEDB) -> do
-        finalEDB <- S.solve exalogProgram initEDB
-        putStrLn $ pp finalEDB
-      Left errs -> panic $ T.intercalate "\n" errs
+  succeedOrDie (programParser >=> nameQueries >=> normalise) bs $ \ast -> do
+    let (exalogProgram, initEDB) = compile ast
+    finalEDB <- S.solve exalogProgram initEDB
+    putStrLn $ pp finalEDB
 
 repl :: ReplOptions -> IO ()
 repl opts = panic "REPL is not yet supported."
@@ -53,18 +51,14 @@ prettyPrint PPOptions{..} = do
     VanillaLex -> succeedOrDie lex bs print
     VanillaParse -> succeedOrDie programParser bs $ putStrLn . pp
     VanillaNormal ->
-      succeedOrDie programParser bs $ \ast ->
-        case nameQueries >=> normalise $ ast of
-          Right ast' -> putStrLn . pp $ ast'
-          Left errs -> panic $ T.intercalate "\n" errs
+      succeedOrDie (programParser >=> nameQueries >=> normalise) bs $
+        putStrLn . pp
     Exalog ->
-      succeedOrDie programParser bs $ \ast ->
-        case compile <$> (nameQueries >=> normalise) ast of
-          Right (exalogProgram, initEDB) -> do
-            putStrLn $ pp exalogProgram
-            putStrLn ("" :: Text)
-            putStrLn $ pp initEDB
-          Left errs -> panic $ T.intercalate "\n" errs
+      succeedOrDie (programParser >=> nameQueries >=> normalise) bs $ \ast -> do
+        let (exalogProgram, initEDB) = compile ast
+        putStrLn $ pp exalogProgram
+        putStrLn ("" :: Text)
+        putStrLn $ pp initEDB
 
 main :: IO ()
 main = do
