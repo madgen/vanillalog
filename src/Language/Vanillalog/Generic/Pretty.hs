@@ -13,8 +13,8 @@ module Language.Vanillalog.Generic.Pretty
 
 import Protolude hiding ((<>), empty, head)
 
-import qualified Data.ByteString.Lazy.Char8 as BS
-import           Data.Functor.Foldable (Base, para, project)
+import Data.Functor.Foldable (Base, para, project)
+import Data.Text (unpack)
 
 import Text.PrettyPrint
 
@@ -85,5 +85,5 @@ instance Pretty Sym where
 
 -- Generic instances
 
-instance Pretty BS.ByteString where
-  pretty = text . BS.unpack
+instance Pretty Text where
+  pretty = text . unpack

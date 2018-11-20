@@ -2,6 +2,7 @@
 module Language.Vanillalog.Parser.Parser where
 
 import Prelude hiding (lex)
+import Protolude (Text)
 
 import           Language.Vanillalog.AST
 import qualified Language.Vanillalog.Generic.AST as G
@@ -10,7 +11,7 @@ import           Language.Vanillalog.Parser.Lexer (Token(..), lex)
 
 %name programParser1 PROGRAM
 %name clauseFactParser1 CLAUSE
-%tokentype { Token }
+%tokentype { Token Text }
 %error     { parseError }
 
 %token
@@ -72,7 +73,7 @@ SYM :: { Sym }
 | bool { SymBool $1 }
 
 {
-parseError :: [ Token ] -> a
+parseError :: [ Token Text ] -> a
 parseError = error . show
 
 programParser = fmap programParser1 <$> lex

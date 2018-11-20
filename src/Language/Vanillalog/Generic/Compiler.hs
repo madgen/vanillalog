@@ -16,7 +16,6 @@ module Language.Vanillalog.Generic.Compiler
 
 import Protolude hiding (head)
 
-import qualified Data.ByteString.Lazy.Char8 as BS
 import           Data.Functor.Foldable (Base, para)
 import qualified Data.List.NonEmpty as NE
 import           Data.Singletons (withSomeSing)
@@ -60,7 +59,7 @@ instance Compilable Fact where
           R.Relation
             E.Predicate
               { annotation = E.PredABase
-              , fxSym = decodeUtf8 . BS.toStrict $ name
+              , fxSym = name
               , arity = arity
               , nature = E.Logical
               }
@@ -117,7 +116,7 @@ instance Compilable AtomicFormula where
           , polarity   = E.Positive
           , predicate  = E.Predicate
               { annotation = E.PredABase
-              , fxSym      = decodeUtf8 . BS.toStrict $ name
+              , fxSym      = name
               , arity      = arity
               , nature     = E.Logical }
           , terms =
@@ -135,10 +134,10 @@ instance Compilable Term where
 
 instance Compilable Var where
   type Output Var = E.Var
-  compile (Var v) = E.Var . decodeUtf8 . BS.toStrict $ v
+  compile (Var v) = E.Var v
 
 instance Compilable Sym where
   type Output Sym = E.Sym
   compile (SymInt i)   = E.SymInt i
-  compile (SymText bs) = E.SymText . decodeUtf8 . BS.toStrict $ bs
+  compile (SymText bs) = E.SymText bs
   compile (SymBool b)  = E.SymBool b

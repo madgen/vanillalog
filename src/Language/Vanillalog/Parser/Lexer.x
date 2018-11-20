@@ -1,7 +1,12 @@
 {
+{-# LANGUAGE DeriveFunctor #-}
 module Language.Vanillalog.Parser.Lexer where
 
 import Prelude
+import Protolude (Text, bimap)
+
+import Data.Text.Lazy.Encoding (decodeUtf8)
+import Data.Text.Lazy (toStrict)
 
 import qualified Data.ByteString.Lazy.Char8 as BS
 }
@@ -32,7 +37,7 @@ token :-
 <str> \"         { begin 0}
 
 {
-data Token =
+data Token str =
     TLeftPar
   | TRightPar
   | TDot
@@ -41,24 +46,24 @@ data Token =
   | TRule
   | TQuery
   | TNeg
-  | TID   BS.ByteString
-  | TStr  BS.ByteString
+  | TID   str
+  | TStr  str
   | TInt  Int
   | TBool Bool
   | TEOF
-  deriving (Eq, Show)
+  deriving (Eq, Show, Functor)
 
-basic :: Token -> AlexAction Token
+basic :: Token str -> AlexAction (Token str)
 basic tok = token (\_ _ -> tok)
 
-useInput :: (BS.ByteString -> Token) -> AlexAction Token
+useInput :: (BS.ByteString -> (Token str)) -> AlexAction (Token str)
 useInput f = token (\(_,_,inp,_) len -> f (BS.take len inp))
 
-alexEOF :: Alex Token
+alexEOF :: Alex (Token str)
 alexEOF = return TEOF
 
-lex :: BS.ByteString -> Either String [ Token ]
-lex text = runAlex text go
+lex :: BS.ByteString -> Either String [ Token Text ]
+lex text = bimap fromString (fmap (toStrict . decodeUtf8) <$>) $ runAlex text go
   where
   go = do
     tok <- alexMonadScan

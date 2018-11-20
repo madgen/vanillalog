@@ -18,8 +18,6 @@ import Protolude
 import Data.Functor.Foldable
 import Data.Functor.Foldable.TH (makeBaseFunctor)
 
-import qualified Data.ByteString.Lazy.Char8 as BS
-
 newtype Program op = Program [ Sentence op ]
 
 data Sentence op =
@@ -56,14 +54,14 @@ data SomeOp (op :: OpKind -> *) = NoOp | forall opKind . SomeOp (op opKind)
 
 data OpKind = Binary | Unary
 
-data AtomicFormula = AtomicFormula BS.ByteString [ Term ] deriving (Eq)
+data AtomicFormula = AtomicFormula Text [ Term ] deriving (Eq)
 
 data Term = TVar Var | TSym Sym deriving (Eq)
 
-newtype Var = Var BS.ByteString deriving (Eq)
+newtype Var = Var Text deriving (Eq)
 data Sym =
     SymInt  Int
-  | SymText BS.ByteString
+  | SymText Text
   | SymBool Bool
   deriving (Eq)
 

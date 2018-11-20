@@ -25,7 +25,6 @@ module Language.Vanillalog.AST
 
 import Protolude
 
-import qualified Data.ByteString.Lazy.Char8 as BS
 import qualified Data.List.NonEmpty as NE
 
 import qualified Language.Exalog.Core as E
