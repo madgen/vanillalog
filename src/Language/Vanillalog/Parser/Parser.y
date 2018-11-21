@@ -6,29 +6,30 @@ import Protolude (Text, bimap, pure)
 
 import           Language.Vanillalog.AST
 import qualified Language.Vanillalog.Generic.AST as G
+import qualified Language.Vanillalog.Generic.Parser.Lexeme as L
 import           Language.Vanillalog.Parser.Lexer (Token(..), lex)
 }
 
 %name programParser1 PROGRAM
 %name clauseFactParser1 CLAUSE
-%tokentype { Token Text }
+%tokentype { L.Lexeme (Token Text) }
 %error     { parseError }
 
 %token
-  "("      { TLeftPar }
-  ")"      { TRightPar }
-  "."      { TDot }
-  ","      { TComma }
-  ";"      { TSemicolon }
-  ":-"     { TRule }
-  "?-"     { TQuery }
-  "!"      { TNeg }
+  "("      { L.Lexeme{L.token = TLeftPar} }
+  ")"      { L.Lexeme{L.token = TRightPar} }
+  "."      { L.Lexeme{L.token = TDot} }
+  ","      { L.Lexeme{L.token = TComma} }
+  ";"      { L.Lexeme{L.token = TSemicolon} }
+  ":-"     { L.Lexeme{L.token = TRule} }
+  "?-"     { L.Lexeme{L.token = TQuery} }
+  "!"      { L.Lexeme{L.token = TNeg} }
 
-  id       { TID $$ }
-  str      { TStr $$ }
-  int      { TInt $$ }
-  bool     { TBool $$ }
-  eof      { TEOF }
+  id       { L.Lexeme{L.token = TID $$} }
+  str      { L.Lexeme{L.token = TStr $$} }
+  int      { L.Lexeme{L.token = TInt $$} }
+  bool     { L.Lexeme{L.token = TBool $$} }
+  eof      { L.Lexeme{L.token = TEOF} }
 
 %left ";"
 %left ","
@@ -73,7 +74,7 @@ SYM :: { Sym }
 | bool { SymBool $1 }
 
 {
-parseError :: [ Token Text ] -> a
+parseError :: [ L.Lexeme (Token Text) ] -> a
 parseError = error . show
 
 programParser    = fmap programParser1    <$> lex

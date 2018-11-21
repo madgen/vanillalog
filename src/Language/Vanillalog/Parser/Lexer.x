@@ -9,6 +9,9 @@ import Data.Text.Lazy.Encoding (decodeUtf8)
 import Data.Text.Lazy (toStrict)
 
 import qualified Data.ByteString.Lazy.Char8 as BS
+
+import Language.Vanillalog.Generic.Parser.SrcLoc
+import qualified Language.Vanillalog.Generic.Parser.Lexeme as L
 }
 
 %wrapper "monad-bytestring"
@@ -32,9 +35,9 @@ token :-
 <0> true         { basic (TBool True) }
 <0> false        { basic (TBool False) }
 
-<0> \"           { begin str}
+<0> \"           { begin str }
 <str> [^\"]+     { useInput TStr }
-<str> \"         { begin 0}
+<str> \"         { begin 0 }
 
 {
 data Token str =
@@ -53,22 +56,32 @@ data Token str =
   | TEOF
   deriving (Eq, Show, Functor)
 
-basic :: Token str -> AlexAction (Token str)
-basic tok = token (\_ _ -> tok)
+basic :: Token str -> AlexAction (L.Lexeme (Token str))
+basic = useInput . const
 
-useInput :: (BS.ByteString -> (Token str)) -> AlexAction (Token str)
-useInput f = token (\(_,_,inp,_) len -> f (BS.take len inp))
+useInput :: (BS.ByteString -> Token str) -> AlexAction (L.Lexeme (Token str))
+useInput f = token $ \(aPos,_,inp,_) len ->
+  L.Lexeme (alexToSpan aPos len) (f $ BS.take len inp)
 
-alexEOF :: Alex (Token str)
-alexEOF = return TEOF
+-- Assumes all tokens are on the same line
+alexToSpan :: AlexPosn -> Int64 -> SrcSpan
+alexToSpan (AlexPn _ line col) len =
+  SrcSpan (SrcLoc "" line col) (SrcLoc "" line (col + (fromIntegral len) - 1))
 
-lex :: BS.ByteString -> Either [ Text ] [ Token Text ]
+eof :: L.Lexeme (Token str)
+eof = L.Lexeme dummySpan TEOF
+
+alexEOF :: Alex (L.Lexeme (Token str))
+alexEOF = return eof
+
+lex :: BS.ByteString -> Either [ Text ] [ L.Lexeme (Token Text) ]
 lex text =
-  bimap (pure . fromString) (fmap (toStrict . decodeUtf8) <$>) $ runAlex text go
+  bimap (pure . fromString)
+        (fmap (fmap (toStrict . decodeUtf8)) <$>) $ runAlex text go
   where
   go = do
     tok <- alexMonadScan
-    if tok == TEOF
-      then return [ TEOF ]
+    if tok == eof
+      then return [ eof ]
       else (tok :) <$> go
 }
