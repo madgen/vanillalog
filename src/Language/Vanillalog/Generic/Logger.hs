@@ -19,4 +19,4 @@ log :: Monad m => Text -> LoggerMT m ()
 log = tell . pure
 
 scream :: Monad m => Text -> LoggerMT m a
-scream msg = log msg >> undefined
+scream msg = log msg >> panic msg
