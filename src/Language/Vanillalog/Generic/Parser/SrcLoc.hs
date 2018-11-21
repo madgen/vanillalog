@@ -6,6 +6,7 @@ module Language.Vanillalog.Generic.Parser.SrcLoc
   , dummySpan
   , transSpan
   , listSpan
+  , Spannable(..)
   ) where
 
 import Protolude hiding ((<>), empty, SrcLoc)
@@ -44,6 +45,9 @@ listSpan :: [ SrcSpan ] -> Maybe SrcSpan
 listSpan []             = Nothing
 listSpan [ span ]       = Just span
 listSpan (span : spans) = transSpan span =<< listSpan spans
+
+class Spannable a where
+  span :: a -> SrcSpan
 
 --------------------------------------------------------------------------------
 -- Pretty instances
