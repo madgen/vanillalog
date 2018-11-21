@@ -77,6 +77,6 @@ SYM :: { Sym }
 parseError :: [ L.Lexeme (Token Text) ] -> a
 parseError = error . show
 
-programParser    = fmap programParser1    <$> lex
-clauseFactParser = fmap clauseFactParser1 <$> lex
+programParser    file = fmap programParser1    <$> lex file
+clauseFactParser file = fmap clauseFactParser1 <$> lex file
 }

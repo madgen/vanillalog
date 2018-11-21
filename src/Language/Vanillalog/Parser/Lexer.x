@@ -10,11 +10,11 @@ import Data.Text.Lazy (toStrict)
 
 import qualified Data.ByteString.Lazy.Char8 as BS
 
-import Language.Vanillalog.Generic.Parser.SrcLoc
+import Language.Vanillalog.Generic.Parser.SrcLoc hiding (file)
 import qualified Language.Vanillalog.Generic.Parser.Lexeme as L
 }
 
-%wrapper "monad-bytestring"
+%wrapper "monadUserState-bytestring"
 
 token :-
 
@@ -60,13 +60,15 @@ basic :: Token str -> AlexAction (L.Lexeme (Token str))
 basic = useInput . const
 
 useInput :: (BS.ByteString -> Token str) -> AlexAction (L.Lexeme (Token str))
-useInput f = token $ \(aPos,_,inp,_) len ->
-  L.Lexeme (alexToSpan aPos len) (f $ BS.take len inp)
+useInput f (aPos,_,inp,_) len = do
+  file <- getFile
+  return $ L.Lexeme (alexToSpan aPos file len) (f $ BS.take len inp)
 
 -- Assumes all tokens are on the same line
-alexToSpan :: AlexPosn -> Int64 -> SrcSpan
-alexToSpan (AlexPn _ line col) len =
-  SrcSpan (SrcLoc "" line col) (SrcLoc "" line (col + (fromIntegral len) - 1))
+alexToSpan :: AlexPosn -> FilePath -> Int64 -> SrcSpan
+alexToSpan (AlexPn _ line col) file len =
+  SrcSpan (SrcLoc file line col)
+          (SrcLoc file line (col + (fromIntegral len) - 1))
 
 eof :: L.Lexeme (Token str)
 eof = L.Lexeme dummySpan TEOF
@@ -74,14 +76,30 @@ eof = L.Lexeme dummySpan TEOF
 alexEOF :: Alex (L.Lexeme (Token str))
 alexEOF = return eof
 
-lex :: BS.ByteString -> Either [ Text ] [ L.Lexeme (Token Text) ]
-lex text =
+data AlexUserState = AlexUserState
+  { file :: FilePath
+  }
+
+alexInitUserState :: AlexUserState
+alexInitUserState = AlexUserState { file = "" }
+
+setFile :: FilePath -> Alex ()
+setFile file = Alex $ \s ->
+  Right (s {alex_ust = (alex_ust s) {file = file}}, ())
+
+getFile :: Alex FilePath
+getFile = Alex $ \s -> Right (s, file . alex_ust $ s)
+
+lex :: FilePath -> BS.ByteString -> Either [ Text ] [ L.Lexeme (Token Text) ]
+lex file source =
   bimap (pure . fromString)
-        (fmap (fmap (toStrict . decodeUtf8)) <$>) $ runAlex text go
+        (fmap (fmap (toStrict . decodeUtf8)) <$>) result
   where
-  go = do
+  result = runAlex source (setFile file >> lexM)
+
+  lexM = do
     tok <- alexMonadScan
     if tok == eof
       then return [ eof ]
-      else (tok :) <$> go
+      else (tok :) <$> lexM
 }

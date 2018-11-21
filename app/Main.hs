@@ -27,16 +27,15 @@ data Stage = VanillaLex | VanillaParse | VanillaNormal | Exalog
 
 stageParser :: Parser Stage
 stageParser =
-   ( stageFlag' VanillaLex    "vanilla-lex"    "Tokenize"
+     stageFlag' VanillaLex    "vanilla-lex"    "Tokenize"
  <|> stageFlag' VanillaParse  "vanilla-parse"  "Parse"
  <|> stageFlag' VanillaNormal "vanilla-normal" "Transform to normal form"
  <|> stageFlag' Exalog        "exalog"         "Compile to Exalog"
-   )
 
 run :: RunOptions -> IO ()
 run RunOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile file
-  succeedOrDie (programParser >=> nameQueries >=> normalise >=> compile) bs $
+  succeedOrDie (programParser file >=> nameQueries >=> normalise >=> compile) bs $
     \(exalogProgram, initEDB) -> do
       finalEDB <- S.solve exalogProgram initEDB
       putStrLn $ pp finalEDB
@@ -48,13 +47,13 @@ prettyPrint :: PPOptions Stage -> IO ()
 prettyPrint PPOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile file
   case stage of
-    VanillaLex -> succeedOrDie lex bs print
-    VanillaParse -> succeedOrDie programParser bs $ putStrLn . pp
+    VanillaLex -> succeedOrDie (lex file) bs print
+    VanillaParse -> succeedOrDie (programParser file) bs $ putStrLn . pp
     VanillaNormal ->
-      succeedOrDie (programParser >=> nameQueries >=> normalise) bs $
+      succeedOrDie (programParser file >=> nameQueries >=> normalise) bs $
         putStrLn . pp
     Exalog ->
-      succeedOrDie (programParser >=> nameQueries >=> normalise >=> compile) bs $
+      succeedOrDie (programParser file >=> nameQueries >=> normalise >=> compile) bs $
         \(exalogProgram, initEDB) -> do
           putStrLn $ pp exalogProgram
           putStrLn ("" :: Text)
