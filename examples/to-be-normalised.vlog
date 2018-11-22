@@ -1,4 +1,4 @@
 p(X) :- q(X), ! (l(W); ! (r(X), d(Y)), t(Y); s(Z)); z(L).
-p("hi")
+p("hi").
 p(X) :- q(X); a(C).
 q(Z) :- (q(Z); q(Y)) , (q(X); q(W)).
