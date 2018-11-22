@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -Wno-simplifiable-class-constraints #-}
 
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -18,13 +19,13 @@ nameQueries :: forall op. Transformable (Subgoal op) op
 nameQueries pr = L.runLogger $ evalStateT (transformM go pr) 0
   where
   go :: Sentence op -> StateT Int L.LoggerM (Sentence op)
-  go (SQuery (Query Nothing body)) =
-    SQuery <$> (Query <$> (Just <$> ac) <*> pure body)
+  go (SQuery s Query{_head = Nothing, ..}) =
+    SQuery s <$> (Query _span <$> (Just <$> ac) <*> pure _body)
     where
     ac :: StateT Int L.LoggerM AtomicFormula
     ac = do
       name <- freshQueryName
-      pure $ AtomicFormula name $ TVar <$> vars body
+      pure $ AtomicFormula s name $ TVar s <$> vars _body
 
     freshQueryName :: StateT Int L.LoggerM Text
     freshQueryName = do

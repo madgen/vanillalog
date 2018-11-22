@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -37,13 +38,13 @@ class Compilable a where
 instance ClosureCompilable op => Compilable (Program op) where
   type Output (Program op) =
     Either [ Text ] (E.Program 'E.ABase, R.Solution 'E.ABase)
-  compile (Program sentences) = L.runLogger action
+  compile Program{..} = L.runLogger action
     where
     action = do
       edb <- traverse compile facts
       compiledClauses <- traverse compile clauses
       compiledQueries <- traverse compile queries
-      return $
+      return
         ( E.Program
             { annotation = E.ProgABase
             , clauses    = compiledClauses ++ compiledQueries
@@ -52,27 +53,27 @@ instance ClosureCompilable op => Compilable (Program op) where
         , R.fromList edb
         )
 
-    clauses = [ clause | SClause clause <- sentences ]
-    facts   = [ fact   | SFact fact     <- sentences ]
-    queries = [ query  | SQuery query   <- sentences ]
+    clauses = [ _clause s | s@SClause{} <- _sentences ]
+    facts   = [ _fact   s | s@SFact{}   <- _sentences ]
+    queries = [ _query  s | s@SQuery{}  <- _sentences ]
 
     queryPreds = map (E.predicateBox . E.head)
 
 instance Compilable Fact where
   type Output Fact = L.LoggerM (R.Relation E.ABase)
-  compile (Fact (AtomicFormula name terms)) =
-    withSomeSing (fromInteger . toInteger . length $ terms) $
+  compile Fact{ _atom = AtomicFormula{..} } =
+    withSomeSing (fromInteger . toInteger . length $ _terms) $
       \(arity :: SNat n) ->
         withKnownNat arity $ do
           tuples <-
-            case V.fromListN @n terms of
+            case V.fromListN @n _terms of
               Just vec -> T.fromList . pure <$> traverse (fromTerm . compile) vec
               Nothing -> L.scream
                 "Impossible: length of terms is not the length of terms."
           pure $ R.Relation
             E.Predicate
               { annotation = E.PredABase
-              , fxSym = name
+              , fxSym = _fxSym
               , arity = arity
               , nature = E.Logical
               }
@@ -85,12 +86,12 @@ instance Compilable Fact where
 
 instance ClosureCompilable op => Compilable (Clause op) where
   type Output (Clause op) = L.LoggerM (E.Clause 'E.ABase)
-  compile (Clause head body) =
-    E.Clause E.ClABase <$> compile head <*> compile body
+  compile Clause{..} =
+    E.Clause E.ClABase <$> compile _head <*> compile _body
 
 instance ClosureCompilable op => Compilable (Query op) where
   type Output (Query op) = L.LoggerM (E.Clause 'E.ABase)
-  compile (Query (Just head) body) = compile (Clause head body)
+  compile Query{ _head = Just _head, ..} = compile (Clause _span _head _body)
   compile _ = L.scream "Impossible: Unnamed query found during compilation."
 
 instance ClosureCompilable op => Compilable (Subgoal op) where
@@ -100,9 +101,9 @@ instance ClosureCompilable op => Compilable (Subgoal op) where
     where
     alg :: Base (Subgoal op) (Subgoal op, Output (Subgoal op))
         -> Output (Subgoal op)
-    alg (SAtomF atom) = (NE.:| []) <$> compile atom
-    alg (SUnOpF  op (ch,m)) = cCompile =<< (CUnary op . (ch,) <$> m)
-    alg (SBinOpF op (ch1,m1) (ch2,m2)) =
+    alg (SAtomF  _ atom) = (NE.:| []) <$> compile atom
+    alg (SUnOpF  _ op (ch,m)) = cCompile =<< (CUnary op . (ch,) <$> m)
+    alg (SBinOpF _ op (ch1,m1) (ch2,m2)) =
       cCompile =<< liftA2 (CBinary op) ((ch1,) <$> m1) ((ch2,) <$> m2)
 
 data Closure op =
@@ -115,11 +116,11 @@ class ClosureCompilable op where
 
 instance Compilable AtomicFormula where
   type Output AtomicFormula = L.LoggerM (E.Literal 'E.ABase)
-  compile (AtomicFormula name terms) =
-    withSomeSing (fromInteger . toInteger $ length terms) $
+  compile AtomicFormula{..} =
+    withSomeSing (fromInteger . toInteger $ length _terms) $
       \(arity :: SNat n) -> do
         terms <- withKnownNat arity $
-          case V.fromListN @n terms of
+          case V.fromListN @n _terms of
             Just vec -> pure $ fmap compile vec
             Nothing ->
               L.scream "Impossible: length of terms is not the length of terms."
@@ -128,7 +129,7 @@ instance Compilable AtomicFormula where
           , polarity   = E.Positive
           , predicate  = E.Predicate
               { annotation = E.PredABase
-              , fxSym      = name
+              , fxSym      = _fxSym
               , arity      = arity
               , nature     = E.Logical }
           , terms = terms
@@ -136,8 +137,8 @@ instance Compilable AtomicFormula where
 
 instance Compilable Term where
   type Output Term = E.Term
-  compile (TVar v) = E.TVar $ compile v
-  compile (TSym s) = E.TSym $ compile s
+  compile TVar{ _var = v } = E.TVar $ compile v
+  compile TSym{ _sym = s } = E.TSym $ compile s
 
 instance Compilable Var where
   type Output Var = E.Var

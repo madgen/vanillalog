@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -23,24 +24,24 @@ import Language.Exalog.Pretty.Helper
 import Language.Vanillalog.Generic.AST
 
 instance Pretty (Sentence op) => Pretty (Program op) where
-  pretty (Program sentences) = vcat . prettyC $ sentences
+  pretty Program{..} = vcat . prettyC $ _sentences
 
 instance (Pretty (Clause op), Pretty (Query op)) => Pretty (Sentence op) where
-  pretty (SClause clause) = pretty clause
-  pretty (SFact fact)     = pretty fact
-  pretty (SQuery query)   = pretty query
+  pretty SClause{..} = pretty _clause
+  pretty SFact{..}   = pretty _fact
+  pretty SQuery{..}  = pretty _query
 
 instance Pretty (Subgoal op) => Pretty (Clause op) where
-  pretty (Clause head body) =
-    pretty head <+> ":-" <+> pretty body <> "."
+  pretty Clause{..} =
+    pretty _head <+> ":-" <+> pretty _body <> "."
 
 instance Pretty Fact where
-  pretty (Fact atom) = pretty atom <> "."
+  pretty Fact{..} = pretty _atom <> "."
 
 instance Pretty (Subgoal op) => Pretty (Query op) where
-  pretty (Query mHead body) =
-    case mHead of { Just head -> pretty head; _ -> empty }
-    <+>  "?-" <+> pretty body <> "."
+  pretty Query{..} =
+    case _head of { Just head-> pretty head; _ -> empty }
+    <+>  "?-" <+> pretty _body <> "."
 
 instance ( Pretty (op 'Unary)
          , Pretty (op 'Binary)
@@ -49,10 +50,10 @@ instance ( Pretty (op 'Unary)
   pretty = para alg
     where
     alg :: Base (Subgoal op) ((Subgoal op), Doc) -> Doc
-    alg (SAtomF atom) = pretty atom
-    alg s@(SUnOpF op (ch,doc)) =
+    alg (SAtomF _ atom) = pretty atom
+    alg s@(SUnOpF _ op (ch,doc)) =
       pretty op <> mParens (SomeOp op) (operation ch) doc
-    alg s@(SBinOpF op (ch,doc) (ch',doc')) =
+    alg s@(SBinOpF _ op (ch,doc) (ch',doc')) =
           mParens (SomeOp op) (operation ch) doc
        <> pretty op
       <+> mParens (SomeOp op) (operation ch') doc'
@@ -67,12 +68,12 @@ class HasPrecedence (op :: OpKind -> *) where
   precedence :: SomeOp op -> Int
 
 instance Pretty AtomicFormula where
-  pretty (AtomicFormula name terms) =
-    pretty name <> parens (csep . prettyC $ terms)
+  pretty AtomicFormula{..} =
+    pretty _fxSym <> parens (csep . prettyC $ _terms)
 
 instance Pretty Term where
-  pretty (TVar v) = pretty v
-  pretty (TSym s) = pretty s
+  pretty TVar{ _var = v } = pretty v
+  pretty TSym{ _sym = s } = pretty s
 
 instance Pretty Var where
   pretty (Var v) = pretty v

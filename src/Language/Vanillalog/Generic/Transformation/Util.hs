@@ -2,7 +2,7 @@
 
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -23,10 +23,10 @@ class Transformable a op where
   transform f p = runIdentity $ transformM (pure <$> f) p
 
 instance Transformable (Program op) op where
-  transformM f p = f p
+  transformM f = f
 
 instance Transformable (Sentence op) op where
-  transformM f (Program sentences) = Program <$> traverse f sentences
+  transformM f Program{..} = Program _span <$> traverse f _sentences
 
 instance Transformable (Clause op) op where
   transformM :: forall m op. Monad m
@@ -34,8 +34,8 @@ instance Transformable (Clause op) op where
   transformM f = transformM go
     where
     go :: Sentence op -> m (Sentence op)
-    go (SClause cl) = SClause <$> f cl
-    go s            = pure s
+    go SClause{..} = SClause _span <$> f _clause
+    go s           = pure s
 
 instance Transformable (Query op) op where
   transformM :: forall m op. Monad m
@@ -43,7 +43,7 @@ instance Transformable (Query op) op where
   transformM f = transformM go
     where
     go :: Sentence op -> m (Sentence op)
-    go (SQuery q) = SQuery <$> f q
+    go SQuery{..} = SQuery _span <$> f _query
     go s          = pure s
 
 instance Transformable Fact op where
@@ -52,8 +52,8 @@ instance Transformable Fact op where
   transformM f = transformM go
     where
     go :: Sentence op -> m (Sentence op)
-    go (SFact fact) = SFact <$> f fact
-    go s            = pure s
+    go SFact{..} = SFact _span <$> f _fact
+    go s         = pure s
 
 instance Transformable (Subgoal op) op where
   transformM :: forall m op. Monad m
@@ -61,9 +61,9 @@ instance Transformable (Subgoal op) op where
   transformM f = transformM go
     where
     go :: Sentence op -> m (Sentence op)
-    go (SClause (Clause head body)) = SClause . Clause head <$> f body
-    go (SQuery  (Query  head body)) = SQuery  . Query  head <$> f body
-    go s                            = pure s
+    go (SClause s Clause{..}) = SClause s . Clause _span _head <$> f _body
+    go (SQuery  s Query{..})  = SQuery  s . Query  _span _head <$> f _body
+    go s                      = pure s
 
 -- |Transform only the atomic subgoals in clause/query bodies.
 peepholeM :: forall op m. (Transformable (Subgoal op) op, Monad m)
@@ -71,8 +71,8 @@ peepholeM :: forall op m. (Transformable (Subgoal op) op, Monad m)
 peepholeM f = transformM go
   where
   go :: Subgoal op -> m (Subgoal op)
-  go (SAtom atom) = SAtom <$> f atom
-  go s            = pure s
+  go SAtom{..} = SAtom _span <$> f _atom
+  go s         = pure s
 
 peephole :: forall op. Transformable (Subgoal op) op
          => (AtomicFormula -> AtomicFormula) -> Program op -> Program op

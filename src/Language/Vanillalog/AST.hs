@@ -52,15 +52,15 @@ data Op (k :: AG.OpKind) where
 
 deriving instance Eq (Op opKind)
 
-pattern SAtom atom      = AG.SAtom atom
-pattern SNeg  sub       = AG.SUnOp Negation sub
-pattern SConj sub1 sub2 = AG.SBinOp Conjunction sub1 sub2
-pattern SDisj sub1 sub2 = AG.SBinOp Disjunction sub1 sub2
+pattern SAtom span atom      = AG.SAtom span atom
+pattern SNeg  span sub       = AG.SUnOp span Negation sub
+pattern SConj span sub1 sub2 = AG.SBinOp span Conjunction sub1 sub2
+pattern SDisj span sub1 sub2 = AG.SBinOp span Disjunction sub1 sub2
 
-pattern SAtomF atom          = AG.SAtomF atom
-pattern SNegF  child         = AG.SUnOpF Negation child
-pattern SConjF child1 child2 = AG.SBinOpF Conjunction child1 child2
-pattern SDisjF child1 child2 = AG.SBinOpF Disjunction child1 child2
+pattern SAtomF span atom          = AG.SAtomF span atom
+pattern SNegF  span child         = AG.SUnOpF span Negation child
+pattern SConjF span child1 child2 = AG.SBinOpF span Conjunction child1 child2
+pattern SDisjF span child1 child2 = AG.SBinOpF span Disjunction child1 child2
 
 -------------------------------------------------------------------------------
 -- Pretty printing related instances

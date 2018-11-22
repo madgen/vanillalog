@@ -1,4 +1,9 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Language.Vanillalog.Generic.Parser.SrcLoc
   ( SrcLoc(..)
@@ -10,6 +15,8 @@ module Language.Vanillalog.Generic.Parser.SrcLoc
   ) where
 
 import Protolude hiding ((<>), empty, SrcLoc)
+
+import Data.Maybe (fromJust)
 
 import Text.PrettyPrint
 
@@ -46,8 +53,23 @@ listSpan []             = Nothing
 listSpan [ span ]       = Just span
 listSpan (span : spans) = transSpan span =<< listSpan spans
 
+--------------------------------------------------------------------------------
+-- Spans of various nodes
+--------------------------------------------------------------------------------
+
 class Spannable a where
   span :: a -> SrcSpan
+
+instance {-# OVERLAPPABLE #-} HasField "_span" r SrcSpan => Spannable r where
+  span = getField @"_span"
+
+-- |Unsafe
+instance {-# OVERLAPPING #-} (Spannable a, Spannable b) => Spannable (a,b) where
+  span (a,b) = fromJust $ transSpan (span a) (span b)
+
+-- |Unsafe
+instance {-# OVERLAPPING #-} Spannable a => Spannable [ a ] where
+  span as = fromJust $ listSpan (map span as)
 
 --------------------------------------------------------------------------------
 -- Pretty instances

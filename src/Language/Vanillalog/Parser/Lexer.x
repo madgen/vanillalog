@@ -49,10 +49,10 @@ data Token str =
   | TRule
   | TQuery
   | TNeg
-  | TID   str
-  | TStr  str
-  | TInt  Int
-  | TBool Bool
+  | TID   { _str  :: str }
+  | TStr  { _str  :: str }
+  | TInt  { _int  :: Int }
+  | TBool { _bool :: Bool }
   | TEOF
   deriving (Eq, Show, Functor)
 
