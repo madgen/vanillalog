@@ -10,7 +10,8 @@ import Data.Text.Lazy (toStrict)
 
 import qualified Data.ByteString.Lazy.Char8 as BS
 
-import Language.Vanillalog.Generic.Parser.SrcLoc hiding (file)
+import           Language.Vanillalog.Generic.Error (Error(..), Severity(..))
+import           Language.Vanillalog.Generic.Parser.SrcLoc hiding (file)
 import qualified Language.Vanillalog.Generic.Parser.Lexeme as L
 }
 
@@ -90,9 +91,9 @@ setFile file = Alex $ \s ->
 getFile :: Alex FilePath
 getFile = Alex $ \s -> Right (s, file . alex_ust $ s)
 
-lex :: FilePath -> BS.ByteString -> Either [ Text ] [ L.Lexeme (Token Text) ]
+lex :: FilePath -> BS.ByteString -> Either [ Error ] [ L.Lexeme (Token Text) ]
 lex file source =
-  bimap (pure . fromString)
+  bimap (pure . Error User Nothing . fromString)
         (fmap (fmap (toStrict . decodeUtf8)) <$>) result
   where
   result = runAlex source (setFile file >> lexM)

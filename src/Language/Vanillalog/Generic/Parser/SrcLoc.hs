@@ -83,3 +83,7 @@ instance Pretty SrcLoc where
 instance Pretty SrcSpan where
   pretty (SrcSpan loc1 loc2) =
     "From " <> pretty loc1 $+$ nest 2 ("to " <?> pretty loc2 <> ".")
+
+instance Pretty (Maybe SrcSpan) where
+  pretty Nothing     = empty
+  pretty (Just span) = pretty span

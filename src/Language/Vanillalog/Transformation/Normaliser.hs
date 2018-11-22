@@ -12,7 +12,7 @@ import qualified Language.Vanillalog.Generic.AST as G
 import qualified Language.Vanillalog.Generic.Logger as L
 import           Language.Vanillalog.Generic.Transformation.Util
 
-normalise :: Program -> Either [ Text ] Program
+normalise :: Program -> Either [ L.Error ] Program
 normalise = L.runLogger
           . separateTopLevelDisjunctions
           . bubbleUpDisjunction
@@ -75,5 +75,5 @@ separateTopLevelDisjunctions G.Program{..} =
         SDisj s sub1 sub2 ->
           G.SQuery _span <$> [ G.Query s head sub1, G.Query s head sub2 ]
         _                 -> [ sentence ]
-    | otherwise =
-      L.scream "Impossible: There should be no unnamed queries at this point."
+    | otherwise = L.scream L.Impossible (Just _span)
+      "There should be no unnamed queries at this point."

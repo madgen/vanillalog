@@ -37,7 +37,7 @@ class Compilable a where
 
 instance ClosureCompilable op => Compilable (Program op) where
   type Output (Program op) =
-    Either [ Text ] (E.Program 'E.ABase, R.Solution 'E.ABase)
+    Either [ L.Error ] (E.Program 'E.ABase, R.Solution 'E.ABase)
   compile Program{..} = L.runLogger action
     where
     action = do
@@ -68,8 +68,8 @@ instance Compilable Fact where
           tuples <-
             case V.fromListN @n _terms of
               Just vec -> T.fromList . pure <$> traverse (fromTerm . compile) vec
-              Nothing -> L.scream
-                "Impossible: length of terms is not the length of terms."
+              Nothing -> L.scream L.Impossible (Just _span)
+                "length of terms is not the length of terms."
           pure $ R.Relation
             E.Predicate
               { annotation = E.PredABase
@@ -80,7 +80,7 @@ instance Compilable Fact where
             tuples
     where
     fromTerm :: E.Term -> L.LoggerM E.Sym
-    fromTerm (E.TVar _) = L.scream "Facts cannot have variables."
+    fromTerm (E.TVar _) = L.scream L.User Nothing "Facts cannot have variables."
     fromTerm (E.TSym s) = pure s
 
 
@@ -92,7 +92,8 @@ instance ClosureCompilable op => Compilable (Clause op) where
 instance ClosureCompilable op => Compilable (Query op) where
   type Output (Query op) = L.LoggerM (E.Clause 'E.ABase)
   compile Query{ _head = Just _head, ..} = compile (Clause _span _head _body)
-  compile _ = L.scream "Impossible: Unnamed query found during compilation."
+  compile Query{..} = L.scream L.Impossible (Just _span)
+    "Unnamed query found during compilation."
 
 instance ClosureCompilable op => Compilable (Subgoal op) where
   type Output (Subgoal op) = L.LoggerM (E.Body 'E.ABase)
@@ -122,8 +123,8 @@ instance Compilable AtomicFormula where
         terms <- withKnownNat arity $
           case V.fromListN @n _terms of
             Just vec -> pure $ fmap compile vec
-            Nothing ->
-              L.scream "Impossible: length of terms is not the length of terms."
+            Nothing -> L.scream L.Impossible (Just _span)
+              "Length of terms is not the length of terms."
         pure $ E.Literal
           { annotation = E.LitABase
           , polarity   = E.Positive
