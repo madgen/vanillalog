@@ -66,7 +66,9 @@ instance Compilable Fact where
         withKnownNat arity $ do
           tuples <-
             case V.fromListN @n _terms of
-              Just vec -> T.fromList . pure <$> traverse (fromTerm . compile) vec
+              Just vec -> T.fromList
+                        . pure
+                      <$> traverse (fmap compile <$> fromTerm) vec
               Nothing -> L.scream (Just _span)
                 "length of terms is not the length of terms."
           pure $ R.Relation
@@ -78,9 +80,9 @@ instance Compilable Fact where
               }
             tuples
     where
-    fromTerm :: E.Term -> L.LoggerM E.Sym
-    fromTerm (E.TVar _) = L.scold Nothing "Facts cannot have variables."
-    fromTerm (E.TSym s) = pure s
+    fromTerm :: Term -> L.LoggerM Sym
+    fromTerm (TVar span _) = L.scold (Just span) "Facts cannot have variables."
+    fromTerm (TSym _    s) = pure s
 
 
 instance ClosureCompilable op => Compilable (Clause op) where
