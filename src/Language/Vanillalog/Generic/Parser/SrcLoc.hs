@@ -11,11 +11,13 @@ module Language.Vanillalog.Generic.Parser.SrcLoc
   , dummySpan
   , transSpan
   , listSpan
+  , printSpan
   , Spannable(..)
   ) where
 
 import Protolude hiding ((<>), empty, SrcLoc)
 
+import Data.Text (lines, justifyLeft, pack, unpack)
 import Data.Maybe (fromJust)
 
 import Text.PrettyPrint
@@ -70,6 +72,32 @@ instance {-# OVERLAPPING #-} (Spannable a, Spannable b) => Spannable (a,b) where
 -- |Unsafe
 instance {-# OVERLAPPING #-} Spannable a => Spannable [ a ] where
   span as = fromJust $ listSpan (map span as)
+
+printSpan :: MonadIO m => SrcSpan -> m ()
+printSpan (SrcSpan loc1 loc2) = liftIO $ do
+  putStrLn ("" :: Text)
+  putStrLn . render . nest 2 $ "Context:"
+  if file loc1 == file loc2
+    then do
+      contents <- zip [1..] . lines <$> readFile (file loc1)
+      let contextLines = take nOfLines $ drop (line loc1 - 1) contents
+
+      traverse_
+        (putStrLn . render . nest 2 .
+          (\(i,l) -> (justifyLeft' 6. pack . show $ i) <> text (unpack l)))
+        contextLines
+
+      when (nOfLines == 1) $
+        putStrLn . render . nest 2 $
+          justifyLeft' 6 " " <> justifyLeft' (col loc1 - 1) " " <> sizedText nOfCols "^"
+    else putStrLn $
+      "The error occurred across multiple files." ++
+      " I can't print the context. Please report a bug."
+  where
+  nOfLines = line loc1 - line loc2 + 1
+  nOfCols  = col loc1 - col loc2 + 1
+
+  justifyLeft' n = text . unpack .justifyLeft n ' '
 
 --------------------------------------------------------------------------------
 -- Pretty instances
