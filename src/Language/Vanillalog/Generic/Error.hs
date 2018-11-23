@@ -13,7 +13,7 @@ import Language.Vanillalog.Generic.Parser.SrcLoc (SrcSpan)
 data Severity =
     Impossible -- |Error that should never be thrown
   | User       -- |Standard user error
-  | Warn       -- |Warning
+  | Warning    -- |Warning
   deriving (Eq)
 
 data Error = Error Severity (Maybe SrcSpan) Text
@@ -21,7 +21,7 @@ data Error = Error Severity (Maybe SrcSpan) Text
 instance Pretty Severity where
   pretty Impossible = "Impossible happened! Please submit a bug report"
   pretty User       = "Error"
-  pretty Warn       = "Warning"
+  pretty Warning    = "Warning"
 
 instance Pretty Error where
   pretty (Error severity mSpan msg) =

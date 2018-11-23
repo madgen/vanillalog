@@ -15,8 +15,8 @@ import qualified Language.Vanillalog.Generic.Logger as L
 import           Language.Vanillalog.Generic.Transformation.Util
 
 nameQueries :: forall op. Transformable (Subgoal op) op
-            => Program op -> Either [ L.Error ] (Program op)
-nameQueries pr = L.runLogger $ evalStateT (transformM go pr) 0
+            => Program op -> L.LoggerM (Program op)
+nameQueries pr = evalStateT (transformM go pr) 0
   where
   go :: Sentence op -> StateT Int L.LoggerM (Sentence op)
   go (SQuery s Query{_head = Nothing, ..}) =
@@ -32,5 +32,5 @@ nameQueries pr = L.runLogger $ evalStateT (transformM go pr) 0
       modify (+ 1)
       pack . ("query_" <>) . show <$> get
   go s@SQuery{..} =
-    lift $ L.scream L.Impossible (Just _span) "Query has already been named."
+    lift $ L.scream (Just _span) "Query has already been named."
   go s = pure s

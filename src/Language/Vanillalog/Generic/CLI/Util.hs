@@ -9,18 +9,16 @@ import           Data.String (fromString)
 import qualified Data.Text as T
 
 
-import Language.Vanillalog.Generic.AST
-import Language.Vanillalog.Generic.Error (Error)
-import Language.Vanillalog.Generic.Pretty (pp)
+import           Language.Vanillalog.Generic.AST
+import qualified Language.Vanillalog.Generic.Logger as L
+import           Language.Vanillalog.Generic.Pretty (pp)
 
-succeedOrDie :: (BS.ByteString -> Either [ Error ] b)
+succeedOrDie :: (BS.ByteString -> L.LoggerM b)
              -> BS.ByteString
              -> (b -> IO a)
              -> IO a
-succeedOrDie processor bs action =
-  case processor bs of
-    Right ast -> action ast
-    Left errs -> do
-      let prettyErrs = map pp errs
-      traverse_ putStrLn prettyErrs
-      exitFailure
+succeedOrDie processor bs action = do
+  mResult <- L.runLoggerT $ processor bs
+  case mResult of
+    Just result -> action result
+    Nothing     -> exitFailure

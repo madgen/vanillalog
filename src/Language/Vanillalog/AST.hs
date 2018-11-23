@@ -85,12 +85,11 @@ instance ClosureCompilable Op where
   cCompile (CUnary Negation rec)
     | (SAtom{}, core NE.:| []) <- rec =
       pure $ core { E.polarity = E.Negative } NE.:| []
-    | otherwise = L.scream L.Impossible Nothing
+    | otherwise = L.scream Nothing
       "Negation over non-atoms should be eliminated at this point."
   cCompile (CBinary Conjunction (_,core1) (_,core2)) = pure $ append core1 core2
     where
     append :: NE.NonEmpty a -> NE.NonEmpty a -> NE.NonEmpty a
     append (a NE.:| as) (a' NE.:| as') = a NE.:| as ++ a' : as'
   cCompile (CBinary Disjunction _ _) =
-    L.scream L.Impossible Nothing
-      "Disjunctions should be eliminated at this point."
+    L.scream Nothing "Disjunctions should be eliminated at this point."

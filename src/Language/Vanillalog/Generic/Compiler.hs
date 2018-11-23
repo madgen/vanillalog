@@ -36,9 +36,8 @@ class Compilable a where
   compile :: a -> Output a
 
 instance ClosureCompilable op => Compilable (Program op) where
-  type Output (Program op) =
-    Either [ L.Error ] (E.Program 'E.ABase, R.Solution 'E.ABase)
-  compile Program{..} = L.runLogger action
+  type Output (Program op) = L.LoggerM (E.Program 'E.ABase, R.Solution 'E.ABase)
+  compile Program{..} = action
     where
     action = do
       edb <- traverse compile facts
@@ -68,7 +67,7 @@ instance Compilable Fact where
           tuples <-
             case V.fromListN @n _terms of
               Just vec -> T.fromList . pure <$> traverse (fromTerm . compile) vec
-              Nothing -> L.scream L.Impossible (Just _span)
+              Nothing -> L.scream (Just _span)
                 "length of terms is not the length of terms."
           pure $ R.Relation
             E.Predicate
@@ -80,7 +79,7 @@ instance Compilable Fact where
             tuples
     where
     fromTerm :: E.Term -> L.LoggerM E.Sym
-    fromTerm (E.TVar _) = L.scream L.User Nothing "Facts cannot have variables."
+    fromTerm (E.TVar _) = L.scold Nothing "Facts cannot have variables."
     fromTerm (E.TSym s) = pure s
 
 
@@ -92,7 +91,7 @@ instance ClosureCompilable op => Compilable (Clause op) where
 instance ClosureCompilable op => Compilable (Query op) where
   type Output (Query op) = L.LoggerM (E.Clause 'E.ABase)
   compile Query{ _head = Just _head, ..} = compile (Clause _span _head _body)
-  compile Query{..} = L.scream L.Impossible (Just _span)
+  compile Query{..} = L.scream (Just _span)
     "Unnamed query found during compilation."
 
 instance ClosureCompilable op => Compilable (Subgoal op) where
@@ -123,7 +122,7 @@ instance Compilable AtomicFormula where
         terms <- withKnownNat arity $
           case V.fromListN @n _terms of
             Just vec -> pure $ fmap compile vec
-            Nothing -> L.scream L.Impossible (Just _span)
+            Nothing -> L.scream (Just _span)
               "Length of terms is not the length of terms."
         pure $ E.Literal
           { annotation = E.LitABase

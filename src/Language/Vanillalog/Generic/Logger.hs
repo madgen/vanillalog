@@ -2,8 +2,8 @@ module Language.Vanillalog.Generic.Logger
   ( LoggerMT
   , LoggerM
   , runLoggerT
-  , runLogger
-  , log
+  , whisper
+  , scold
   , scream
   , Error
   , Severity(..)
@@ -11,24 +11,28 @@ module Language.Vanillalog.Generic.Logger
 
 import Protolude hiding (log)
 
-import Control.Monad.Trans.Writer (WriterT, runWriterT, tell)
+import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 
+import Language.Vanillalog.Generic.Pretty (pp)
 import Language.Vanillalog.Generic.Error (Error(..), Severity(..))
 import Language.Vanillalog.Generic.Parser.SrcLoc (SrcSpan)
 
-type LoggerMT = WriterT [ Error ]
-type LoggerM = LoggerMT Identity
+type LoggerMT = MaybeT
+type LoggerM  = LoggerMT IO
 
-runLoggerT :: Monad m => LoggerMT m a -> m (Either [ Error ] a)
-runLoggerT action = do
-  (ma,msgs) <- runWriterT action
-  pure $ if null msgs then Right ma else Left msgs
+runLoggerT :: Monad m => LoggerMT m a -> m (Maybe a)
+runLoggerT = runMaybeT
 
-runLogger :: LoggerM a -> Either [ Error ] a
-runLogger = runIdentity . runLoggerT
+whisper :: MonadIO m => Maybe SrcSpan -> Text -> LoggerMT m ()
+whisper mSpan msg =
+  liftIO . putStrLn . pp $ Error Warning mSpan msg
 
-log :: Monad m => Severity -> Maybe SrcSpan -> Text -> LoggerMT m ()
-log severity mSpan = tell . pure . Error severity mSpan
+scold :: MonadIO m => Maybe SrcSpan -> Text -> LoggerMT m a
+scold mSpan msg = do
+  liftIO . putStrLn . pp $ Error User mSpan msg
+  MaybeT (return Nothing)
 
-scream :: Monad m => Severity -> Maybe SrcSpan -> Text -> LoggerMT m a
-scream severity mSpan msg = log severity mSpan msg >> panic msg
+scream :: MonadIO m => Maybe SrcSpan -> Text -> LoggerMT m a
+scream mSpan msg = do
+  liftIO . putStrLn . pp $ Error Impossible mSpan msg
+  MaybeT (return Nothing)
