@@ -82,7 +82,7 @@ instance Pretty SrcLoc where
 -- |This is really ought to be better.
 instance Pretty SrcSpan where
   pretty (SrcSpan loc1 loc2) =
-    "From " <> pretty loc1 $+$ nest 2 ("to " <?> pretty loc2 <> ".")
+    "From " <> pretty loc1 $+$ nest 2 ("to " <?> pretty loc2 <> colon)
 
 instance Pretty (Maybe SrcSpan) where
   pretty Nothing     = empty
