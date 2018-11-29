@@ -4,7 +4,7 @@ github:              "madgen/vanillalog"
 license:             BSD3
 author:              "Mistral Contrastin"
 maintainer:          "madgenhetic@gmail.com"
-copyright:           "2018"
+copyright:           "2018 Mistral Contrastin"
 
 extra-source-files:
 - README.md
@@ -14,9 +14,6 @@ extra-source-files:
 # synopsis:            Short description of your package
 # category:            Language
 
-# To avoid duplicated efforts in documentation and dealing with the
-# complications of embedding Haddock markup inside cabal files, it is
-# common to point users to the README.md file.
 description:         Please see the README on GitHub at <https://github.com/madgen/vanillalog#readme>
 
 default-extensions:
