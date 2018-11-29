@@ -25,7 +25,8 @@ default-extensions:
 - OverloadedStrings
 
 build-tools:
-  alex: 3.2.4
+  alex: 3.2.*
+  happy: 1.19.*
 
 dependencies:
 - base >= 4.7 && < 5
