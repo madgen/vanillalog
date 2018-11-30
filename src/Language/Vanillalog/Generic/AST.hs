@@ -30,7 +30,8 @@ data Sentence op =
   | SFact   { _span :: SrcSpan, _fact   :: Fact      }
   | SQuery  { _span :: SrcSpan, _query  :: Query op  }
 
-deriving instance (Eq (op 'Unary), Eq (op 'Binary)) => Eq (Sentence op)
+deriving instance
+  (Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary)) => Eq (Sentence op)
 
 data Query op = Query
   { _span :: SrcSpan
@@ -38,7 +39,8 @@ data Query op = Query
   , _body :: Subgoal op
   }
 
-deriving instance (Eq (op 'Unary), Eq (op 'Binary)) => Eq (Query op)
+deriving instance
+  (Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary)) => Eq (Query op)
 
 data Clause op = Clause
   { _span :: SrcSpan
@@ -46,7 +48,8 @@ data Clause op = Clause
   , _body :: Subgoal op
   }
 
-deriving instance (Eq (op 'Unary), Eq (op 'Binary)) => Eq (Clause op)
+deriving instance
+  (Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary)) => Eq (Clause op)
 
 data Fact = Fact
   { _span :: SrcSpan
@@ -57,6 +60,10 @@ data Subgoal op =
     SAtom
       { _span :: SrcSpan
       , _atom :: AtomicFormula
+      }
+  | SNullOp
+      { _span   :: SrcSpan
+      , _nullOp :: op 'Nullary
       }
   | SUnOp
       { _span  :: SrcSpan
@@ -70,11 +77,12 @@ data Subgoal op =
       , _child2 :: Subgoal op
       }
 
-deriving instance (Eq (op 'Unary), Eq (op 'Binary)) => Eq (Subgoal op)
+deriving instance
+  (Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary)) => Eq (Subgoal op)
 
 data SomeOp (op :: OpKind -> *) = NoOp | forall opKind . SomeOp (op opKind)
 
-data OpKind = Binary | Unary
+data OpKind = Binary | Unary | Nullary
 
 data AtomicFormula =
   AtomicFormula
