@@ -26,28 +26,29 @@ import qualified Language.Vanillalog.Generic.Logger as Log
 
 token :-
 
-<0,scB> $white+  ;
-<0,scB> "%".*    ;
+<0,scB,scA> $white+  ;
+<0>         "%".*    ;
 
-<0,scB> "("      { basic TLeftPar }
-<0,scB> ")"      { basic TRightPar }
-<0,scB> ","      { basic TComma }
-<scB>   ";"      { basic TSemicolon }
-<scB>   "!"      { basic TNeg }
+<0,scB,scA> "("  { basic TLeftPar }
+<0,scB>     ")"  { basic TRightPar }
+<scA>       ")"  { exitStartCodeAnd $ basic TRightPar }
+<scB,scA>   ","  { basic TComma }
+<scB>       ";"  { basic TSemicolon }
+<scB>       "!"  { basic TNeg }
 
 <0> ":-"         { basic TRule  `andBegin` scB }
 <0> "?-"         { basic TQuery `andBegin` scB }
 <0,scB> "."      { basic TDot   `andBegin` 0 }
 
-<0,scB> true     { basic (TBool True) }
-<0,scB> false    { basic (TBool False) }
-<0,scB> @fxSym   { useInput TFxSym }
-<0,scB> @var     { useInput TVariable }
-<0,scB> @int     { useInput (TInt . read . BS.unpack) }
+<0,scB> @fxSym   { useInput TFxSym `andEnterStartCode` scA }
+<scA> true       { basic (TBool True) }
+<scA> false      { basic (TBool False) }
+<scA> @var       { useInput TVariable }
+<scA> @int       { useInput (TInt . read . BS.unpack) }
 
-<0,scB> \"       { enterStartCode str }
-<str>   [^\"]+   { useInput TStr }
-<str>   \"       { exitStartCode }
+<scA> \"         { enterStartCode str }
+<str> [^\"]+     { useInput TStr }
+<str> \"         { exitStartCode }
 
 {
 data Token str =
@@ -139,14 +140,14 @@ andEnterStartCode :: AlexAction a -> Int -> AlexAction a
 andEnterStartCode action startCode input len =
   enterStartCode' startCode >> action input len
 
-andExitStartCode :: AlexAction a -> AlexAction a
-andExitStartCode action input len = exitStartCode' >> action input len
+exitStartCodeAnd :: AlexAction a -> AlexAction a
+exitStartCodeAnd action input len = exitStartCode' >> action input len
 
 enterStartCode :: Int -> AlexAction (L.Lexeme (Token ByteString.ByteString))
 enterStartCode = andEnterStartCode skip
 
 exitStartCode :: AlexAction (L.Lexeme (Token ByteString.ByteString))
-exitStartCode = andExitStartCode skip
+exitStartCode = exitStartCodeAnd skip
 
 lex :: FilePath -> BS.ByteString -> Log.LoggerM [ L.Lexeme (Token Text) ]
 lex file source =
