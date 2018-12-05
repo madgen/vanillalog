@@ -4,15 +4,19 @@ module Language.Vanillalog.Parser.Parser where
 import Prelude hiding (lex, span)
 import Protolude (Text, bimap, pure)
 
+import Control.Monad ((>=>))
+
 import           Language.Vanillalog.AST
 import qualified Language.Vanillalog.Generic.AST as G
 import qualified Language.Vanillalog.Generic.Parser.Lexeme as L
 import           Language.Vanillalog.Generic.Parser.SrcLoc
 import           Language.Vanillalog.Parser.Lexer (Token(..), lex)
+import qualified Language.Vanillalog.Generic.Logger as Log
 }
 
 %name programParser1 PROGRAM
 %name clauseFactParser1 CLAUSE
+%monad { Log.LoggerM }
 %tokentype { L.Lexeme (Token Text) }
 %error     { parseError }
 
@@ -81,9 +85,9 @@ VAR :: { (SrcSpan, Var) }
 : var { (span $1, Var . _str . L._token $ $1) }
 
 {
-parseError :: [ L.Lexeme (Token Text) ] -> a
-parseError = error . show
+parseError :: [ L.Lexeme (Token Text) ] -> Log.LoggerM a
+parseError _ = Log.scold Nothing "Parse error"
 
-programParser    file = fmap programParser1    <$> lex file
-clauseFactParser file = fmap clauseFactParser1 <$> lex file
+programParser    file = lex file >=> programParser1
+clauseFactParser file = lex file >=> clauseFactParser1
 }
