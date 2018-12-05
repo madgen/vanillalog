@@ -39,19 +39,15 @@ token :-
 <0> "?-"         { basic TQuery `andBegin` scB }
 <0,scB> "."      { basic TDot   `andBegin` 0 }
 
+<0,scB> true     { basic (TBool True) }
+<0,scB> false    { basic (TBool False) }
 <0,scB> @fxSym   { useInput TFxSym }
 <0,scB> @var     { useInput TVariable }
 <0,scB> @int     { useInput (TInt . read . BS.unpack) }
-<0,scB> true     { basic (TBool True) }
-<0,scB> false    { basic (TBool False) }
 
-<0> \"           { begin str }
-<str> [^\"]+     { useInput TStr }
-<str> \"         { begin 0 }
-
-<scB> \"         { begin strB }
-<strB> [^\"]+    { useInput TStr }
-<strB> \"        { begin scB }
+<0,scB> \"       { enterStartCode str }
+<str>   [^\"]+   { useInput TStr }
+<str>   \"       { exitStartCode }
 
 {
 data Token str =
@@ -93,10 +89,11 @@ alexEOF = return eof
 
 data AlexUserState = AlexUserState
   { file :: FilePath
+  , startCodeStack :: [ Int ]
   }
 
 alexInitUserState :: AlexUserState
-alexInitUserState = AlexUserState { file = "" }
+alexInitUserState = AlexUserState { file = "", startCodeStack = [] }
 
 getUserState :: Alex AlexUserState
 getUserState = Alex $ \s -> Right (s, alex_ust $ s)
@@ -113,6 +110,43 @@ getFile = file <$> getUserState
 
 setFile :: FilePath -> Alex ()
 setFile file = modifyUserState (\s -> s {file = file})
+
+pushStartCode :: Int -> Alex ()
+pushStartCode startCode =
+  modifyUserState (\s -> s {startCodeStack = startCode : startCodeStack s})
+
+topStartCode :: Alex Int
+topStartCode = head . startCodeStack <$> getUserState
+
+popStartCode :: Alex Int
+popStartCode = do
+  startCode <- topStartCode
+  modifyUserState (\s -> s {startCodeStack = tail . startCodeStack $ s})
+  pure startCode
+
+enterStartCode' :: Int -> Alex ()
+enterStartCode' newStartCode = do
+  currentStartCode <- alexGetStartCode
+  pushStartCode currentStartCode
+  alexSetStartCode newStartCode
+
+exitStartCode' :: Alex ()
+exitStartCode' = do
+  startCodeToReturn <- popStartCode
+  alexSetStartCode startCodeToReturn
+
+andEnterStartCode :: AlexAction a -> Int -> AlexAction a
+andEnterStartCode action startCode input len =
+  enterStartCode' startCode >> action input len
+
+andExitStartCode :: AlexAction a -> AlexAction a
+andExitStartCode action input len = exitStartCode' >> action input len
+
+enterStartCode :: Int -> AlexAction (L.Lexeme (Token ByteString.ByteString))
+enterStartCode = andEnterStartCode skip
+
+exitStartCode :: AlexAction (L.Lexeme (Token ByteString.ByteString))
+exitStartCode = andExitStartCode skip
 
 lex :: FilePath -> BS.ByteString -> Log.LoggerM [ L.Lexeme (Token Text) ]
 lex file source =

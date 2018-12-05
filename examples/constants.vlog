@@ -1,0 +1,1 @@
+const("xyz") :- p(123,"qer"), r(false), q(Var), t(true).
