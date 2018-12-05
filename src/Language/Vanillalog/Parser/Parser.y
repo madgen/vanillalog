@@ -26,7 +26,8 @@ import           Language.Vanillalog.Parser.Lexer (Token(..), lex)
   "?-"     { L.Lexeme{L._token = TQuery} }
   "!"      { L.Lexeme{L._token = TNeg} }
 
-  id       { L.Lexeme{L._token = TID{}} }
+  fxSym    { L.Lexeme{L._token = TFxSym{}} }
+  var      { L.Lexeme{L._token = TVariable{}} }
   str      { L.Lexeme{L._token = TStr{}} }
   int      { L.Lexeme{L._token = TInt{}} }
   bool     { L.Lexeme{L._token = TBool{}} }
@@ -58,15 +59,15 @@ SUBGOAL :: { Subgoal }
 | SUBGOAL ";" SUBGOAL { SDisj (span ($1,$3)) $1 $3 }
 
 ATOMIC_FORMULA :: { AtomicFormula }
-: ID "(" TERMS ")" { uncurry AtomicFormula $1 (reverse $3) }
-| ID               { uncurry AtomicFormula $1 [] }
+: fxSym "(" TERMS ")" { AtomicFormula (span $1) (_str . L._token $ $1) (reverse $3) }
+| fxSym               { AtomicFormula (span $1) (_str . L._token $ $1) [] }
 
 TERMS :: { [ Term ] }
 : TERMS "," TERM { $3 : $1 }
 | TERM           { [ $1 ] }
 
 TERM :: { Term }
-: ID   { TVar (fst $1) (Var . snd $ $1) }
+: VAR  { uncurry TVar $1 }
 | SYM  { uncurry TSym $1 }
 
 SYM :: { (SrcSpan, Sym) }
@@ -74,8 +75,8 @@ SYM :: { (SrcSpan, Sym) }
 | int  { (span $1, SymInt   . _int  . L._token $ $1) }
 | bool { (span $1, SymBool . _bool . L._token $ $1) }
 
-ID :: { (SrcSpan, Text) }
-: id { (span $1, _str . L._token $ $1) }
+VAR :: { (SrcSpan, Var) }
+: var { (span $1, Var . _str . L._token $ $1) }
 
 {
 parseError :: [ L.Lexeme (Token Text) ] -> a

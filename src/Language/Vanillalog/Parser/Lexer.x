@@ -18,6 +18,12 @@ import qualified Language.Vanillalog.Generic.Logger as Log
 
 %wrapper "monadUserState-bytestring"
 
+@idChar   = [a-zA-Z0-9_']
+@var      = [A-Z]@idChar*
+@fxSym    = [a-z]@idChar*
+
+@int = [1-9][0-9]+
+
 token :-
 
 <0> $white+      ;
@@ -32,8 +38,9 @@ token :-
 <0> "?-"         { basic TQuery }
 <0> "!"          { basic TNeg }
 
-<0> [a-zA-Z_]+   { useInput TID  }
-<0> [1-9][0-9]*  { useInput (TInt . read . BS.unpack) }
+<0> @fxSym       { useInput TFxSym }
+<0> @var         { useInput TVariable }
+<0> @int         { useInput (TInt . read . BS.unpack) }
 <0> true         { basic (TBool True) }
 <0> false        { basic (TBool False) }
 
@@ -51,10 +58,11 @@ data Token str =
   | TRule
   | TQuery
   | TNeg
-  | TID   { _str  :: str }
-  | TStr  { _str  :: str }
-  | TInt  { _int  :: Int }
-  | TBool { _bool :: Bool }
+  | TFxSym    { _str  :: str }
+  | TVariable { _str  :: str }
+  | TStr      { _str  :: str }
+  | TInt      { _int  :: Int }
+  | TBool     { _bool :: Bool }
   | TEOF
   deriving (Eq, Show, Functor)
 
