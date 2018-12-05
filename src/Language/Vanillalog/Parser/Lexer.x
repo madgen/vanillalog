@@ -5,9 +5,8 @@ module Language.Vanillalog.Parser.Lexer where
 import Prelude
 import Protolude (Text, bimap)
 
-import Data.Text.Lazy.Encoding (decodeUtf8)
-import Data.Text.Lazy (toStrict)
-
+import           Data.Text.Lazy.Encoding (decodeUtf8)
+import           Data.Text.Lazy (toStrict)
 import qualified Data.ByteString.Lazy.Char8 as BS
 
 import           Language.Vanillalog.Generic.Error (Error(..), Severity(..))

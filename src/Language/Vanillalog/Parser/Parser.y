@@ -8,10 +8,10 @@ import Control.Monad ((>=>))
 
 import           Language.Vanillalog.AST
 import qualified Language.Vanillalog.Generic.AST as G
+import qualified Language.Vanillalog.Generic.Logger as Log
 import qualified Language.Vanillalog.Generic.Parser.Lexeme as L
 import           Language.Vanillalog.Generic.Parser.SrcLoc
 import           Language.Vanillalog.Parser.Lexer (Token(..), lex)
-import qualified Language.Vanillalog.Generic.Logger as Log
 }
 
 %name programParser1 PROGRAM
@@ -86,7 +86,7 @@ VAR :: { (SrcSpan, Var) }
 
 {
 parseError :: [ L.Lexeme (Token Text) ] -> Log.LoggerM a
-parseError _ = Log.scold Nothing "Parse error"
+parseError tokens = Log.scold (Just . span . head $ tokens) ("Parse error.")
 
 programParser    file = lex file >=> programParser1
 clauseFactParser file = lex file >=> clauseFactParser1
