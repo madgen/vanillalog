@@ -26,27 +26,32 @@ import qualified Language.Vanillalog.Generic.Logger as Log
 
 token :-
 
-<0> $white+      ;
-<0> "%".*\n      ;
+<0,scB> $white+  ;
+<0,scB> "%".*    ;
 
-<0> "("          { basic TLeftPar }
-<0> ")"          { basic TRightPar }
-<0> "."          { basic TDot }
-<0> ","          { basic TComma }
-<0> ";"          { basic TSemicolon }
-<0> ":-"         { basic TRule }
-<0> "?-"         { basic TQuery }
-<0> "!"          { basic TNeg }
+<0,scB> "("      { basic TLeftPar }
+<0,scB> ")"      { basic TRightPar }
+<0,scB> ","      { basic TComma }
+<scB>   ";"      { basic TSemicolon }
+<scB>   "!"      { basic TNeg }
 
-<0> @fxSym       { useInput TFxSym }
-<0> @var         { useInput TVariable }
-<0> @int         { useInput (TInt . read . BS.unpack) }
-<0> true         { basic (TBool True) }
-<0> false        { basic (TBool False) }
+<0> ":-"         { basic TRule  `andBegin` scB }
+<0> "?-"         { basic TQuery `andBegin` scB }
+<0,scB> "."      { basic TDot   `andBegin` 0 }
+
+<0,scB> @fxSym   { useInput TFxSym }
+<0,scB> @var     { useInput TVariable }
+<0,scB> @int     { useInput (TInt . read . BS.unpack) }
+<0,scB> true     { basic (TBool True) }
+<0,scB> false    { basic (TBool False) }
 
 <0> \"           { begin str }
 <str> [^\"]+     { useInput TStr }
 <str> \"         { begin 0 }
+
+<scB> \"         { begin strB }
+<strB> [^\"]+    { useInput TStr }
+<strB> \"        { begin scB }
 
 {
 data Token str =
