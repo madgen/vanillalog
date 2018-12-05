@@ -111,9 +111,10 @@ data Sym =
 makeBaseFunctor ''Subgoal
 
 operation :: Subgoal op -> SomeOp op
-operation SAtom{}    = NoOp
-operation s@SUnOp{}  = SomeOp (_unOp s)
-operation s@SBinOp{} = SomeOp (_binOp s)
+operation SAtom{}     = NoOp
+operation s@SNullOp{} = SomeOp (_nullOp s)
+operation s@SUnOp{}   = SomeOp (_unOp s)
+operation s@SBinOp{}  = SomeOp (_binOp s)
 
 vars :: Subgoal a -> [ Var ]
 vars = cata alg
