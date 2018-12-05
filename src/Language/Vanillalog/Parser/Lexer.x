@@ -98,12 +98,21 @@ data AlexUserState = AlexUserState
 alexInitUserState :: AlexUserState
 alexInitUserState = AlexUserState { file = "" }
 
-setFile :: FilePath -> Alex ()
-setFile file = Alex $ \s ->
-  Right (s {alex_ust = (alex_ust s) {file = file}}, ())
+getUserState :: Alex AlexUserState
+getUserState = Alex $ \s -> Right (s, alex_ust $ s)
+
+modifyUserState :: (AlexUserState -> AlexUserState) -> Alex ()
+modifyUserState f =
+  Alex $ \s -> Right (s {alex_ust = f (alex_ust s)}, ())
+
+setUserState :: AlexUserState -> Alex ()
+setUserState = modifyUserState . const
 
 getFile :: Alex FilePath
-getFile = Alex $ \s -> Right (s, file . alex_ust $ s)
+getFile = file <$> getUserState
+
+setFile :: FilePath -> Alex ()
+setFile file = modifyUserState (\s -> s {file = file})
 
 lex :: FilePath -> BS.ByteString -> Log.LoggerM [ L.Lexeme (Token Text) ]
 lex file source =
