@@ -29,24 +29,25 @@ token :-
 <0,scB,scA> $white+  ;
 <0>         "%".*    ;
 
-<0,scB,scA> "("  { basic TLeftPar }
-<0,scB>     ")"  { basic TRightPar }
-<scA>       ")"  { exitStartCodeAnd $ basic TRightPar }
-<scA>       ","  { basic TComma }
+<0,scB> "("  { basic TLeftPar }
+<0,scB> ")"  { basic TRightPar }
+<scA>   ","  { basic TComma }
 
-<scB>       ","  { basic TConj }
-<scB>       ";"  { basic TDisj }
-<scB>       "!"  { basic TNeg }
+<scB> ","        { basic TConj }
+<scB> ";"        { basic TDisj }
+<scB> "!"        { basic TNeg }
 
-<0> ":-"         { basic TRule  `andBegin` scB }
-<0> "?-"         { basic TQuery `andBegin` scB }
+<0>     ":-"     { basic TRule  `andBegin` scB }
+<0>     "?-"     { basic TQuery `andBegin` scB }
 <0,scB> "."      { basic TDot   `andBegin` 0 }
 
 <0,scB> @fxSym   { useInput TFxSym `andEnterStartCode` scA }
-<scA> true       { basic (TBool True) }
-<scA> false      { basic (TBool False) }
-<scA> @var       { useInput TVariable }
-<scA> @int       { useInput (TInt . read . BS.unpack) }
+<scA>   "("      { basic TLeftPar }
+<scA>   ")"      { exitStartCodeAnd $ basic TRightPar }
+<scA>   true     { basic (TBool True) }
+<scA>   false    { basic (TBool False) }
+<scA>   @var     { useInput TVariable }
+<scA>   @int     { useInput (TInt . read . BS.unpack) }
 
 <scA> \"         { enterStartCode str }
 <str> [^\"]+     { useInput TStr }
