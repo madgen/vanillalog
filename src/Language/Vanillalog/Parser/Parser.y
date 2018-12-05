@@ -14,9 +14,9 @@ import           Language.Vanillalog.Generic.Parser.SrcLoc
 import           Language.Vanillalog.Parser.Lexer (Token(..), lex)
 }
 
-%name programParser1 PROGRAM
-%name clauseFactParser1 CLAUSE
-%monad { Log.LoggerM }
+%name      programParser1 PROGRAM
+%name      clauseFactParser1 CLAUSE
+%monad     { Log.LoggerM }
 %tokentype { L.Lexeme (Token Text) }
 %error     { parseError }
 
@@ -77,8 +77,8 @@ TERM :: { Term }
 | SYM  { uncurry TSym $1 }
 
 SYM :: { (SrcSpan, Sym) }
-: str  { (span $1, SymText  . _str  . L._token $ $1) }
-| int  { (span $1, SymInt   . _int  . L._token $ $1) }
+: str  { (span $1, SymText . _str  . L._token $ $1) }
+| int  { (span $1, SymInt  . _int  . L._token $ $1) }
 | bool { (span $1, SymBool . _bool . L._token $ $1) }
 
 VAR :: { (SrcSpan, Var) }
