@@ -21,10 +21,12 @@ import           Language.Vanillalog.Parser.Lexer (Token(..), lex)
   ")"      { L.Lexeme{L._token = TRightPar} }
   "."      { L.Lexeme{L._token = TDot} }
   ","      { L.Lexeme{L._token = TComma} }
-  ";"      { L.Lexeme{L._token = TSemicolon} }
   ":-"     { L.Lexeme{L._token = TRule} }
   "?-"     { L.Lexeme{L._token = TQuery} }
-  "!"      { L.Lexeme{L._token = TNeg} }
+
+  conj     { L.Lexeme{L._token = TConj} }
+  disj     { L.Lexeme{L._token = TDisj} }
+  neg      { L.Lexeme{L._token = TNeg} }
 
   fxSym    { L.Lexeme{L._token = TFxSym{}} }
   var      { L.Lexeme{L._token = TVariable{}} }
@@ -33,9 +35,9 @@ import           Language.Vanillalog.Parser.Lexer (Token(..), lex)
   bool     { L.Lexeme{L._token = TBool{}} }
   eof      { L.Lexeme{L._token = TEOF} }
 
-%left ";"
-%left ","
-%left "!"
+%left disj
+%left conj
+%left neg
 
 %%
 
@@ -53,10 +55,10 @@ CLAUSE :: { Sentence }
 
 SUBGOAL :: { Subgoal }
 : ATOMIC_FORMULA      { SAtom (span $1) $1 }
-| "!" SUBGOAL         { SNeg (span ($1,$2)) $2 }
+| neg SUBGOAL         { SNeg (span ($1,$2)) $2 }
 | "(" SUBGOAL ")"     { $2 }
-| SUBGOAL "," SUBGOAL { SConj (span ($1,$3)) $1 $3 }
-| SUBGOAL ";" SUBGOAL { SDisj (span ($1,$3)) $1 $3 }
+| SUBGOAL conj SUBGOAL { SConj (span ($1,$3)) $1 $3 }
+| SUBGOAL disj SUBGOAL { SDisj (span ($1,$3)) $1 $3 }
 
 ATOMIC_FORMULA :: { AtomicFormula }
 : fxSym "(" TERMS ")" { AtomicFormula (span $1) (_str . L._token $ $1) (reverse $3) }

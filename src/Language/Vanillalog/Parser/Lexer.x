@@ -32,8 +32,10 @@ token :-
 <0,scB,scA> "("  { basic TLeftPar }
 <0,scB>     ")"  { basic TRightPar }
 <scA>       ")"  { exitStartCodeAnd $ basic TRightPar }
-<scB,scA>   ","  { basic TComma }
-<scB>       ";"  { basic TSemicolon }
+<scA>       ","  { basic TComma }
+
+<scB>       ","  { basic TConj }
+<scB>       ";"  { basic TDisj }
 <scB>       "!"  { basic TNeg }
 
 <0> ":-"         { basic TRule  `andBegin` scB }
@@ -56,9 +58,10 @@ data Token str =
   | TRightPar
   | TDot
   | TComma
-  | TSemicolon
   | TRule
   | TQuery
+  | TConj
+  | TDisj
   | TNeg
   | TFxSym    { _str  :: str }
   | TVariable { _str  :: str }
