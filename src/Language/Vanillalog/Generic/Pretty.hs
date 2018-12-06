@@ -49,7 +49,7 @@ instance ( Pretty (op 'Unary)
          ) => Pretty (Subgoal op) where
   pretty = para alg
     where
-    alg :: Base (Subgoal op) ((Subgoal op), Doc) -> Doc
+    alg :: Base (Subgoal op) (Subgoal op, Doc) -> Doc
     alg (SAtomF _ atom) = pretty atom
     alg s@(SUnOpF _ op (ch,doc)) =
       pretty op <> mParens (SomeOp op) (operation ch) doc
