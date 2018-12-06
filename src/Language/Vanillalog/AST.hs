@@ -74,8 +74,8 @@ instance HasPrecedence Op where
 
 instance Pretty (Op opKind) where
   pretty Negation    = "!"
-  pretty Conjunction = ","
-  pretty Disjunction = ";"
+  pretty Conjunction = ", "
+  pretty Disjunction = "; "
 
 -------------------------------------------------------------------------------
 -- Compilation related instances

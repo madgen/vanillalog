@@ -54,9 +54,9 @@ instance ( Pretty (op 'Unary)
     alg s@(SUnOpF _ op (ch,doc)) =
       pretty op <> mParens (SomeOp op) (operation ch) doc
     alg s@(SBinOpF _ op (ch,doc) (ch',doc')) =
-          mParens (SomeOp op) (operation ch) doc
-       <> pretty op
-      <+> mParens (SomeOp op) (operation ch') doc'
+         mParens (SomeOp op) (operation ch) doc
+      <> pretty op
+      <> mParens (SomeOp op) (operation ch') doc'
 
     mParens :: SomeOp op -> SomeOp op -> Doc -> Doc
     mParens op1 op2 doc =
