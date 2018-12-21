@@ -14,8 +14,8 @@ import           Language.Vanillalog.Generic.AST
 import qualified Language.Vanillalog.Generic.Logger as L
 import           Language.Vanillalog.Generic.Transformation.Util
 
-nameQueries :: forall op. Transformable (Subgoal op) op
-            => Program op -> L.LoggerM (Program op)
+nameQueries :: forall decl op. Transformable (Subgoal op) decl op
+            => Program decl op -> L.LoggerM (Program decl op)
 nameQueries pr = evalStateT (transformM go pr) 0
   where
   go :: Sentence op -> StateT Int L.LoggerM (Sentence op)

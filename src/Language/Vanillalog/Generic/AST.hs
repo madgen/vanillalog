@@ -20,10 +20,18 @@ import Data.Functor.Foldable.TH (makeBaseFunctor)
 
 import Language.Vanillalog.Generic.Parser.SrcLoc
 
-data Program op = Program
-  { _span      :: SrcSpan
-  , _sentences :: [ Sentence op ]
+data Program decl op = Program
+  { _span       :: SrcSpan
+  , _statements :: [ Statement decl op ]
   }
+
+data Statement decl op =
+    StDeclaration { _span :: SrcSpan, _declaration :: decl }
+  | StSentence    { _span :: SrcSpan, _sentence    :: Sentence op }
+
+deriving instance
+  (Eq decl, Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary))
+    => Eq (Statement decl op)
 
 data Sentence op =
     SClause { _span :: SrcSpan, _clause :: Clause op }

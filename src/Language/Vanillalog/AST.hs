@@ -7,6 +7,7 @@
 
 module Language.Vanillalog.AST
   ( Program(..)
+  , Statement(..)
   , Sentence(..)
   , Query(..)
   , Clause(..)
@@ -35,7 +36,9 @@ import           Language.Vanillalog.Generic.Compiler (ClosureCompilable(..), Cl
 import qualified Language.Vanillalog.Generic.Logger as L
 import           Language.Vanillalog.Generic.Pretty (Pretty(..), HasPrecedence(..))
 
-type Program = AG.Program Op
+type Program = AG.Program Void Op
+
+type Statement = AG.Statement Void Op
 
 type Sentence = AG.Sentence Op
 
@@ -76,6 +79,9 @@ instance Pretty (Op opKind) where
   pretty Negation    = "!"
   pretty Conjunction = ", "
   pretty Disjunction = "; "
+
+instance Pretty Void where
+  pretty = absurd
 
 -------------------------------------------------------------------------------
 -- Compilation related instances

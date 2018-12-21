@@ -35,8 +35,10 @@ class Compilable a where
   type Output a
   compile :: a -> Output a
 
-instance ClosureCompilable op => Compilable (Program op) where
-  type Output (Program op) = L.LoggerM (E.Program 'E.ABase, R.Solution 'E.ABase)
+instance ClosureCompilable op => Compilable (Program Void op) where
+  type Output (Program Void op) =
+    L.LoggerM (E.Program 'E.ABase, R.Solution 'E.ABase)
+
   compile Program{..} = action
     where
     action = do
@@ -52,9 +54,9 @@ instance ClosureCompilable op => Compilable (Program op) where
         , R.fromList edb
         )
 
-    clauses = [ _clause s | s@SClause{} <- _sentences ]
-    facts   = [ _fact   s | s@SFact{}   <- _sentences ]
-    queries = [ _query  s | s@SQuery{}  <- _sentences ]
+    clauses = [ _clause s | StSentence _ s@SClause{} <- _statements ]
+    facts   = [ _fact   s | StSentence _ s@SFact{}   <- _statements ]
+    queries = [ _query  s | StSentence _ s@SQuery{}  <- _statements ]
 
     queryPreds = map (E.predicateBox . E.head)
 

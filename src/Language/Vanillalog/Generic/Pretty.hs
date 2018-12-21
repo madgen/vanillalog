@@ -23,8 +23,12 @@ import Language.Exalog.Pretty.Helper
 
 import Language.Vanillalog.Generic.AST
 
-instance Pretty (Sentence op) => Pretty (Program op) where
-  pretty Program{..} = vcat . prettyC $ _sentences
+instance (Pretty decl, Pretty (Sentence op)) => Pretty (Program decl op) where
+  pretty Program{..} = vcat . prettyC $ _statements
+
+instance (Pretty decl, Pretty (Sentence op)) => Pretty (Statement decl op) where
+  pretty StSentence{..}    = pretty _sentence
+  pretty StDeclaration{..} = pretty _declaration
 
 instance (Pretty (Clause op), Pretty (Query op)) => Pretty (Sentence op) where
   pretty SClause{..} = pretty _clause

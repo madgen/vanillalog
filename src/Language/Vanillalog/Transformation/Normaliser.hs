@@ -10,6 +10,7 @@ import Data.Functor.Foldable
 import           Language.Vanillalog.AST
 import qualified Language.Vanillalog.Generic.AST as G
 import qualified Language.Vanillalog.Generic.Logger as L
+import           Language.Vanillalog.Generic.Parser.SrcLoc (span)
 import           Language.Vanillalog.Generic.Transformation.Util
 
 normalise :: Program -> L.LoggerM Program
@@ -54,20 +55,25 @@ bubbleUpDisjunction = transform budSub
 
 separateTopLevelDisjunctions :: Program -> L.LoggerM Program
 separateTopLevelDisjunctions G.Program{..} =
-  G.Program _span <$> yakk _sentences
+  G.Program _span <$> yakk _statements
   where
-  yakk :: [ Sentence ] -> L.LoggerM [ Sentence ]
+  yakk :: [ Statement ] -> L.LoggerM [ Statement ]
   yakk = fix $ \f sol -> do
     newSol <- join <$> traverse step sol
     if sol == newSol then pure newSol else f newSol
 
-  step :: Sentence -> L.LoggerM [ Sentence ]
-  step fact@G.SFact{} = pure [ fact ]
-  step sentence@G.SClause{..}
+  step :: Statement -> L.LoggerM [ Statement ]
+  step G.StSentence{..} =
+    fmap (\sent -> G.StSentence (span sent) sent) <$> step' _sentence
+  step decl@G.StDeclaration{} = pure [ decl ]
+
+  step' :: Sentence -> L.LoggerM [ Sentence ]
+  step' fact@G.SFact{} = pure [ fact ]
+  step' sentence@G.SClause{..}
     | G.Clause _ head (SDisj s sub1 sub2) <- _clause =
       pure $ G.SClause _span <$> [ G.Clause s head sub1, G.Clause s head sub2 ]
     | otherwise = pure [ sentence ]
-  step sentence@G.SQuery{..}
+  step' sentence@G.SQuery{..}
     | G.Query _ head@Just{} body <- _query =
       pure $ case body of
         SDisj s sub1 sub2 ->

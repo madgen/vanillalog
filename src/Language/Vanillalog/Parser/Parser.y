@@ -48,8 +48,8 @@ import           Language.Vanillalog.Parser.Lexer (Token(..), lex)
 PROGRAM :: { Program }
 : CLAUSES eof { G.Program (span $1) . reverse $ $1 }
 
-CLAUSES :: { [ Sentence ] }
-: CLAUSES CLAUSE { $2 : $1 }
+CLAUSES :: { [ Statement ] }
+: CLAUSES CLAUSE { G.StSentence (span $1) $2 : $1 }
 |                { [] }
 
 CLAUSE :: { Sentence }
