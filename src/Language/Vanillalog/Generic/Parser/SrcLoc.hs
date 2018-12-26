@@ -46,14 +46,15 @@ isBefore loc@SrcLoc{} loc'@SrcLoc{} =
       col loc < col loc')) -- or on the same line but loc is at a preceding col.
 isBefore _ _ = False
 
-transSpan :: SrcSpan -> SrcSpan -> Maybe SrcSpan
+transSpan :: SrcSpan -> SrcSpan -> SrcSpan
 transSpan (SrcSpan loc1 loc2) (SrcSpan loc2' loc3) =
-  if loc2 `isBefore` loc2' then Just (SrcSpan loc1 loc3) else Nothing
+  if loc2 `isBefore` loc2'
+    then SrcSpan loc1 loc3
+    else panic "The first span is not before the second."
 
-listSpan :: [ SrcSpan ] -> Maybe SrcSpan
-listSpan []             = Nothing
-listSpan [ span ]       = Just span
-listSpan (span : spans) = transSpan span =<< listSpan spans
+listSpan :: [ SrcSpan ] -> SrcSpan
+listSpan = foldr transSpan
+                 (panic "A span of an empty list of spans is undefined.")
 
 --------------------------------------------------------------------------------
 -- Spans of various nodes
@@ -67,11 +68,11 @@ instance {-# OVERLAPPABLE #-} HasField "_span" r SrcSpan => Spannable r where
 
 -- |Unsafe
 instance {-# OVERLAPPING #-} (Spannable a, Spannable b) => Spannable (a,b) where
-  span (a,b) = fromJust $ transSpan (span a) (span b)
+  span (a,b) = transSpan (span a) (span b)
 
 -- |Unsafe
 instance {-# OVERLAPPING #-} Spannable a => Spannable [ a ] where
-  span as = fromJust $ listSpan (map span as)
+  span as = listSpan (map span as)
 
 printSpan :: MonadIO m => SrcSpan -> m ()
 printSpan (SrcSpan loc1 loc2) = liftIO $ do
