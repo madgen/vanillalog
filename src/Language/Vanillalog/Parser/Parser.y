@@ -49,11 +49,11 @@ PROGRAM :: { Program }
 : CLAUSES eof { G.Program (span $1) . reverse $ $1 }
 
 CLAUSES :: { [ Statement ] }
-: CLAUSES CLAUSE { G.StSentence (span $1) $2 : $1 }
+: CLAUSES CLAUSE { G.StSentence (span $2) $2 : $1 }
 |                { [] }
 
 CLAUSE :: { Sentence }
-: ATOMIC_FORMULA ":-" SUBGOAL "." { let s = span ($1,$2) in G.SClause s $ G.Clause s $1 $3 }
+: ATOMIC_FORMULA ":-" SUBGOAL "." { let s = span ($1,$4) in G.SClause s $ G.Clause s $1 $3 }
 | ATOMIC_FORMULA "."              { let s = span ($1,$2) in G.SFact   s $ G.Fact   s $1 }
 | "?-" SUBGOAL "."                { let s = span ($1,$3) in G.SQuery  s $ G.Query  s Nothing $2 }
 
