@@ -36,9 +36,10 @@ token :-
 <scB> ";"        { basic TDisj }
 <scB> "!"        { basic TNeg }
 
-<0>     ":-"     { basic TRule  `andBegin` scB }
-<0>     "?-"     { basic TQuery `andBegin` scB }
-<0,scB> "."      { basic TDot   `andBegin` 0 }
+<0>   ":-"     { basic TRule  `andEnterStartCode` scB }
+<0>   "?-"     { basic TQuery `andEnterStartCode` scB }
+<scB> "."      { exitStartCodeAnd $ basic TDot }
+<0>   "."      { basic TDot }
 
 <0,scB> @fxSym   { useInput TFxSym `andEnterStartCode` scA }
 <scA>   "("      { basic TLeftPar }
