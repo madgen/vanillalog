@@ -71,7 +71,7 @@ instance ( Pretty (op 'Unary)
 class HasPrecedence (op :: OpKind -> *) where
   precedence :: SomeOp op -> Int
 
-instance Pretty AtomicFormula where
+instance Pretty a => Pretty (AtomicFormula a) where
   pretty AtomicFormula{..} =
     pretty _fxSym <> parens (csep . prettyC $ _terms)
 

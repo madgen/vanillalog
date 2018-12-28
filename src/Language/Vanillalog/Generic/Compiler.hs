@@ -68,9 +68,7 @@ instance Compilable Fact where
         withKnownNat arity $ do
           tuples <-
             case V.fromListN @n _terms of
-              Just vec -> T.fromList
-                        . pure
-                      <$> traverse (fmap compile <$> fromTerm) vec
+              Just vec -> pure $ T.fromList [ map compile vec ]
               Nothing -> L.scream (Just _span)
                 "length of terms is not the length of terms."
           pure $ R.Relation
@@ -81,11 +79,6 @@ instance Compilable Fact where
               , nature = E.Logical
               }
             tuples
-    where
-    fromTerm :: Term -> L.LoggerM Sym
-    fromTerm (TVar span _) = L.scold (Just span) "Facts cannot have variables."
-    fromTerm (TSym _    s) = pure s
-
 
 instance ClosureCompilable op => Compilable (Clause op) where
   type Output (Clause op) = L.LoggerM (E.Clause 'E.ABase)
@@ -94,7 +87,7 @@ instance ClosureCompilable op => Compilable (Clause op) where
 
 instance ClosureCompilable op => Compilable (Query op) where
   type Output (Query op) = L.LoggerM (E.Clause 'E.ABase)
-  compile Query{ _head = Just _head, ..} = compile (Clause _span _head _body)
+  compile Query{_head = Just h, ..} = compile Clause{_head = fmap _ h, ..}
   compile Query{..} = L.scream (Just _span)
     "Unnamed query found during compilation."
 
@@ -118,8 +111,8 @@ data Closure op =
 class ClosureCompilable op where
   cCompile :: Closure op -> L.LoggerM (E.Body 'E.ABase)
 
-instance Compilable AtomicFormula where
-  type Output AtomicFormula = L.LoggerM (E.Literal 'E.ABase)
+instance Compilable (AtomicFormula Term) where
+  type Output (AtomicFormula Term) = L.LoggerM (E.Literal 'E.ABase)
   compile AtomicFormula{..} =
     withSomeSing (fromInteger . toInteger $ length _terms) $
       \(arity :: SNat n) -> do

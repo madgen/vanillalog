@@ -54,7 +54,7 @@ CLAUSES :: { [ Statement ] }
 
 CLAUSE :: { Sentence }
 : ATOMIC_FORMULA ":-" SUBGOAL "." { let s = span ($1,$4) in G.SClause s $ G.Clause s $1 $3 }
-| ATOMIC_FORMULA "."              { let s = span ($1,$2) in G.SFact   s $ G.Fact   s $1 }
+| ATOMIC_FACT "."                 { let s = span ($1,$2) in G.SFact   s $ G.Fact   s $1 }
 | "?-" SUBGOAL "."                { let s = span ($1,$3) in G.SQuery  s $ G.Query  s Nothing $2 }
 
 SUBGOAL :: { Subgoal }
@@ -64,9 +64,13 @@ SUBGOAL :: { Subgoal }
 | SUBGOAL conj SUBGOAL { SConj (span ($1,$3)) $1 $3 }
 | SUBGOAL disj SUBGOAL { SDisj (span ($1,$3)) $1 $3 }
 
-ATOMIC_FORMULA :: { AtomicFormula }
+ATOMIC_FORMULA :: { AtomicFormula Term }
 : fxSym "(" TERMS ")" { AtomicFormula (span ($1,$4)) (_str . L._token $ $1) (reverse $3) }
 | fxSym               { AtomicFormula (span $1)      (_str . L._token $ $1) [] }
+
+ATOMIC_FACT :: { AtomicFormula Sym }
+: fxSym "(" SYMS ")" { AtomicFormula (span ($1,$4)) (_str . L._token $ $1) (reverse $3) }
+| fxSym              { AtomicFormula (span $1)      (_str . L._token $ $1) [] }
 
 TERMS :: { [ Term ] }
 : TERMS "," TERM { $3 : $1 }

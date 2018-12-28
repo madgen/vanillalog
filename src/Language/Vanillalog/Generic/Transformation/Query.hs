@@ -22,10 +22,10 @@ nameQueries pr = evalStateT (transformM go pr) 0
   go (SQuery s Query{_head = Nothing, ..}) =
     SQuery s <$> (Query _span <$> (Just <$> ac) <*> pure _body)
     where
-    ac :: StateT Int L.LoggerM AtomicFormula
+    ac :: StateT Int L.LoggerM (AtomicFormula Var)
     ac = do
       name <- freshQueryName
-      pure $ AtomicFormula s name $ TVar s <$> vars _body
+      pure $ AtomicFormula s name $ vars _body
 
     freshQueryName :: StateT Int L.LoggerM Text
     freshQueryName = do

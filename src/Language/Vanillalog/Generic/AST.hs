@@ -43,7 +43,7 @@ deriving instance
 
 data Query op = Query
   { _span :: SrcSpan
-  , _head :: Maybe AtomicFormula
+  , _head :: Maybe (AtomicFormula Var)
   , _body :: Subgoal op
   }
 
@@ -52,7 +52,7 @@ deriving instance
 
 data Clause op = Clause
   { _span :: SrcSpan
-  , _head :: AtomicFormula
+  , _head :: AtomicFormula Term
   , _body :: Subgoal op
   }
 
@@ -61,13 +61,13 @@ deriving instance
 
 data Fact = Fact
   { _span :: SrcSpan
-  , _atom :: AtomicFormula
+  , _atom :: AtomicFormula Sym
   } deriving (Eq)
 
 data Subgoal op =
     SAtom
       { _span :: SrcSpan
-      , _atom :: AtomicFormula
+      , _atom :: AtomicFormula Term
       }
   | SNullOp
       { _span   :: SrcSpan
@@ -92,12 +92,12 @@ data SomeOp (op :: OpKind -> *) = NoOp | forall opKind . SomeOp (op opKind)
 
 data OpKind = Binary | Unary | Nullary
 
-data AtomicFormula =
+data AtomicFormula a =
   AtomicFormula
     { _span  :: SrcSpan
     , _fxSym :: Text
-    , _terms :: [ Term ]
-    } deriving (Eq)
+    , _terms :: [ a ]
+    } deriving (Eq, Functor)
 
 data Term =
     TVar { _var :: Var }

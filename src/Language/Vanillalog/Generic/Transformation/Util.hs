@@ -80,8 +80,8 @@ instance Transformable (Subgoal op) decl op where
     go s                      = pure s
 
 -- |Transform only the atomic subgoals in clause/query bodies.
-peepholeM :: forall m decl op. (Transformable (Subgoal op) decl op, Monad m)
-          => (AtomicFormula -> m AtomicFormula)
+peepholeM :: forall m decl op . (Transformable (Subgoal op) decl op, Monad m)
+          => (AtomicFormula Term -> m (AtomicFormula Term))
           -> Program decl op -> m (Program decl op)
 peepholeM f = transformM go
   where
@@ -90,6 +90,6 @@ peepholeM f = transformM go
   go s         = pure s
 
 peephole :: forall decl op. Transformable (Subgoal op) decl op
-         => (AtomicFormula -> AtomicFormula)
+         => (AtomicFormula Term -> AtomicFormula Term)
          -> Program decl op -> Program decl op
 peephole f = runIdentity . peepholeM (pure <$> f)
