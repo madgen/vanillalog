@@ -87,7 +87,7 @@ instance ClosureCompilable op => Compilable (Clause op) where
 
 instance ClosureCompilable op => Compilable (Query op) where
   type Output (Query op) = L.LoggerM (E.Clause 'E.ABase)
-  compile Query{_head = Just h, ..} = compile Clause{_head = fmap _ h, ..}
+  compile Query{_head = Just h, ..} = compile Clause{_head = fmap TVar h, ..}
   compile Query{..} = L.scream (Just _span)
     "Unnamed query found during compilation."
 
