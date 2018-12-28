@@ -100,20 +100,15 @@ data AtomicFormula =
     } deriving (Eq)
 
 data Term =
-    TVar
-      { _span :: SrcSpan
-      , _var  :: Var
-      }
-  | TSym
-      { _span :: SrcSpan
-      , _sym  :: Sym
-      } deriving (Eq)
+    TVar { _var :: Var }
+  | TSym { _sym :: Sym }
+  deriving (Eq)
 
-newtype Var = Var Text deriving (Eq)
+data Var = Var SrcSpan Text deriving (Eq)
 data Sym =
-    SymInt  Int
-  | SymText Text
-  | SymBool Bool
+    SymInt  SrcSpan Int
+  | SymText SrcSpan Text
+  | SymBool SrcSpan Bool
   deriving (Eq)
 
 makeBaseFunctor ''Subgoal
@@ -129,6 +124,6 @@ vars = cata alg
   where
   alg :: Base (Subgoal a) [ Var ] -> [ Var ]
   alg (SAtomF _ (AtomicFormula _ _ terms)) =
-    mapMaybe (\case {TVar _ v -> Just v; _ -> Nothing}) terms
+    mapMaybe (\case {TVar v -> Just v; _ -> Nothing}) terms
   alg (SUnOpF _ _ vars) = vars
   alg (SBinOpF _ _ vars1 vars2) = vars1 ++ vars2

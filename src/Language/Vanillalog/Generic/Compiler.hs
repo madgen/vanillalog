@@ -146,10 +146,10 @@ instance Compilable Term where
 
 instance Compilable Var where
   type Output Var = E.Var
-  compile (Var v) = E.Var v
+  compile (Var _ v) = E.Var v
 
 instance Compilable Sym where
   type Output Sym = E.Sym
-  compile (SymInt i)   = E.SymInt i
-  compile (SymText bs) = E.SymText bs
-  compile (SymBool b)  = E.SymBool b
+  compile (SymInt  _ i)  = E.SymInt i
+  compile (SymText _ bs) = E.SymText bs
+  compile (SymBool _ b)  = E.SymBool b

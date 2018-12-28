@@ -73,16 +73,20 @@ TERMS :: { [ Term ] }
 | TERM           { [ $1 ] }
 
 TERM :: { Term }
-: VAR  { uncurry TVar $1 }
-| SYM  { uncurry TSym $1 }
+: VAR  { TVar $1 }
+| SYM  { TSym $1 }
 
-SYM :: { (SrcSpan, Sym) }
-: str  { (span $1, SymText . _str  . L._token $ $1) }
-| int  { (span $1, SymInt  . _int  . L._token $ $1) }
-| bool { (span $1, SymBool . _bool . L._token $ $1) }
+SYMS :: { [ Sym ] }
+: SYMS "," SYM { $3 : $1 }
+| SYM          { [ $1 ] }
 
-VAR :: { (SrcSpan, Var) }
-: var { (span $1, Var . _str . L._token $ $1) }
+SYM :: { Sym }
+: str  { SymText (span $1) . _str  . L._token $ $1 }
+| int  { SymInt  (span $1) . _int  . L._token $ $1 }
+| bool { SymBool (span $1) . _bool . L._token $ $1 }
+
+VAR :: { Var }
+: var { Var (span $1) . _str . L._token $ $1 }
 
 {
 parseError :: [ L.Lexeme (Token Text) ] -> Log.LoggerM a

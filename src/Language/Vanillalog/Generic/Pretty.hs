@@ -80,13 +80,13 @@ instance Pretty Term where
   pretty TSym{ _sym = s } = pretty s
 
 instance Pretty Var where
-  pretty (Var v) = pretty v
+  pretty (Var _ v) = pretty v
 
 instance Pretty Sym where
-  pretty (SymInt i) = int i
-  pretty (SymText bs) = doubleQuotes $ pretty bs
-  pretty (SymBool True) = "true"
-  pretty (SymBool False) = "false"
+  pretty (SymInt  _ i)     = int i
+  pretty (SymText _ bs)    = doubleQuotes $ pretty bs
+  pretty (SymBool _ True)  = "true"
+  pretty (SymBool _ False) = "false"
 
 -- Generic instances
 
