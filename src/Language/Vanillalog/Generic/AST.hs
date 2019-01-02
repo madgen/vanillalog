@@ -104,6 +104,13 @@ data Term =
   | TSym { _sym :: Sym }
   deriving (Eq)
 
+data TermType = TInt | TText | TBool deriving (Eq)
+
+termType :: Sym -> TermType
+termType SymInt{}  = TInt
+termType SymText{} = TText
+termType SymBool{} = TBool
+
 data Var = Var SrcSpan Text deriving (Eq)
 data Sym =
     SymInt  SrcSpan Int
