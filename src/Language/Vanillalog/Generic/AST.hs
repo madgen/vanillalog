@@ -97,7 +97,7 @@ data AtomicFormula a =
     { _span  :: SrcSpan
     , _fxSym :: Text
     , _terms :: [ a ]
-    } deriving (Eq, Functor)
+    } deriving (Eq, Functor, Foldable, Traversable)
 
 data Term =
     TVar { _var :: Var }
