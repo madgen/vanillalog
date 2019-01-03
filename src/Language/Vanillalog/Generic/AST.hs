@@ -104,18 +104,18 @@ data Term =
   | TSym { _sym :: Sym }
   deriving (Eq)
 
-data TermType = TInt | TText | TBool deriving (Eq)
+data TermType = TTInt | TTText | TTBool deriving (Eq)
 
 termType :: Sym -> TermType
-termType SymInt{}  = TInt
-termType SymText{} = TText
-termType SymBool{} = TBool
+termType SymInt{}  = TTInt
+termType SymText{} = TTText
+termType SymBool{} = TTBool
 
 data Var = Var SrcSpan Text deriving (Eq)
 data Sym =
-    SymInt  SrcSpan Int
-  | SymText SrcSpan Text
-  | SymBool SrcSpan Bool
+    SymInt  { _span :: SrcSpan, _int  :: Int  }
+  | SymText { _span :: SrcSpan, _text :: Text }
+  | SymBool { _span :: SrcSpan, _bool :: Bool }
   deriving (Eq)
 
 makeBaseFunctor ''Subgoal

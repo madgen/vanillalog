@@ -64,11 +64,11 @@ data Token str =
   | TConj
   | TDisj
   | TNeg
-  | TFxSym    { _str  :: str }
-  | TVariable { _str  :: str }
-  | TStr      { _str  :: str }
-  | TInt      { _int  :: Int }
-  | TBool     { _bool :: Bool }
+  | TFxSym    { _tStr  :: str }
+  | TVariable { _tStr  :: str }
+  | TStr      { _tStr  :: str }
+  | TInt      { _tInt  :: Int }
+  | TBool     { _tBool :: Bool }
   | TEOF
   deriving (Eq, Show, Functor)
 

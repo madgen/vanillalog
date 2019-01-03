@@ -79,6 +79,11 @@ instance Pretty Term where
   pretty TVar{ _var = v } = pretty v
   pretty TSym{ _sym = s } = pretty s
 
+instance Pretty TermType where
+  pretty TTInt  = "int"
+  pretty TTBool = "bool"
+  pretty TTText = "text"
+
 instance Pretty Var where
   pretty (Var _ v) = pretty v
 

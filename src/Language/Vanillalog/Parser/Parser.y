@@ -71,8 +71,8 @@ SUBGOAL :: { Subgoal }
 | SUBGOAL disj SUBGOAL { SDisj (span ($1,$3)) $1 $3 }
 
 ATOMIC_FORMULA :: { AtomicFormula Term }
-: fxSym "(" TERMS ")" { AtomicFormula (span ($1,$4)) (_str . L._token $ $1) (reverse $3) }
-| fxSym               { AtomicFormula (span $1)      (_str . L._token $ $1) [] }
+: fxSym "(" TERMS ")" { AtomicFormula (span ($1,$4)) (_tStr . L._token $ $1) (reverse $3) }
+| fxSym               { AtomicFormula (span $1)      (_tStr . L._token $ $1) [] }
 
 TERMS :: { [ Term ] }
 : TERMS "," TERM { $3 : $1 }
@@ -83,12 +83,12 @@ TERM :: { Term }
 | SYM  { TSym $1 }
 
 SYM :: { Sym }
-: str  { SymText (span $1) . _str  . L._token $ $1 }
-| int  { SymInt  (span $1) . _int  . L._token $ $1 }
-| bool { SymBool (span $1) . _bool . L._token $ $1 }
+: str  { SymText (span $1) . _tStr  . L._token $ $1 }
+| int  { SymInt  (span $1) . _tInt  . L._token $ $1 }
+| bool { SymBool (span $1) . _tBool . L._token $ $1 }
 
 VAR :: { Var }
-: var { Var (span $1) . _str . L._token $ $1 }
+: var { Var (span $1) . _tStr . L._token $ $1 }
 
 {
 parseError :: [ L.Lexeme (Token Text) ] -> Log.LoggerM a
