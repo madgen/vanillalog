@@ -112,7 +112,7 @@ termType SymInt{}  = TTInt
 termType SymText{} = TTText
 termType SymBool{} = TTBool
 
-data Var = Var SrcSpan Text deriving (Eq)
+data Var = Var { _span :: SrcSpan, _varName :: Text } deriving (Eq)
 data Sym =
     SymInt  { _span :: SrcSpan, _int  :: Int  }
   | SymText { _span :: SrcSpan, _text :: Text }
