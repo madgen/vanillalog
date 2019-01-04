@@ -3,6 +3,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DeriveTraversable #-}
@@ -125,6 +126,15 @@ operation SAtom{}     = NoOp
 operation s@SNullOp{} = SomeOp (_nullOp s)
 operation s@SUnOp{}   = SomeOp (_unOp s)
 operation s@SBinOp{}  = SomeOp (_binOp s)
+
+atoms :: Subgoal op -> [ Subgoal a ]
+atoms = cata alg
+  where
+  alg :: Base (Subgoal op) [ Subgoal a ] -> [ Subgoal a ]
+  alg s@SAtomF{..} = [ SAtom{_span = _spanF, _atom = _atomF} ]
+  alg SNullOpF{}   = []
+  alg SUnOpF{..}   = _childF
+  alg SBinOpF{..}  = _child1F ++ _child2F
 
 vars :: Subgoal a -> [ Var ]
 vars = cata alg
