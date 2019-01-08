@@ -23,10 +23,10 @@ data Stage = VanillaLex | VanillaParse | VanillaNormal | Exalog
 
 stageParser :: Parser Stage
 stageParser =
-     stageFlag' VanillaLex    "vanilla-lex"    "Tokenize"
- <|> stageFlag' VanillaParse  "vanilla-parse"  "Parse"
- <|> stageFlag' VanillaNormal "vanilla-normal" "Transform to normal form"
- <|> stageFlag' Exalog        "exalog"         "Compile to Exalog"
+     stageFlag' VanillaLex    "lex"    "Lexer output"
+ <|> stageFlag' VanillaParse  "parse"  "Parser output"
+ <|> stageFlag' VanillaNormal "normal" "Normal form"
+ <|> stageFlag' Exalog        "exalog" "Exalog core"
 
 run :: RunOptions -> IO ()
 run RunOptions{..} = do
