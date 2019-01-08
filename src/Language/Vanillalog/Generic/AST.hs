@@ -30,17 +30,10 @@ data Statement decl op =
     StDeclaration { _span :: SrcSpan, _declaration :: decl }
   | StSentence    { _span :: SrcSpan, _sentence    :: Sentence op }
 
-deriving instance
-  (Eq decl, Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary))
-    => Eq (Statement decl op)
-
 data Sentence op =
     SClause { _span :: SrcSpan, _clause :: Clause op }
   | SFact   { _span :: SrcSpan, _fact   :: Fact      }
   | SQuery  { _span :: SrcSpan, _query  :: Query op  }
-
-deriving instance
-  (Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary)) => Eq (Sentence op)
 
 data Query op = Query
   { _span :: SrcSpan
@@ -48,22 +41,16 @@ data Query op = Query
   , _body :: Subgoal op
   }
 
-deriving instance
-  (Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary)) => Eq (Query op)
-
 data Clause op = Clause
   { _span :: SrcSpan
   , _head :: AtomicFormula Term
   , _body :: Subgoal op
   }
 
-deriving instance
-  (Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary)) => Eq (Clause op)
-
 data Fact = Fact
   { _span :: SrcSpan
   , _atom :: AtomicFormula Sym
-  } deriving (Eq)
+  }
 
 data Subgoal op =
     SAtom
@@ -86,9 +73,6 @@ data Subgoal op =
       , _child2 :: Subgoal op
       }
 
-deriving instance
-  (Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary)) => Eq (Subgoal op)
-
 data SomeOp (op :: OpKind -> *) = NoOp | forall opKind . SomeOp (op opKind)
 
 data OpKind = Binary | Unary | Nullary
@@ -98,7 +82,7 @@ data AtomicFormula a =
     { _span  :: SrcSpan
     , _fxSym :: Text
     , _terms :: [ a ]
-    } deriving (Eq, Functor, Foldable, Traversable)
+    } deriving (Functor, Foldable, Traversable)
 
 data Term =
     TVar { _var :: Var }
@@ -107,19 +91,77 @@ data Term =
 
 data TermType = TTInt | TTText | TTBool deriving (Eq)
 
-termType :: Sym -> TermType
-termType SymInt{}  = TTInt
-termType SymText{} = TTText
-termType SymBool{} = TTBool
-
-data Var = Var { _span :: SrcSpan, _varName :: Text } deriving (Eq)
+data Var = Var { _span :: SrcSpan, _varName :: Text }
 data Sym =
     SymInt  { _span :: SrcSpan, _int  :: Int  }
   | SymText { _span :: SrcSpan, _text :: Text }
   | SymBool { _span :: SrcSpan, _bool :: Bool }
-  deriving (Eq)
+
+--------------------------------------------------------------------------------
+-- Eq instances
+--------------------------------------------------------------------------------
+
+instance Eq Sym where
+  SymInt{_int = i}   == SymInt{_int = i'}   = i == i'
+  SymBool{_bool = b} == SymBool{_bool = b'} = b == b'
+  SymText{_text = t} == SymText{_text = t'} = t == t'
+  _ == _ = False
+
+instance Eq Var where
+  Var{_varName = v} == Var{_varName = v'} = v == v'
+
+instance Eq a => Eq (AtomicFormula a) where
+  AtomicFormula{_fxSym = sym, _terms = ts} ==
+    AtomicFormula{_fxSym = sym', _terms = ts'} = sym == sym' && ts == ts'
+
+instance (Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary))
+    => Eq (Subgoal op) where
+  SAtom{_atom = a}              == SAtom{_atom = a'} = a == a'
+  SNullOp{_nullOp = op}         == SNullOp{_nullOp = op'} = op == op'
+  SUnOp{_unOp = op, _child = c} == SUnOp{_unOp = op', _child = c'} =
+    op == op' && c == c'
+  SBinOp{_binOp = op, _child1 = c1, _child2 = c2} ==
+    SBinOp{_binOp = op', _child1 = c1', _child2 = c2'} =
+    op == op' && c1 == c1' && c2 == c2'
+
+instance Eq Fact where
+  Fact{_atom = a} == Fact{_atom = a'} = a == a'
+
+instance (Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary))
+    => Eq (Clause op) where
+  Clause{_head = h, _body = b} == Clause{_head = h', _body = b'} =
+    h == h' && b == b'
+
+instance (Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary))
+    => Eq (Query op) where
+  Query{_head = h, _body = b} == Query{_head = h', _body = b'} =
+    h == h' && b == b'
+
+instance (Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary))
+    => Eq (Sentence op) where
+  SFact{_fact = f}     == SFact{_fact = f'}     = f == f'
+  SQuery{_query = q}   == SQuery{_query = q'}   = q == q'
+  SClause{_clause = c} == SClause{_clause = c'} = c == c'
+
+instance (Eq decl, Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary))
+    => Eq (Statement decl op) where
+  StDeclaration{_declaration = d} == StDeclaration{_declaration = d'} = d == d'
+  StSentence{_sentence = s}       == StSentence{_sentence = s'}       = s == s'
+
+--------------------------------------------------------------------------------
+-- Template Haskell
+--------------------------------------------------------------------------------
 
 makeBaseFunctor ''Subgoal
+
+--------------------------------------------------------------------------------
+-- Helper functions
+--------------------------------------------------------------------------------
+
+termType :: Sym -> TermType
+termType SymInt{}  = TTInt
+termType SymText{} = TTText
+termType SymBool{} = TTBool
 
 operation :: Subgoal op -> SomeOp op
 operation SAtom{}     = NoOp
