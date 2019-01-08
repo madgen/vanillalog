@@ -10,13 +10,9 @@ import qualified Data.Text as T
 import           Language.Exalog.Pretty ()
 import qualified Language.Exalog.Solver as S
 
-import Language.Vanillalog.AST (Program)
-import Language.Vanillalog.Generic.Compiler (compile)
-import Language.Vanillalog.Generic.Pretty (pp)
-import Language.Vanillalog.Generic.Transformation.Query (nameQueries)
-import Language.Vanillalog.Transformation.Normaliser (normalise)
-import Language.Vanillalog.Parser.Lexer (lex)
-import Language.Vanillalog.Parser.Parser (programParser)
+import           Language.Vanillalog.AST (Program)
+import           Language.Vanillalog.Generic.Pretty (pp)
+import qualified Language.Vanillalog.Stage as Stage
 
 import Language.Vanillalog.Generic.CLI.Arguments
 import Language.Vanillalog.Generic.CLI.Util
@@ -35,7 +31,7 @@ stageParser =
 run :: RunOptions -> IO ()
 run RunOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile file
-  succeedOrDie (programParser file >=> nameQueries >=> normalise >=> compile) bs $
+  succeedOrDie (Stage.compiled file) bs $
     \(exalogProgram, initEDB) -> do
       finalEDB <- S.solve exalogProgram initEDB
       putStrLn $ pp finalEDB
@@ -47,17 +43,14 @@ prettyPrint :: PPOptions Stage -> IO ()
 prettyPrint PPOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile file
   case stage of
-    VanillaLex -> succeedOrDie (lex file) bs print
-    VanillaParse -> succeedOrDie (programParser file) bs $ putStrLn . pp
-    VanillaNormal ->
-      succeedOrDie (programParser file >=> nameQueries >=> normalise) bs $
-        putStrLn . pp
-    Exalog ->
-      succeedOrDie (programParser file >=> nameQueries >=> normalise >=> compile) bs $
-        \(exalogProgram, initEDB) -> do
-          putStrLn $ pp exalogProgram
-          putStrLn ("" :: Text)
-          putStrLn $ pp initEDB
+    VanillaLex    -> succeedOrDie (Stage.lex file) bs print
+    VanillaParse  -> succeedOrDie (Stage.parse file) bs $ putStrLn . pp
+    VanillaNormal -> succeedOrDie (Stage.normalised file) bs $ putStrLn . pp
+    Exalog        -> succeedOrDie (Stage.compiled file) bs $
+      \(exalogProgram, initEDB) -> do
+        putStrLn $ pp exalogProgram
+        putStrLn ("" :: Text)
+        putStrLn $ pp initEDB
 
 main :: IO ()
 main = do
