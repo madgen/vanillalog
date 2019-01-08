@@ -73,7 +73,7 @@ class HasPrecedence (op :: OpKind -> *) where
 
 instance Pretty a => Pretty (AtomicFormula a) where
   pretty AtomicFormula{..} =
-    pretty _fxSym <> parens (csep . prettyC $ _terms)
+    pretty _predSym <> parens (csep . prettyC $ _terms)
 
 instance Pretty Term where
   pretty TVar{ _var = v } = pretty v

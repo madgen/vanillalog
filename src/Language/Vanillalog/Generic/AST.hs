@@ -79,9 +79,9 @@ data OpKind = Binary | Unary | Nullary
 
 data AtomicFormula a =
   AtomicFormula
-    { _span  :: SrcSpan
-    , _fxSym :: Text
-    , _terms :: [ a ]
+    { _span    :: SrcSpan
+    , _predSym :: Text
+    , _terms   :: [ a ]
     } deriving (Functor, Foldable, Traversable)
 
 data Term =
@@ -111,8 +111,8 @@ instance Eq Var where
   Var{_varName = v} == Var{_varName = v'} = v == v'
 
 instance Eq a => Eq (AtomicFormula a) where
-  AtomicFormula{_fxSym = sym, _terms = ts} ==
-    AtomicFormula{_fxSym = sym', _terms = ts'} = sym == sym' && ts == ts'
+  AtomicFormula{_predSym = sym, _terms = ts} ==
+    AtomicFormula{_predSym = sym', _terms = ts'} = sym == sym' && ts == ts'
 
 instance (Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary))
     => Eq (Subgoal op) where

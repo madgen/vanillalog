@@ -74,7 +74,7 @@ instance Compilable Fact where
           pure $ R.Relation
             E.Predicate
               { annotation = E.PredABase
-              , fxSym = _fxSym
+              , fxSym = _predSym
               , arity = arity
               , nature = E.Logical
               }
@@ -126,7 +126,7 @@ instance Compilable (AtomicFormula Term) where
           , polarity   = E.Positive
           , predicate  = E.Predicate
               { annotation = E.PredABase
-              , fxSym      = _fxSym
+              , fxSym      = _predSym
               , arity      = arity
               , nature     = E.Logical }
           , terms = terms
