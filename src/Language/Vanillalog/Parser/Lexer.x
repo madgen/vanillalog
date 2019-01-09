@@ -21,7 +21,8 @@ import qualified Language.Vanillalog.Generic.Logger as Log
 @var      = [A-Z]@idChar*
 @fxSym    = [a-z]@idChar*
 
-@int = 0|[1-9][0-9]*
+@positive = [1-9][0-9]*
+@int      = 0|@positive|\-@positive
 
 token :-
 
