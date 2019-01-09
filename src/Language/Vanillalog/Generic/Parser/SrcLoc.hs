@@ -76,7 +76,6 @@ instance {-# OVERLAPPING #-} Spannable a => Spannable [ a ] where
 
 printSpan :: MonadIO m => SrcSpan -> m ()
 printSpan (SrcSpan loc1 loc2) = liftIO $ do
-  putStrLn ("" :: Text)
   putStrLn . render . nest 2 $ "Context:"
   if file loc1 == file loc2
     then do
@@ -90,13 +89,14 @@ printSpan (SrcSpan loc1 loc2) = liftIO $ do
 
       when (nOfLines == 1) $
         putStrLn . render . nest 2 $
-          justifyLeft' 6 " " <> justifyLeft' (col loc1 - 1) " " <> sizedText nOfCols "^"
+          justifyLeft' 6 " " <> justifyLeft' (col loc1 - 1) " " <>
+          hcat (replicate nOfCols "^")
     else putStrLn $
       "The error occurred across multiple files." ++
       " I can't print the context. Please report a bug."
   where
-  nOfLines = line loc1 - line loc2 + 1
-  nOfCols  = col loc1 - col loc2 + 1
+  nOfLines = line loc2 - line loc1 + 1
+  nOfCols  = col  loc2 - col  loc1 + 1
 
   justifyLeft' n = text . unpack .justifyLeft n ' '
 

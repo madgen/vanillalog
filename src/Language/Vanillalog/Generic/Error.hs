@@ -26,6 +26,7 @@ data Error = Error
 printError :: MonadIO m => Error -> m ()
 printError err = do
   liftIO . putStrLn . pp $ err
+  putStrLn ("" :: Text)
   forM_ (mSpan err) printSpan
 
 instance Pretty Severity where
