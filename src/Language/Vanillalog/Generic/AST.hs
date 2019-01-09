@@ -53,7 +53,7 @@ data Clause op = Clause
 
 data Fact = Fact
   { _span :: SrcSpan
-  , _atom :: AtomicFormula Sym
+  , _atom :: AtomicFormula Term
   }
 
 data Subgoal op =

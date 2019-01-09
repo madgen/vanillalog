@@ -64,11 +64,14 @@ instance Compilable Fact where
   type Output Fact = L.LoggerM (R.Relation E.ABase)
   compile Fact{ _atom = AtomicFormula{..} } =
     withSomeSing (fromInteger . toInteger . length $ _terms) $
-      \(arity :: SNat n) ->
+      \(arity :: SNat n) -> do
+        syms <- traverse castToSym _terms
         withKnownNat arity $ do
           tuples <-
             case V.fromListN @n _terms of
-              Just vec -> pure $ T.fromList [ map compile vec ]
+              Just vec -> do
+                symVec <- traverse castToSym vec
+                pure $ T.fromList [ map compile symVec ]
               Nothing -> L.scream (Just _span)
                 "length of terms is not the length of terms."
           pure $ R.Relation
@@ -79,6 +82,11 @@ instance Compilable Fact where
               , nature = E.Logical
               }
             tuples
+    where
+    castToSym :: Term -> L.LoggerM Sym
+    castToSym TVar{_var = Var{..}} =
+      L.scold (Just _span) "Facts cannot have variables."
+    castToSym TSym{..} = pure _sym
 
 instance ClosureCompilable op => Compilable (Clause op) where
   type Output (Clause op) = L.LoggerM (E.Clause 'E.ABase)
