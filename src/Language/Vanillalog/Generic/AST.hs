@@ -6,10 +6,12 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ExistentialQuantification #-}
 
 module Language.Vanillalog.Generic.AST where
@@ -18,6 +20,8 @@ import Protolude
 
 import Data.Functor.Foldable
 import Data.Functor.Foldable.TH (makeBaseFunctor)
+
+import GHC.OverloadedLabels
 
 import Language.Vanillalog.Generic.Parser.SrcLoc
 
@@ -186,3 +190,10 @@ vars = cata alg
     mapMaybe (\case {TVar v -> Just v; _ -> Nothing}) terms
   alg (SUnOpF _ _ vars) = vars
   alg (SBinOpF _ _ vars1 vars2) = vars1 ++ vars2
+
+--------------------------------------------------------------------------------
+-- IsLabel instances
+--------------------------------------------------------------------------------
+
+instance IsLabel "_predSym" (AtomicFormula a -> Text) where
+  fromLabel AtomicFormula{..} = _predSym
