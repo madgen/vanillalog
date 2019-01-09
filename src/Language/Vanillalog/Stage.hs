@@ -22,6 +22,7 @@ import qualified Language.Vanillalog.Generic.Logger as Log
 import qualified Language.Vanillalog.Parser.Lexer as Lexer
 import qualified Language.Vanillalog.Parser.Parser as Parser
 import qualified Language.Vanillalog.Generic.Parser.Lexeme as L
+import           Language.Vanillalog.Generic.RangeRestriction (checkRangeRestriction)
 import           Language.Vanillalog.Generic.Transformation.Query (nameQueries)
 import           Language.Vanillalog.Transformation.Normaliser (normalise)
 
@@ -33,8 +34,14 @@ lex = Lexer.lex
 parse :: Stage Program
 parse = Parser.programParser
 
+rangeRestricted :: Stage Program
+rangeRestricted file bs = do
+  ast <- parse file bs
+  checkRangeRestriction ast
+  pure ast
+
 namedQueries :: Stage Program
-namedQueries file = parse file >=> nameQueries
+namedQueries file = rangeRestricted file >=> nameQueries
 
 normalised :: Stage Program
 normalised file = namedQueries file >=> normalise

@@ -18,6 +18,8 @@ module Language.Vanillalog.Generic.AST where
 
 import Protolude
 
+import Data.List (nub)
+
 import Data.Functor.Foldable
 import Data.Functor.Foldable.TH (makeBaseFunctor)
 
@@ -182,14 +184,34 @@ atoms = cata alg
   alg SUnOpF{..}   = _childF
   alg SBinOpF{..}  = _child1F ++ _child2F
 
-vars :: Subgoal a -> [ Var ]
-vars = cata alg
-  where
-  alg :: Base (Subgoal a) [ Var ] -> [ Var ]
-  alg (SAtomF _ (AtomicFormula _ _ terms)) =
-    mapMaybe (\case {TVar v -> Just v; _ -> Nothing}) terms
-  alg (SUnOpF _ _ vars) = vars
-  alg (SBinOpF _ _ vars1 vars2) = vars1 ++ vars2
+class HasVariables a where
+  vars :: a -> [ Var ]
+
+instance HasVariables (Sentence op) where
+  vars SFact{..}   = vars _fact
+  vars SClause{..} = vars _clause
+  vars SQuery{..}  = vars _query
+
+instance HasVariables (Clause op) where
+  vars Clause{..} = nub $ vars _head ++ vars _body
+
+instance HasVariables (Query op) where
+  vars Query{..} = vars _body
+
+instance HasVariables Fact where
+  vars Fact{..} = vars _atom
+
+instance HasVariables (Subgoal op) where
+  vars = nub . cata alg
+    where
+    alg :: Base (Subgoal a) [ Var ] -> [ Var ]
+    alg (SAtomF _ atom@AtomicFormula{}) = vars atom
+    alg (SUnOpF _ _ vars)               = vars
+    alg (SBinOpF _ _ vars1 vars2)       = vars1 ++ vars2
+
+instance HasVariables (AtomicFormula Term) where
+  vars AtomicFormula{..} = nub $
+    mapMaybe (\case {TVar{..} -> Just _var; _ -> Nothing}) _terms
 
 --------------------------------------------------------------------------------
 -- IsLabel instances

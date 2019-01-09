@@ -84,8 +84,8 @@ instance Compilable Fact where
             tuples
     where
     castToSym :: Term -> L.LoggerM Sym
-    castToSym TVar{_var = Var{..}} =
-      L.scold (Just _span) "Facts cannot have variables."
+    castToSym TVar{_var = Var{..}} = L.scream (Just _span)
+      "Facts cannot have variables. This should have been caught earlier."
     castToSym TSym{..} = pure _sym
 
 instance ClosureCompilable op => Compilable (Clause op) where
