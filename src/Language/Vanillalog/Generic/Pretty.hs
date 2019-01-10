@@ -35,25 +35,26 @@ instance (Pretty (Clause op), Pretty (Query op)) => Pretty (Sentence op) where
   pretty SFact{..}   = pretty _fact
   pretty SQuery{..}  = pretty _query
 
-instance Pretty (Subgoal op) => Pretty (Clause op) where
+instance Pretty (Subgoal Term op) => Pretty (Clause op) where
   pretty Clause{..} =
     pretty _head <+> ":-" <+> pretty _body <> "."
 
 instance Pretty Fact where
   pretty Fact{..} = pretty _head <> "."
 
-instance Pretty (Subgoal op) => Pretty (Query op) where
+instance Pretty (Subgoal Term op) => Pretty (Query op) where
   pretty Query{..} =
     case _head of { Just head-> pretty head; _ -> empty }
     <+>  "?-" <+> pretty _body <> "."
 
 instance ( Pretty (op 'Unary)
          , Pretty (op 'Binary)
+         , Pretty term
          , HasPrecedence op
-         ) => Pretty (Subgoal op) where
+         ) => Pretty (Subgoal term op) where
   pretty = para alg
     where
-    alg :: Base (Subgoal op) (Subgoal op, Doc) -> Doc
+    alg :: Base (Subgoal term op) (Subgoal term op, Doc) -> Doc
     alg (SAtomF _ atom) = pretty atom
     alg s@(SUnOpF _ op (ch,doc)) =
       pretty op <> mParens (SomeOp op) (operation ch) doc

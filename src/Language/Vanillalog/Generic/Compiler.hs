@@ -99,22 +99,22 @@ instance ClosureCompilable op => Compilable (Query op) where
   compile Query{..} = L.scream (Just _span)
     "Unnamed query found during compilation."
 
-instance ClosureCompilable op => Compilable (Subgoal op) where
-  type Output (Subgoal op) = L.LoggerM (E.Body 'E.ABase)
+instance ClosureCompilable op => Compilable (Subgoal Term op) where
+  type Output (Subgoal Term op) = L.LoggerM (E.Body 'E.ABase)
 
   compile = para alg
     where
-    alg :: Base (Subgoal op) (Subgoal op, Output (Subgoal op))
-        -> Output (Subgoal op)
+    alg :: Base (Subgoal Term op) (Subgoal Term op, Output (Subgoal Term op))
+        -> Output (Subgoal Term op)
     alg (SAtomF  _ atom) = (NE.:| []) <$> compile atom
     alg (SUnOpF  _ op (ch,m)) = cCompile =<< (CUnary op . (ch,) <$> m)
     alg (SBinOpF _ op (ch1,m1) (ch2,m2)) =
       cCompile =<< liftA2 (CBinary op) ((ch1,) <$> m1) ((ch2,) <$> m2)
 
 data Closure op =
-    CUnary  (op 'Unary)  (Subgoal op, E.Body 'E.ABase)
-  | CBinary (op 'Binary) (Subgoal op, E.Body 'E.ABase)
-                         (Subgoal op, E.Body 'E.ABase)
+    CUnary  (op 'Unary)  (Subgoal Term op, E.Body 'E.ABase)
+  | CBinary (op 'Binary) (Subgoal Term op, E.Body 'E.ABase)
+                         (Subgoal Term op, E.Body 'E.ABase)
 
 class ClosureCompilable op where
   cCompile :: Closure op -> L.LoggerM (E.Body 'E.ABase)

@@ -44,13 +44,13 @@ data Sentence op =
 data Query op = Query
   { _span :: SrcSpan
   , _head :: Maybe (AtomicFormula Var)
-  , _body :: Subgoal op
+  , _body :: Subgoal Term op
   }
 
 data Clause op = Clause
   { _span :: SrcSpan
   , _head :: AtomicFormula Term
-  , _body :: Subgoal op
+  , _body :: Subgoal Term op
   }
 
 data Fact = Fact
@@ -58,10 +58,10 @@ data Fact = Fact
   , _head :: AtomicFormula Term
   }
 
-data Subgoal op =
+data Subgoal term op =
     SAtom
       { _span :: SrcSpan
-      , _atom :: AtomicFormula Term
+      , _atom :: AtomicFormula term
       }
   | SNullOp
       { _span   :: SrcSpan
@@ -70,13 +70,13 @@ data Subgoal op =
   | SUnOp
       { _span  :: SrcSpan
       , _unOp  :: op 'Unary
-      , _child :: Subgoal op
+      , _child :: Subgoal term op
       }
   | SBinOp
       { _span   :: SrcSpan
       , _binOp  :: op 'Binary
-      , _child1 :: Subgoal op
-      , _child2 :: Subgoal op
+      , _child1 :: Subgoal term op
+      , _child2 :: Subgoal term op
       }
 
 data SomeOp (op :: OpKind -> *) = NoOp | forall opKind . SomeOp (op opKind)
@@ -120,8 +120,9 @@ instance Eq a => Eq (AtomicFormula a) where
   AtomicFormula{_predSym = sym, _terms = ts} ==
     AtomicFormula{_predSym = sym', _terms = ts'} = sym == sym' && ts == ts'
 
-instance (Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary))
-    => Eq (Subgoal op) where
+instance ( Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary)
+         , Eq (AtomicFormula term)
+         ) => Eq (Subgoal term op) where
   SAtom{_atom = a}              == SAtom{_atom = a'} = a == a'
   SNullOp{_nullOp = op}         == SNullOp{_nullOp = op'} = op == op'
   SUnOp{_unOp = op, _child = c} == SUnOp{_unOp = op', _child = c'} =
@@ -169,16 +170,16 @@ termType SymInt{}  = TTInt
 termType SymText{} = TTText
 termType SymBool{} = TTBool
 
-operation :: Subgoal op -> SomeOp op
+operation :: Subgoal term op -> SomeOp op
 operation SAtom{}     = NoOp
 operation s@SNullOp{} = SomeOp (_nullOp s)
 operation s@SUnOp{}   = SomeOp (_unOp s)
 operation s@SBinOp{}  = SomeOp (_binOp s)
 
-atoms :: Subgoal op -> [ AtomicFormula Term ]
+atoms :: Subgoal term op -> [ AtomicFormula term ]
 atoms = cata alg
   where
-  alg :: Base (Subgoal op) [ AtomicFormula Term ] -> [ AtomicFormula Term ]
+  alg :: Base (Subgoal term op) [ AtomicFormula term ] -> [ AtomicFormula term ]
   alg s@SAtomF{..} = [ _atomF ]
   alg SNullOpF{}   = []
   alg SUnOpF{..}   = _childF
@@ -201,10 +202,10 @@ instance HasVariables (Query op) where
 instance HasVariables Fact where
   vars Fact{..} = vars _head
 
-instance HasVariables (Subgoal op) where
+instance HasVariables (Subgoal Term op) where
   vars = nub . cata alg
     where
-    alg :: Base (Subgoal a) [ Var ] -> [ Var ]
+    alg :: Base (Subgoal Term a) [ Var ] -> [ Var ]
     alg (SAtomF _ atom@AtomicFormula{}) = vars atom
     alg (SUnOpF _ _ vars)               = vars
     alg (SBinOpF _ _ vars1 vars2)       = vars1 ++ vars2
