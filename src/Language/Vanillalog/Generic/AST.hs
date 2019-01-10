@@ -223,8 +223,8 @@ instance IsLabel "_predSym" (AtomicFormula a -> Text) where
 instance IsLabel "_head" (Fact -> AtomicFormula Term) where
   fromLabel Fact{..} = _head
 
-instance IsLabel "_head" (Clause -> AtomicFormula Term) where
+instance IsLabel "_head" (Clause op -> AtomicFormula Term) where
   fromLabel Clause{..} = _head
 
-instance IsLabel "_head" (Query -> Maybe (AtomicFormula Term)) where
+instance IsLabel "_head" (Query op -> Maybe (AtomicFormula Var)) where
   fromLabel Query{..} = _head
