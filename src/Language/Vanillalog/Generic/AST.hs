@@ -219,3 +219,12 @@ instance HasVariables (AtomicFormula Term) where
 
 instance IsLabel "_predSym" (AtomicFormula a -> Text) where
   fromLabel AtomicFormula{..} = _predSym
+
+instance IsLabel "_head" (Fact -> AtomicFormula Term) where
+  fromLabel Fact{..} = _head
+
+instance IsLabel "_head" (Clause -> AtomicFormula Term) where
+  fromLabel Clause{..} = _head
+
+instance IsLabel "_head" (Query -> Maybe (AtomicFormula Term)) where
+  fromLabel Query{..} = _head
