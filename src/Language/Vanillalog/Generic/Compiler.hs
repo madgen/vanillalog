@@ -62,7 +62,7 @@ instance ClosureCompilable op => Compilable (Program Void op) where
 
 instance Compilable Fact where
   type Output Fact = L.LoggerM (R.Relation E.ABase)
-  compile Fact{ _atom = AtomicFormula{..} } =
+  compile Fact{_head = AtomicFormula{..}} =
     withSomeSing (fromInteger . toInteger . length $ _terms) $
       \(arity :: SNat n) -> do
         syms <- traverse castToSym _terms

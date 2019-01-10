@@ -55,7 +55,7 @@ data Clause op = Clause
 
 data Fact = Fact
   { _span :: SrcSpan
-  , _atom :: AtomicFormula Term
+  , _head :: AtomicFormula Term
   }
 
 data Subgoal op =
@@ -131,7 +131,7 @@ instance (Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary))
     op == op' && c1 == c1' && c2 == c2'
 
 instance Eq Fact where
-  Fact{_atom = a} == Fact{_atom = a'} = a == a'
+  Fact{_head = a} == Fact{_head = a'} = a == a'
 
 instance (Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary))
     => Eq (Clause op) where
@@ -199,7 +199,7 @@ instance HasVariables (Query op) where
   vars Query{..} = vars _body
 
 instance HasVariables Fact where
-  vars Fact{..} = vars _atom
+  vars Fact{..} = vars _head
 
 instance HasVariables (Subgoal op) where
   vars = nub . cata alg

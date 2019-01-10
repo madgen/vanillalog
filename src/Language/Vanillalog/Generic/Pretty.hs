@@ -40,7 +40,7 @@ instance Pretty (Subgoal op) => Pretty (Clause op) where
     pretty _head <+> ":-" <+> pretty _body <> "."
 
 instance Pretty Fact where
-  pretty Fact{..} = pretty _atom <> "."
+  pretty Fact{..} = pretty _head <> "."
 
 instance Pretty (Subgoal op) => Pretty (Query op) where
   pretty Query{..} =
