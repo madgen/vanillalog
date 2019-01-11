@@ -165,6 +165,14 @@ instance (Eq decl , Eq (Sentence hop bop)) => Eq (Statement decl hop bop) where
 makeBaseFunctor ''Subgoal
 
 --------------------------------------------------------------------------------
+-- Spannable instanes
+--------------------------------------------------------------------------------
+
+instance Spannable Term where
+  span TVar{..} = span _var
+  span TSym{..} = span _sym
+
+--------------------------------------------------------------------------------
 -- Helper functions
 --------------------------------------------------------------------------------
 
