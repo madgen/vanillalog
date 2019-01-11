@@ -68,9 +68,9 @@ instance Transformable (Fact hop) decl hop bop where
     go SFact{..} = SFact _span <$> f _fact
     go s         = pure s
 
-instance Transformable (Subgoal Term bop) decl hop bop where
+instance Transformable (Subgoal bop Term) decl hop bop where
   transformM :: forall m decl hop bop. Monad m
-             => (Subgoal Term bop -> m (Subgoal Term bop))
+             => (Subgoal bop Term -> m (Subgoal bop Term))
              -> Program decl hop bop -> m (Program decl hop bop)
   transformM f = transformM go
     where
@@ -81,16 +81,16 @@ instance Transformable (Subgoal Term bop) decl hop bop where
 
 -- |Transform only the atomic subgoals in clause/query bodies.
 peepholeM :: forall m decl hop bop
-           . (Transformable (Subgoal Term bop) decl hop bop, Monad m)
+           . (Transformable (Subgoal bop Term) decl hop bop, Monad m)
           => (AtomicFormula Term -> m (AtomicFormula Term))
           -> Program decl hop bop -> m (Program decl hop bop)
 peepholeM f = transformM go
   where
-  go :: Subgoal Term bop -> m (Subgoal Term bop)
+  go :: Subgoal bop Term -> m (Subgoal bop Term)
   go SAtom{..} = SAtom _span <$> f _atom
   go s         = pure s
 
-peephole :: forall decl hop bop. Transformable (Subgoal Term bop) decl hop bop
+peephole :: forall decl hop bop. Transformable (Subgoal bop Term) decl hop bop
          => (AtomicFormula Term -> AtomicFormula Term)
          -> Program decl hop bop -> Program decl hop bop
 peephole f = runIdentity . peepholeM (pure <$> f)

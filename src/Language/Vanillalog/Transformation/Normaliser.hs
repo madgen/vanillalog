@@ -21,30 +21,30 @@ normalise = separateTopLevelDisjunctions
 pushNegation :: Program -> Program
 pushNegation = transform pnSub
   where
-  pnSub :: Subgoal Term Op -> Subgoal Term Op
+  pnSub :: Subgoal Op Term -> Subgoal Op Term
   pnSub = ana coalg
 
-  coalg :: Coalgebra (Base (Subgoal Term Op)) (Subgoal Term Op)
+  coalg :: Coalgebra (Base (Subgoal Op Term)) (Subgoal Op Term)
   coalg (SNeg span (SConj _ sub1 sub2)) = SDisjF span (elimNeg $ SNeg span sub1) (elimNeg $ SNeg span sub2)
   coalg (SNeg span (SDisj _ sub1 sub2)) = SConjF span (elimNeg $ SNeg span sub1) (elimNeg $ SNeg span sub2)
   coalg s = project (elimNeg s)
 -- | Repeatedly eliminates immediate double negation top-down but does not
 -- traverse the tree all the way down if it sees a non-negation node.
-elimNeg :: Subgoal Term Op -> Subgoal Term Op
+elimNeg :: Subgoal Op Term -> Subgoal Op Term
 elimNeg = apo rcoalg
   where
-  rcoalg :: Subgoal Term Op
-         -> Base (Subgoal Term Op) (Either (Subgoal Term Op) (Subgoal Term Op))
+  rcoalg :: Subgoal Op Term
+         -> Base (Subgoal Op Term) (Either (Subgoal Op Term) (Subgoal Op Term))
   rcoalg (SNeg _ (SNeg _ sub)) = Left  <$> project sub
   rcoalg s                     = Right <$> project s
 
 bubbleUpDisjunction :: Program -> Program
 bubbleUpDisjunction = transform budSub
   where
-  budSub :: Subgoal Term Op -> Subgoal Term Op
+  budSub :: Subgoal Op Term -> Subgoal Op Term
   budSub = cata alg
 
-  alg :: Algebra (Base (Subgoal Term Op)) (Subgoal Term Op)
+  alg :: Algebra (Base (Subgoal Op Term)) (Subgoal Op Term)
   alg (SConjF span (SDisj _ sub1 sub2) (SDisj _ sub3 sub4)) =
     SDisj span (SConj span sub1 sub3)
                (SDisj span (SConj span sub1 sub4)

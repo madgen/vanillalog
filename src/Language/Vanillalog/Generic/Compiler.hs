@@ -110,15 +110,15 @@ instance Compilable (Clause hop bop) => Compilable (Query hop bop) where
       ,..} :: Clause hop bop)
     Nothing -> L.scream (Just _span) "Unnamed query found during compilation."
 
-headCompile :: Subgoal Term op -> L.LoggerM (E.Literal 'E.ABase)
+headCompile :: Subgoal op Term -> L.LoggerM (E.Literal 'E.ABase)
 headCompile SAtom{..} = compile _atom
 headCompile s = L.scream (Just $ span s) "Head is not ready for compilation."
 
 bodyCompile :: forall op. ClosureCompilable op
-            => Subgoal Term op -> L.LoggerM (E.Body 'E.ABase)
+            => Subgoal op Term -> L.LoggerM (E.Body 'E.ABase)
 bodyCompile = para alg
   where
-  alg :: Base (Subgoal Term op) (Subgoal Term op, L.LoggerM (E.Body 'E.ABase))
+  alg :: Base (Subgoal op Term) (Subgoal op Term, L.LoggerM (E.Body 'E.ABase))
       -> L.LoggerM (E.Body 'E.ABase)
   alg (SAtomF  _ atom) = (NE.:| []) <$> compile atom
   alg (SUnOpF  _ op (ch,m)) = cCompile =<< (CUnary op . (ch,) <$> m)
@@ -126,9 +126,9 @@ bodyCompile = para alg
     cCompile =<< liftA2 (CBinary op) ((ch1,) <$> m1) ((ch2,) <$> m2)
 
 data Closure op =
-    CUnary  (op 'Unary)  (Subgoal Term op, E.Body 'E.ABase)
-  | CBinary (op 'Binary) (Subgoal Term op, E.Body 'E.ABase)
-                         (Subgoal Term op, E.Body 'E.ABase)
+    CUnary  (op 'Unary)  (Subgoal op Term, E.Body 'E.ABase)
+  | CBinary (op 'Binary) (Subgoal op Term, E.Body 'E.ABase)
+                         (Subgoal op Term, E.Body 'E.ABase)
 
 class ClosureCompilable op where
   cCompile :: Closure op -> L.LoggerM (E.Body 'E.ABase)

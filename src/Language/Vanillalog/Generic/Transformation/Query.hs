@@ -15,7 +15,7 @@ import qualified Language.Vanillalog.Generic.Logger as L
 import           Language.Vanillalog.Generic.Transformation.Util
 
 nameQueries :: forall decl hop bop
-             . Transformable (Subgoal Term bop) decl hop bop
+             . Transformable (Subgoal bop Term) decl hop bop
             => Program decl hop bop -> L.LoggerM (Program decl hop bop)
 nameQueries pr = evalStateT (transformM go pr) 0
   where
@@ -23,7 +23,7 @@ nameQueries pr = evalStateT (transformM go pr) 0
   go (SQuery s Query{_head = Nothing, ..}) =
     SQuery s <$> (Query _span <$> (Just <$> sub) <*> pure _body)
     where
-    sub :: StateT Int L.LoggerM (Subgoal Var hop)
+    sub :: StateT Int L.LoggerM (Subgoal hop Var)
     sub = do
       name <- freshQueryName
       pure $ SAtom s $ AtomicFormula s name $ vars _body

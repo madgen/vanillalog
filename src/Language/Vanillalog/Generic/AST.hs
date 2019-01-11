@@ -6,6 +6,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE StandaloneDeriving #-}
@@ -43,22 +44,22 @@ data Sentence hop bop =
 
 data Query hop bop = Query
   { _span :: SrcSpan
-  , _head :: Maybe (Subgoal Var hop)
-  , _body :: Subgoal Term bop
+  , _head :: Maybe (Subgoal hop Var)
+  , _body :: Subgoal bop Term
   }
 
 data Clause hop bop = Clause
   { _span :: SrcSpan
-  , _head :: Subgoal Term hop
-  , _body :: Subgoal Term bop
+  , _head :: Subgoal hop Term
+  , _body :: Subgoal bop Term
   }
 
 data Fact hop = Fact
   { _span :: SrcSpan
-  , _head :: Subgoal Term hop
+  , _head :: Subgoal hop Term
   }
 
-data Subgoal term op =
+data Subgoal op term =
     SAtom
       { _span :: SrcSpan
       , _atom :: AtomicFormula term
@@ -70,14 +71,15 @@ data Subgoal term op =
   | SUnOp
       { _span  :: SrcSpan
       , _unOp  :: op 'Unary
-      , _child :: Subgoal term op
+      , _child :: Subgoal op term
       }
   | SBinOp
       { _span   :: SrcSpan
       , _binOp  :: op 'Binary
-      , _child1 :: Subgoal term op
-      , _child2 :: Subgoal term op
+      , _child1 :: Subgoal op term
+      , _child2 :: Subgoal op term
       }
+  deriving (Functor)
 
 data SomeOp (op :: OpKind -> *) = NoOp | forall opKind . SomeOp (op opKind)
 
@@ -122,7 +124,7 @@ instance Eq a => Eq (AtomicFormula a) where
 
 instance ( Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary)
          , Eq (AtomicFormula term)
-         ) => Eq (Subgoal term op) where
+         ) => Eq (Subgoal op term) where
   SAtom{_atom = a}              == SAtom{_atom = a'} = a == a'
   SNullOp{_nullOp = op}         == SNullOp{_nullOp = op'} = op == op'
   SUnOp{_unOp = op, _child = c} == SUnOp{_unOp = op', _child = c'} =
@@ -131,17 +133,17 @@ instance ( Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary)
     SBinOp{_binOp = op', _child1 = c1', _child2 = c2'} =
     op == op' && c1 == c1' && c2 == c2'
 
-instance (Eq (Subgoal Term hop)) => Eq (Fact hop) where
+instance (Eq (Subgoal hop Term)) => Eq (Fact hop) where
   Fact{_head = a} == Fact{_head = a'} = a == a'
 
-instance ( Eq (Subgoal Term hop)
-         , Eq (Subgoal Term bop)
+instance ( Eq (Subgoal hop Term)
+         , Eq (Subgoal bop Term)
          ) => Eq (Clause hop bop) where
   Clause{_head = h, _body = b} == Clause{_head = h', _body = b'} =
     h == h' && b == b'
 
-instance ( Eq (Subgoal Var hop)
-         , Eq (Subgoal Term bop)
+instance ( Eq (Subgoal hop Var)
+         , Eq (Subgoal bop Term)
          ) => Eq (Query hop bop) where
   Query{_head = h, _body = b} == Query{_head = h', _body = b'} =
     h == h' && b == b'
@@ -171,16 +173,16 @@ termType SymInt{}  = TTInt
 termType SymText{} = TTText
 termType SymBool{} = TTBool
 
-operation :: Subgoal term op -> SomeOp op
+operation :: Subgoal op term -> SomeOp op
 operation SAtom{}     = NoOp
 operation s@SNullOp{} = SomeOp (_nullOp s)
 operation s@SUnOp{}   = SomeOp (_unOp s)
 operation s@SBinOp{}  = SomeOp (_binOp s)
 
-atoms :: Subgoal term op -> [ AtomicFormula term ]
+atoms :: Subgoal op term -> [ AtomicFormula term ]
 atoms = cata alg
   where
-  alg :: Base (Subgoal term op) [ AtomicFormula term ] -> [ AtomicFormula term ]
+  alg :: Base (Subgoal op term) [ AtomicFormula term ] -> [ AtomicFormula term ]
   alg s@SAtomF{..} = [ _atomF ]
   alg SNullOpF{}   = []
   alg SUnOpF{..}   = _childF
@@ -203,25 +205,22 @@ instance HasVariables (Query hop bop) where
 instance HasVariables (Fact hop) where
   vars Fact{..} = vars _head
 
-instance HasVariables (Subgoal Var op) where
-  vars = nub . cata alg
+instance HasVariables (AtomicFormula t) => HasVariables (Subgoal op t) where
+  vars = nub . cata varAlg
     where
-    alg :: Base (Subgoal Var a) [ Var ] -> [ Var ]
-    alg (SAtomF _ AtomicFormula{..}) = _terms
-    alg (SUnOpF _ _ vars)            = vars
-    alg (SBinOpF _ _ vars1 vars2)    = vars1 ++ vars2
-
-instance HasVariables (Subgoal Term op) where
-  vars = nub . cata alg
-    where
-    alg :: Base (Subgoal Term a) [ Var ] -> [ Var ]
-    alg (SAtomF _ atom@AtomicFormula{}) = vars atom
-    alg (SUnOpF _ _ vars)               = vars
-    alg (SBinOpF _ _ vars1 vars2)       = vars1 ++ vars2
+    varAlg (SAtomF _ atom@AtomicFormula{}) = vars atom
+    varAlg (SUnOpF _ _ vars)               = vars
+    varAlg (SBinOpF _ _ vars1 vars2)       = vars1 ++ vars2
 
 instance HasVariables (AtomicFormula Term) where
   vars AtomicFormula{..} = nub $
     mapMaybe (\case {TVar{..} -> Just _var; _ -> Nothing}) _terms
+
+instance HasVariables (AtomicFormula Var) where
+  vars AtomicFormula{..} = nub _terms
+
+instance HasVariables (AtomicFormula Sym) where
+  vars AtomicFormula{..} = []
 
 --------------------------------------------------------------------------------
 -- IsLabel instances
@@ -230,11 +229,11 @@ instance HasVariables (AtomicFormula Term) where
 instance IsLabel "_predSym" (AtomicFormula a -> Text) where
   fromLabel AtomicFormula{..} = _predSym
 
-instance IsLabel "_head" (Fact hop -> Subgoal Term hop) where
+instance IsLabel "_head" (Fact hop -> Subgoal hop Term) where
   fromLabel Fact{..} = _head
 
-instance IsLabel "_head" (Clause hop bop -> Subgoal Term hop) where
+instance IsLabel "_head" (Clause hop bop -> Subgoal hop Term) where
   fromLabel Clause{..} = _head
 
-instance IsLabel "_head" (Query hop bop -> Maybe (Subgoal Var hop)) where
+instance IsLabel "_head" (Query hop bop -> Maybe (Subgoal hop Var)) where
   fromLabel Query{..} = _head

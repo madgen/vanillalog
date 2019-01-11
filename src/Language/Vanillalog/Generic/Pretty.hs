@@ -40,17 +40,17 @@ instance ( Pretty (Clause hop bop)
   pretty SFact{..}   = pretty _fact
   pretty SQuery{..}  = pretty _query
 
-instance ( Pretty (Subgoal Term hop)
-         , Pretty (Subgoal Term bop)
+instance ( Pretty (Subgoal hop Term)
+         , Pretty (Subgoal bop Term)
          ) => Pretty (Clause hop bop) where
   pretty Clause{..} =
     pretty _head <+> ":-" <+> pretty _body <> "."
 
-instance Pretty (Subgoal Term hop) => Pretty (Fact hop) where
+instance Pretty (Subgoal hop Term) => Pretty (Fact hop) where
   pretty Fact{..} = pretty _head <> "."
 
-instance ( Pretty (Subgoal Var  hop)
-         , Pretty (Subgoal Term bop)
+instance ( Pretty (Subgoal hop Var)
+         , Pretty (Subgoal bop Term)
          ) => Pretty (Query hop bop) where
   pretty Query{..} =
     case _head of { Just head-> pretty head; _ -> empty }
@@ -61,10 +61,10 @@ instance ( Pretty (op 'Nullary)
          , Pretty (op 'Binary)
          , Pretty term
          , HasPrecedence op
-         ) => Pretty (Subgoal term op) where
+         ) => Pretty (Subgoal op term) where
   pretty = para alg
     where
-    alg :: Base (Subgoal term op) (Subgoal term op, Doc) -> Doc
+    alg :: Base (Subgoal op term) (Subgoal op term, Doc) -> Doc
     alg (SAtomF _ atom) = pretty atom
     alg (SNullOpF _ op) = pretty op
     alg s@(SUnOpF _ op (ch,doc)) =
