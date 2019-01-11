@@ -23,31 +23,41 @@ import Language.Exalog.Pretty.Helper
 
 import Language.Vanillalog.Generic.AST
 
-instance (Pretty decl, Pretty (Sentence op)) => Pretty (Program decl op) where
+instance ( Pretty decl, Pretty (Sentence hop bop)
+         ) => Pretty (Program decl hop bop) where
   pretty Program{..} = vcat . prettyC $ _statements
 
-instance (Pretty decl, Pretty (Sentence op)) => Pretty (Statement decl op) where
+instance ( Pretty decl, Pretty (Sentence hop bop)
+         ) => Pretty (Statement decl hop bop) where
   pretty StSentence{..}    = pretty _sentence
   pretty StDeclaration{..} = pretty _declaration
 
-instance (Pretty (Clause op), Pretty (Query op)) => Pretty (Sentence op) where
+instance ( Pretty (Clause hop bop)
+         , Pretty (Query hop bop)
+         , Pretty (Fact hop)
+         ) => Pretty (Sentence hop bop) where
   pretty SClause{..} = pretty _clause
   pretty SFact{..}   = pretty _fact
   pretty SQuery{..}  = pretty _query
 
-instance Pretty (Subgoal Term op) => Pretty (Clause op) where
+instance ( Pretty (Subgoal Term hop)
+         , Pretty (Subgoal Term bop)
+         ) => Pretty (Clause hop bop) where
   pretty Clause{..} =
     pretty _head <+> ":-" <+> pretty _body <> "."
 
-instance Pretty Fact where
+instance Pretty (Subgoal Term hop) => Pretty (Fact hop) where
   pretty Fact{..} = pretty _head <> "."
 
-instance Pretty (Subgoal Term op) => Pretty (Query op) where
+instance ( Pretty (Subgoal Var  hop)
+         , Pretty (Subgoal Term bop)
+         ) => Pretty (Query hop bop) where
   pretty Query{..} =
     case _head of { Just head-> pretty head; _ -> empty }
     <+>  "?-" <+> pretty _body <> "."
 
-instance ( Pretty (op 'Unary)
+instance ( Pretty (op 'Nullary)
+         , Pretty (op 'Unary)
          , Pretty (op 'Binary)
          , Pretty term
          , HasPrecedence op
@@ -56,6 +66,7 @@ instance ( Pretty (op 'Unary)
     where
     alg :: Base (Subgoal term op) (Subgoal term op, Doc) -> Doc
     alg (SAtomF _ atom) = pretty atom
+    alg (SNullOpF _ op) = pretty op
     alg s@(SUnOpF _ op (ch,doc)) =
       pretty op <> mParens (SomeOp op) (operation ch) doc
     alg s@(SBinOpF _ op (ch,doc) (ch',doc')) =

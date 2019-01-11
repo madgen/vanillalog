@@ -2,6 +2,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
@@ -36,17 +37,17 @@ import           Language.Vanillalog.Generic.Compiler (ClosureCompilable(..), Cl
 import qualified Language.Vanillalog.Generic.Logger as L
 import           Language.Vanillalog.Generic.Pretty (Pretty(..), HasPrecedence(..))
 
-type Program = AG.Program Void Op
+type Program = AG.Program Void (Const Void) Op
 
-type Statement = AG.Statement Void Op
+type Statement = AG.Statement Void (Const Void) Op
 
-type Sentence = AG.Sentence Op
+type Sentence = AG.Sentence (Const Void) Op
 
-type Query = AG.Query Op
+type Query = AG.Query (Const Void) Op
 
-type Clause = AG.Clause Op
+type Clause = AG.Clause (Const Void) Op
 
-type Subgoal term = AG.Subgoal term Op
+type Subgoal = AG.Subgoal
 
 data Op (k :: AG.OpKind) where
   Negation    :: Op 'AG.Unary
@@ -75,6 +76,10 @@ instance HasPrecedence Op where
   precedence (AG.SomeOp Conjunction) = 2
   precedence (AG.SomeOp Disjunction) = 3
 
+instance HasPrecedence (Const Void) where
+  precedence AG.NoOp               = panic "absurd."
+  precedence (AG.SomeOp (Const a)) = absurd a
+
 instance Pretty (Op opKind) where
   pretty Negation    = "!"
   pretty Conjunction = ", "
@@ -82,6 +87,9 @@ instance Pretty (Op opKind) where
 
 instance Pretty Void where
   pretty = absurd
+
+instance Pretty (Const Void (a :: AG.OpKind)) where
+  pretty (Const a) = absurd a
 
 -------------------------------------------------------------------------------
 -- Compilation related instances

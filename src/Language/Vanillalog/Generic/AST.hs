@@ -27,35 +27,35 @@ import GHC.OverloadedLabels
 
 import Language.Vanillalog.Generic.Parser.SrcLoc
 
-data Program decl op = Program
+data Program decl hop bop = Program
   { _span       :: SrcSpan
-  , _statements :: [ Statement decl op ]
+  , _statements :: [ Statement decl hop bop ]
   }
 
-data Statement decl op =
-    StDeclaration { _span :: SrcSpan, _declaration :: decl }
-  | StSentence    { _span :: SrcSpan, _sentence    :: Sentence op }
+data Statement decl hop bop =
+    StDeclaration { _span :: SrcSpan, _declaration :: decl             }
+  | StSentence    { _span :: SrcSpan, _sentence    :: Sentence hop bop }
 
-data Sentence op =
-    SClause { _span :: SrcSpan, _clause :: Clause op }
-  | SFact   { _span :: SrcSpan, _fact   :: Fact      }
-  | SQuery  { _span :: SrcSpan, _query  :: Query op  }
+data Sentence hop bop =
+    SClause { _span :: SrcSpan, _clause :: Clause hop bop }
+  | SFact   { _span :: SrcSpan, _fact   :: Fact hop       }
+  | SQuery  { _span :: SrcSpan, _query  :: Query hop bop  }
 
-data Query op = Query
+data Query hop bop = Query
   { _span :: SrcSpan
-  , _head :: Maybe (AtomicFormula Var)
-  , _body :: Subgoal Term op
+  , _head :: Maybe (Subgoal Var hop)
+  , _body :: Subgoal Term bop
   }
 
-data Clause op = Clause
+data Clause hop bop = Clause
   { _span :: SrcSpan
-  , _head :: AtomicFormula Term
-  , _body :: Subgoal Term op
+  , _head :: Subgoal Term hop
+  , _body :: Subgoal Term bop
   }
 
-data Fact = Fact
+data Fact hop = Fact
   { _span :: SrcSpan
-  , _head :: AtomicFormula Term
+  , _head :: Subgoal Term hop
   }
 
 data Subgoal term op =
@@ -131,27 +131,28 @@ instance ( Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary)
     SBinOp{_binOp = op', _child1 = c1', _child2 = c2'} =
     op == op' && c1 == c1' && c2 == c2'
 
-instance Eq Fact where
+instance (Eq (Subgoal Term hop)) => Eq (Fact hop) where
   Fact{_head = a} == Fact{_head = a'} = a == a'
 
-instance (Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary))
-    => Eq (Clause op) where
+instance ( Eq (Subgoal Term hop)
+         , Eq (Subgoal Term bop)
+         ) => Eq (Clause hop bop) where
   Clause{_head = h, _body = b} == Clause{_head = h', _body = b'} =
     h == h' && b == b'
 
-instance (Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary))
-    => Eq (Query op) where
+instance ( Eq (Subgoal Var hop)
+         , Eq (Subgoal Term bop)
+         ) => Eq (Query hop bop) where
   Query{_head = h, _body = b} == Query{_head = h', _body = b'} =
     h == h' && b == b'
 
-instance (Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary))
-    => Eq (Sentence op) where
+instance ( Eq (Fact hop), Eq (Clause hop bop), Eq (Query hop bop)
+         ) => Eq (Sentence hop bop) where
   SFact{_fact = f}     == SFact{_fact = f'}     = f == f'
   SQuery{_query = q}   == SQuery{_query = q'}   = q == q'
   SClause{_clause = c} == SClause{_clause = c'} = c == c'
 
-instance (Eq decl, Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary))
-    => Eq (Statement decl op) where
+instance (Eq decl , Eq (Sentence hop bop)) => Eq (Statement decl hop bop) where
   StDeclaration{_declaration = d} == StDeclaration{_declaration = d'} = d == d'
   StSentence{_sentence = s}       == StSentence{_sentence = s'}       = s == s'
 
@@ -188,19 +189,27 @@ atoms = cata alg
 class HasVariables a where
   vars :: a -> [ Var ]
 
-instance HasVariables (Sentence op) where
+instance HasVariables (Sentence hop bop) where
   vars SFact{..}   = vars _fact
   vars SClause{..} = vars _clause
   vars SQuery{..}  = vars _query
 
-instance HasVariables (Clause op) where
+instance HasVariables (Clause hop bop) where
   vars Clause{..} = nub $ vars _head ++ vars _body
 
-instance HasVariables (Query op) where
+instance HasVariables (Query hop bop) where
   vars Query{..} = vars _body
 
-instance HasVariables Fact where
+instance HasVariables (Fact hop) where
   vars Fact{..} = vars _head
+
+instance HasVariables (Subgoal Var op) where
+  vars = nub . cata alg
+    where
+    alg :: Base (Subgoal Var a) [ Var ] -> [ Var ]
+    alg (SAtomF _ AtomicFormula{..}) = _terms
+    alg (SUnOpF _ _ vars)            = vars
+    alg (SBinOpF _ _ vars1 vars2)    = vars1 ++ vars2
 
 instance HasVariables (Subgoal Term op) where
   vars = nub . cata alg
@@ -221,11 +230,11 @@ instance HasVariables (AtomicFormula Term) where
 instance IsLabel "_predSym" (AtomicFormula a -> Text) where
   fromLabel AtomicFormula{..} = _predSym
 
-instance IsLabel "_head" (Fact -> AtomicFormula Term) where
+instance IsLabel "_head" (Fact hop -> Subgoal Term hop) where
   fromLabel Fact{..} = _head
 
-instance IsLabel "_head" (Clause op -> AtomicFormula Term) where
+instance IsLabel "_head" (Clause hop bop -> Subgoal Term hop) where
   fromLabel Clause{..} = _head
 
-instance IsLabel "_head" (Query op -> Maybe (AtomicFormula Var)) where
+instance IsLabel "_head" (Query hop bop -> Maybe (Subgoal Var hop)) where
   fromLabel Query{..} = _head

@@ -11,13 +11,14 @@ import           Language.Vanillalog.Generic.AST
 import qualified Language.Vanillalog.Generic.Logger as Log
 import           Language.Vanillalog.Generic.Transformation.Util (transformM)
 
-checkRangeRestriction :: forall decl op. Program decl op -> Log.LoggerM ()
+checkRangeRestriction :: forall decl hop bop
+                       . Program decl hop bop -> Log.LoggerM ()
 checkRangeRestriction = void . transformM (\sent -> handle sent . diff $ sent)
   where
-  diff :: Sentence op -> [ Var ]
+  diff :: Sentence hop bop -> [ Var ]
   diff sent@SFact{_fact = Fact{..}}                   = vars _head
   diff sent@SClause{_clause = Clause{..}}             = vars _head \\ vars _body
-  diff sent@SQuery{_query = Query{_head = Just h,..}} = _terms h \\ vars _body
+  diff sent@SQuery{_query = Query{_head = Just h,..}} = vars  h    \\ vars _body
   diff _                                              = []
 
   handle sent []                    = pure sent

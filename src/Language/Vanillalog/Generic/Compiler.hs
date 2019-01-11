@@ -30,13 +30,17 @@ import qualified Language.Exalog.Tuples as T
 
 import           Language.Vanillalog.Generic.AST
 import qualified Language.Vanillalog.Generic.Logger as L
+import           Language.Vanillalog.Generic.Parser.SrcLoc (span)
 
 class Compilable a where
   type Output a
   compile :: a -> Output a
 
-instance ClosureCompilable op => Compilable (Program Void op) where
-  type Output (Program Void op) =
+instance ( Compilable (Clause hop bop)
+         , Compilable (Query hop bop)
+         , Compilable (Fact hop)
+         ) => Compilable (Program Void hop bop) where
+  type Output (Program Void hop bop) =
     L.LoggerM (E.Program 'E.ABase, R.Solution 'E.ABase)
 
   compile Program{..} = action
@@ -60,56 +64,66 @@ instance ClosureCompilable op => Compilable (Program Void op) where
 
     queryPreds = map (E.predicateBox . E.head)
 
-instance Compilable Fact where
-  type Output Fact = L.LoggerM (R.Relation E.ABase)
-  compile Fact{_head = AtomicFormula{..}} =
-    withSomeSing (fromInteger . toInteger . length $ _terms) $
-      \(arity :: SNat n) -> do
-        syms <- traverse castToSym _terms
-        withKnownNat arity $ do
-          tuples <-
-            case V.fromListN @n _terms of
-              Just vec -> do
-                symVec <- traverse castToSym vec
-                pure $ T.fromList [ map compile symVec ]
-              Nothing -> L.scream (Just _span)
-                "length of terms is not the length of terms."
-          pure $ R.Relation
-            E.Predicate
-              { annotation = E.PredABase
-              , fxSym = _predSym
-              , arity = arity
-              , nature = E.Logical
-              }
-            tuples
+instance Compilable (Fact hop) where
+  type Output (Fact hop) = L.LoggerM (R.Relation E.ABase)
+  compile Fact{_head = sub,..} = case sub of
+    SAtom{_atom = AtomicFormula{..}} ->
+      withSomeSing (fromInteger . toInteger . length $ _terms) $
+        \(arity :: SNat n) -> do
+          syms <- traverse castToSym _terms
+          withKnownNat arity $ do
+            tuples <-
+              case V.fromListN @n _terms of
+                Just vec -> do
+                  symVec <- traverse castToSym vec
+                  pure $ T.fromList [ map compile symVec ]
+                Nothing -> L.scream (Just _span)
+                  "length of terms is not the length of terms."
+            pure $ R.Relation
+              E.Predicate
+                { annotation = E.PredABase
+                , fxSym = _predSym
+                , arity = arity
+                , nature = E.Logical
+                }
+              tuples
+    _ -> L.scream (Just _span) "The head is not ready for compilation."
     where
     castToSym :: Term -> L.LoggerM Sym
     castToSym TVar{_var = Var{..}} = L.scream (Just _span)
       "Facts cannot have variables. This should have been caught earlier."
     castToSym TSym{..} = pure _sym
 
-instance ClosureCompilable op => Compilable (Clause op) where
-  type Output (Clause op) = L.LoggerM (E.Clause 'E.ABase)
-  compile Clause{..} =
-    E.Clause E.ClABase <$> compile _head <*> compile _body
+instance (ClosureCompilable bop) => Compilable (Clause hop bop) where
+  type Output (Clause hop bop) = L.LoggerM (E.Clause 'E.ABase)
+  compile Clause{..} = E.Clause E.ClABase
+                   <$> headCompile _head
+                   <*> bodyCompile _body
 
-instance ClosureCompilable op => Compilable (Query op) where
-  type Output (Query op) = L.LoggerM (E.Clause 'E.ABase)
-  compile Query{_head = Just h, ..} = compile Clause{_head = fmap TVar h, ..}
-  compile Query{..} = L.scream (Just _span)
-    "Unnamed query found during compilation."
+instance Compilable (Clause hop bop) => Compilable (Query hop bop) where
+  type Output (Query hop bop) = L.LoggerM (E.Clause 'E.ABase)
+  compile Query{..} = case _head of
+    Just sub -> compile (Clause
+      {_head = SAtom { _span = span sub
+                     , _atom = TVar <$> _atom sub
+                     }
+      ,..} :: Clause hop bop)
+    Nothing -> L.scream (Just _span) "Unnamed query found during compilation."
 
-instance ClosureCompilable op => Compilable (Subgoal Term op) where
-  type Output (Subgoal Term op) = L.LoggerM (E.Body 'E.ABase)
+headCompile :: Subgoal Term op -> L.LoggerM (E.Literal 'E.ABase)
+headCompile SAtom{..} = compile _atom
+headCompile s = L.scream (Just $ span s) "Head is not ready for compilation."
 
-  compile = para alg
-    where
-    alg :: Base (Subgoal Term op) (Subgoal Term op, Output (Subgoal Term op))
-        -> Output (Subgoal Term op)
-    alg (SAtomF  _ atom) = (NE.:| []) <$> compile atom
-    alg (SUnOpF  _ op (ch,m)) = cCompile =<< (CUnary op . (ch,) <$> m)
-    alg (SBinOpF _ op (ch1,m1) (ch2,m2)) =
-      cCompile =<< liftA2 (CBinary op) ((ch1,) <$> m1) ((ch2,) <$> m2)
+bodyCompile :: forall op. ClosureCompilable op
+            => Subgoal Term op -> L.LoggerM (E.Body 'E.ABase)
+bodyCompile = para alg
+  where
+  alg :: Base (Subgoal Term op) (Subgoal Term op, L.LoggerM (E.Body 'E.ABase))
+      -> L.LoggerM (E.Body 'E.ABase)
+  alg (SAtomF  _ atom) = (NE.:| []) <$> compile atom
+  alg (SUnOpF  _ op (ch,m)) = cCompile =<< (CUnary op . (ch,) <$> m)
+  alg (SBinOpF _ op (ch1,m1) (ch2,m2)) =
+    cCompile =<< liftA2 (CBinary op) ((ch1,) <$> m1) ((ch2,) <$> m2)
 
 data Closure op =
     CUnary  (op 'Unary)  (Subgoal Term op, E.Body 'E.ABase)
