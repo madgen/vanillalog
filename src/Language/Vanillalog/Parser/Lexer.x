@@ -41,12 +41,12 @@ token :-
 <scB> ";"        { basic TDisj }
 <scB> "!"        { basic TNeg }
 
-<0>   ":-"     { basic TRule  `andEnterStartCode` scB }
-<0>   "?-"     { basic TQuery `andEnterStartCode` scB }
+<0>   ":-"     { enterStartCodeAnd scB $ basic TRule }
+<0>   "?-"     { enterStartCodeAnd scB $ basic TQuery }
 <scB> "."      { exitStartCodeAnd $ basic TDot }
 <0>   "."      { basic TDot }
 
-<0,scB> @fxSym   { useInput TFxSym `andEnterStartCode` scA }
+<0,scB> @fxSym   { enterStartCodeAnd scA $ useInput TFxSym }
 <scA>   "("      { basic TLeftPar }
 <scA>   ")"      { exitStartCodeAnd $ basic TRightPar }
 <scA>   true     { basic (TBool True) }
@@ -54,9 +54,9 @@ token :-
 <scA>   @var     { useInput TVariable }
 <scA>   @int     { useInput (TInt . read . BS.unpack) }
 
-<scA> \"         { enterStartCode str }
+<scA> \"         { enterStartCodeAnd str skip }
 <str> [^\"]+     { useInput TStr }
-<str> \"         { exitStartCode }
+<str> \"         { exitStartCodeAnd skip }
 
 {
 data Token str =
@@ -150,18 +150,12 @@ exitStartCode' = do
   startCodeToReturn <- popStartCode
   alexSetStartCode startCodeToReturn
 
-andEnterStartCode :: AlexAction a -> Int -> AlexAction a
-andEnterStartCode action startCode input len =
-  action input len <* enterStartCode' startCode
+enterStartCodeAnd :: Int -> AlexAction a -> AlexAction a
+enterStartCodeAnd startCode action inp len =
+  enterStartCode' startCode *> action inp len
 
 exitStartCodeAnd :: AlexAction a -> AlexAction a
-exitStartCodeAnd action input len = exitStartCode' >> action input len
-
-enterStartCode :: Int -> AlexAction (L.Lexeme (Token ByteString.ByteString))
-enterStartCode = andEnterStartCode skip
-
-exitStartCode :: AlexAction (L.Lexeme (Token ByteString.ByteString))
-exitStartCode = exitStartCodeAnd skip
+exitStartCodeAnd action inp len = exitStartCode' *> action inp len
 
 lex :: FilePath -> BS.ByteString -> Log.LoggerM [ L.Lexeme (Token Text) ]
 lex file source =
