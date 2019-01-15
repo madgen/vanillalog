@@ -15,8 +15,7 @@ import qualified Language.Vanillalog.Generic.Logger as L
 import           Language.Vanillalog.Generic.Transformation.Util
 
 nameQueries :: forall decl hop bop
-             . Transformable (Subgoal bop Term) decl hop bop
-            => Program decl hop bop -> L.LoggerM (Program decl hop bop)
+             . Program decl hop bop -> L.LoggerM (Program decl hop bop)
 nameQueries pr = evalStateT (transformM go pr) 0
   where
   go :: Sentence hop bop -> StateT Int L.LoggerM (Sentence hop bop)

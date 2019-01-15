@@ -1,14 +1,23 @@
 {-# OPTIONS_GHC -Wno-simplifiable-class-constraints #-}
 
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module Language.Vanillalog.Generic.Transformation.Util where
+module Language.Vanillalog.Generic.Transformation.Util
+  ( Transformable(..)
+  , Algebra, Coalgebra
+  , transformHeadM, transformHead
+  , transformBodyM, transformBody
+  , peepholeM, peephole
+  ) where
 
 import Protolude
 
@@ -17,10 +26,13 @@ import Language.Vanillalog.Generic.AST
 type Algebra f a = f a -> a
 type Coalgebra f a = a -> f a
 
+purify :: ((a -> Identity a) -> (b -> Identity b)) -> (a -> a) -> (b -> b)
+purify f g = runIdentity . f (pure <$> g)
+
 class Transformable a decl hop bop where
   transformM :: Monad m => (a -> m a) -> Program decl hop bop -> m (Program decl hop bop)
   transform  ::            (a -> a)   -> Program decl hop bop ->    Program decl hop bop
-  transform f p = runIdentity $ transformM (pure <$> f) p
+  transform = purify transformM
 
 instance Transformable (Program decl hop bop) decl hop bop where
   transformM f = f
@@ -68,16 +80,39 @@ instance Transformable (Fact hop) decl hop bop where
     go SFact{..} = SFact _span <$> f _fact
     go s         = pure s
 
-instance Transformable (Subgoal bop Term) decl hop bop where
+transformHeadM :: forall m decl hop bop. Monad m
+               => (Subgoal hop Term -> m (Subgoal hop Term))
+               -> Program decl hop bop -> m (Program decl hop bop)
+transformHeadM f = transformM go
+  where
+  go :: Sentence hop bop -> m (Sentence hop bop)
+  go (SClause s Clause{..}) = (\h -> SClause s Clause{_head = h,..}) <$> f _head
+  go (SFact   s Fact{..})   = (\h -> SFact   s Fact{_head = h,..})   <$> f _head
+  go s@SQuery{}             = pure s
+
+transformHead = purify transformHeadM
+
+transformBodyM :: forall m decl hop bop. Monad m
+               => (Subgoal bop Term -> m (Subgoal bop Term))
+               -> Program decl hop bop -> m (Program decl hop bop)
+transformBodyM f = transformM go
+  where
+  go :: Sentence hop bop -> m (Sentence hop bop)
+  go (SClause s Clause{..}) = SClause s . Clause _span _head <$> f _body
+  go (SQuery  s Query{..})  = SQuery  s . Query  _span _head <$> f _body
+  go s                      = pure s
+
+transformBody = purify transformBodyM
+
+instance Transformable (AtomicFormula Term) decl hop bop where
   transformM :: forall m decl hop bop. Monad m
-             => (Subgoal bop Term -> m (Subgoal bop Term))
+             => (AtomicFormula Term -> m (AtomicFormula Term))
              -> Program decl hop bop -> m (Program decl hop bop)
-  transformM f = transformM go
+  transformM f = transformHeadM (go @hop) >=> transformBodyM (go @bop)
     where
-    go :: Sentence hop bop -> m (Sentence hop bop)
-    go (SClause s Clause{..}) = SClause s . Clause _span _head <$> f _body
-    go (SQuery  s Query{..})  = SQuery  s . Query  _span _head <$> f _body
-    go s                      = pure s
+    go :: forall a. Subgoal (a :: OpKind -> *) Term -> m (Subgoal a Term)
+    go SAtom{..} = SAtom _span <$> f _atom
+    go s         = pure s
 
 -- |Transform only the atomic subgoals in clause/query bodies.
 peepholeM :: forall m decl hop bop
@@ -93,4 +128,4 @@ peepholeM f = transformM go
 peephole :: forall decl hop bop. Transformable (Subgoal bop Term) decl hop bop
          => (AtomicFormula Term -> AtomicFormula Term)
          -> Program decl hop bop -> Program decl hop bop
-peephole f = runIdentity . peepholeM (pure <$> f)
+peephole = purify peepholeM

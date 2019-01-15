@@ -19,7 +19,7 @@ normalise = separateTopLevelDisjunctions
           . pushNegation
 
 pushNegation :: Program -> Program
-pushNegation = transform pnSub
+pushNegation = transformBody pnSub
   where
   pnSub :: Subgoal Op Term -> Subgoal Op Term
   pnSub = ana coalg
@@ -39,7 +39,7 @@ elimNeg = apo rcoalg
   rcoalg s                     = Right <$> project s
 
 bubbleUpDisjunction :: Program -> Program
-bubbleUpDisjunction = transform budSub
+bubbleUpDisjunction = transformBody budSub
   where
   budSub :: Subgoal Op Term -> Subgoal Op Term
   budSub = cata alg
