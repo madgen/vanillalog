@@ -31,9 +31,9 @@ data SrcLoc =
       , col  :: !Int
       }
   | SrcDummy
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
 
-data SrcSpan = SrcSpan SrcLoc SrcLoc deriving (Eq, Show)
+data SrcSpan = SrcSpan SrcLoc SrcLoc deriving (Eq, Ord, Show)
 
 dummySpan :: SrcSpan
 dummySpan = SrcSpan SrcDummy SrcDummy

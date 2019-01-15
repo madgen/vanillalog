@@ -90,23 +90,24 @@ data AtomicFormula a =
     { _span    :: SrcSpan
     , _predSym :: Text
     , _terms   :: [ a ]
-    } deriving (Functor, Foldable, Traversable)
+    } deriving (Ord, Functor, Foldable, Traversable)
 
 data Term =
     TVar { _var :: Var }
   | TSym { _sym :: Sym }
-  deriving (Eq)
+  deriving (Eq,Ord)
 
-data TermType = TTInt | TTText | TTBool deriving (Eq)
+data TermType = TTInt | TTText | TTBool deriving (Eq, Ord)
 
-data Var = Var { _span :: SrcSpan, _varName :: Text }
+data Var = Var { _span :: SrcSpan, _varName :: Text } deriving (Ord)
 data Sym =
     SymInt  { _span :: SrcSpan, _int  :: Int  }
   | SymText { _span :: SrcSpan, _text :: Text }
   | SymBool { _span :: SrcSpan, _bool :: Bool }
+  deriving (Ord)
 
 --------------------------------------------------------------------------------
--- Eq instances
+-- Eq & Ord instances
 --------------------------------------------------------------------------------
 
 instance Eq Sym where
@@ -133,8 +134,14 @@ instance ( Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary)
     SBinOp{_binOp = op', _child1 = c1', _child2 = c2'} =
     op == op' && c1 == c1' && c2 == c2'
 
+deriving instance
+  (Ord (op 'Nullary), Ord (op 'Unary), Ord (op 'Binary), Ord term)
+  => Ord (Subgoal op term)
+
 instance (Eq (Subgoal hop Term)) => Eq (Fact hop) where
   Fact{_head = a} == Fact{_head = a'} = a == a'
+
+deriving instance Ord (Subgoal hop Term) => Ord (Fact hop)
 
 instance ( Eq (Subgoal hop Term)
          , Eq (Subgoal bop Term)
@@ -142,11 +149,17 @@ instance ( Eq (Subgoal hop Term)
   Clause{_head = h, _body = b} == Clause{_head = h', _body = b'} =
     h == h' && b == b'
 
+deriving instance
+  (Ord (Subgoal hop Term), Ord (Subgoal bop Term)) => Ord (Clause hop bop)
+
 instance ( Eq (Subgoal hop Var)
          , Eq (Subgoal bop Term)
          ) => Eq (Query hop bop) where
   Query{_head = h, _body = b} == Query{_head = h', _body = b'} =
     h == h' && b == b'
+
+deriving instance (Ord (Subgoal hop Var), Ord (Subgoal bop Term))
+  => Ord (Query hop bop)
 
 instance ( Eq (Fact hop), Eq (Clause hop bop), Eq (Query hop bop)
          ) => Eq (Sentence hop bop) where
@@ -154,9 +167,15 @@ instance ( Eq (Fact hop), Eq (Clause hop bop), Eq (Query hop bop)
   SQuery{_query = q}   == SQuery{_query = q'}   = q == q'
   SClause{_clause = c} == SClause{_clause = c'} = c == c'
 
+deriving instance (Ord (Fact hop), Ord (Clause hop bop), Ord (Query hop bop))
+  => Ord (Sentence hop bop)
+
 instance (Eq decl , Eq (Sentence hop bop)) => Eq (Statement decl hop bop) where
   StDeclaration{_declaration = d} == StDeclaration{_declaration = d'} = d == d'
   StSentence{_sentence = s}       == StSentence{_sentence = s'}       = s == s'
+
+deriving instance (Ord decl, Ord (Sentence hop bop))
+  => Ord (Statement decl hop bop)
 
 --------------------------------------------------------------------------------
 -- Template Haskell
