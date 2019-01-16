@@ -18,10 +18,12 @@ module Language.Vanillalog.Generic.Compiler
 
 import Protolude hiding (head)
 
+
 import           Data.Functor.Foldable (Base, para)
 import qualified Data.List.NonEmpty as NE
 import           Data.Singletons (withSomeSing)
 import           Data.Singletons.TypeLits (SNat, withKnownNat)
+import qualified Data.Text as Text
 import qualified Data.Vector.Sized as V
 
 import qualified Language.Exalog.Core as E
@@ -82,7 +84,7 @@ instance Compilable (Fact hop) where
             pure $ R.Relation
               E.Predicate
                 { annotation = E.PredABase
-                , fxSym = _predSym
+                , fxSym = flatten _predSym
                 , arity = arity
                 , nature = E.Logical
                 }
@@ -133,6 +135,9 @@ data Closure op =
 class ClosureCompilable op where
   cCompile :: Closure op -> L.LoggerM (E.Body 'E.ABase)
 
+flatten :: PredicateSymbol -> Text
+flatten (PredicateSymbol names) = Text.intercalate ":" $ reverse names
+
 instance Compilable (AtomicFormula Term) where
   type Output (AtomicFormula Term) = L.LoggerM (E.Literal 'E.ABase)
   compile AtomicFormula{..} =
@@ -148,7 +153,7 @@ instance Compilable (AtomicFormula Term) where
           , polarity   = E.Positive
           , predicate  = E.Predicate
               { annotation = E.PredABase
-              , fxSym      = _predSym
+              , fxSym      = flatten _predSym
               , arity      = arity
               , nature     = E.Logical }
           , terms = terms

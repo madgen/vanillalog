@@ -83,9 +83,12 @@ instance ( Pretty (op 'Nullary)
 class HasPrecedence (op :: OpKind -> *) where
   precedence :: SomeOp op -> Int
 
+instance Pretty PredicateSymbol where
+  pretty (PredicateSymbol names) =
+    hcat . punctuate colon . prettyC . reverse $ names
+
 instance Pretty a => Pretty (AtomicFormula a) where
-  pretty AtomicFormula{..} =
-    pretty _predSym <> parens (csep . prettyC $ _terms)
+  pretty AtomicFormula{..} = pretty _predSym <> parens (csep . prettyC $ _terms)
 
 instance Pretty Term where
   pretty TVar{ _var = v } = pretty v

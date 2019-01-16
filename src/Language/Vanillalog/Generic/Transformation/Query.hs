@@ -8,6 +8,7 @@ module Language.Vanillalog.Generic.Transformation.Query (nameQueries) where
 
 import Protolude
 
+import Data.String (fromString)
 import Data.Text (pack)
 
 import           Language.Vanillalog.Generic.AST
@@ -27,10 +28,10 @@ nameQueries pr = evalStateT (transformM go pr) 0
       name <- freshQueryName
       pure $ SAtom s $ AtomicFormula s name $ vars _body
 
-    freshQueryName :: StateT Int L.LoggerM Text
+    freshQueryName :: StateT Int L.LoggerM PredicateSymbol
     freshQueryName = do
       modify (+ 1)
-      pack . ("query_" <>) . show <$> get
+      fromString . ("query_" <>) . show <$> get
   go s@SQuery{..} =
     lift $ L.scream (Just _span) "Query has already been named."
   go s = pure s

@@ -20,6 +20,8 @@ module Language.Vanillalog.Generic.AST where
 import Protolude
 
 import Data.List (nub)
+import Data.String (IsString(..))
+import Data.Text (pack)
 
 import Data.Functor.Foldable
 import Data.Functor.Foldable.TH (makeBaseFunctor)
@@ -85,10 +87,12 @@ data SomeOp (op :: OpKind -> *) = NoOp | forall opKind . SomeOp (op opKind)
 
 data OpKind = Binary | Unary | Nullary
 
+newtype PredicateSymbol = PredicateSymbol [ Text ] deriving (Eq, Ord)
+
 data AtomicFormula a =
   AtomicFormula
     { _span    :: SrcSpan
-    , _predSym :: Text
+    , _predSym :: PredicateSymbol
     , _terms   :: [ a ]
     } deriving (Ord, Functor, Foldable, Traversable)
 
@@ -253,7 +257,7 @@ instance HasVariables (AtomicFormula Sym) where
 -- IsLabel instances
 --------------------------------------------------------------------------------
 
-instance IsLabel "_predSym" (AtomicFormula a -> Text) where
+instance IsLabel "_predSym" (AtomicFormula a -> PredicateSymbol) where
   fromLabel AtomicFormula{..} = _predSym
 
 instance IsLabel "_head" (Fact hop -> Subgoal hop Term) where
@@ -264,3 +268,10 @@ instance IsLabel "_head" (Clause hop bop -> Subgoal hop Term) where
 
 instance IsLabel "_head" (Query hop bop -> Maybe (Subgoal hop Var)) where
   fromLabel Query{..} = _head
+
+--------------------------------------------------------------------------------
+-- IsString instances
+--------------------------------------------------------------------------------
+
+instance IsString PredicateSymbol where
+  fromString = PredicateSymbol . pure . pack
