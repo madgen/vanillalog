@@ -65,8 +65,11 @@ SUBGOAL :: { Subgoal Op Term}
 | SUBGOAL disj SUBGOAL { SDisj (span ($1,$3)) $1 $3 }
 
 ATOMIC_FORMULA :: { AtomicFormula Term }
-: fxSym "(" TERMS ")" { AtomicFormula (span ($1,$4)) (G.PredicateSymbol . pure . _tStr . L._token $ $1) (reverse $3) }
-| fxSym               { AtomicFormula (span $1)      (G.PredicateSymbol . pure . _tStr . L._token $ $1) [] }
+: FX_SYM "(" TERMS ")" { AtomicFormula (transSpan (fst $1) (span $4)) (snd $1) (reverse $3) }
+| FX_SYM               { AtomicFormula (fst $1)                       (snd $1) [] }
+
+FX_SYM :: { (SrcSpan, G.PredicateSymbol) }
+: fxSym { (span $1, G.PredicateSymbol . pure . _tStr . L._token $ $1) }
 
 TERMS :: { [ Term ] }
 : TERMS "," TERM { $3 : $1 }
