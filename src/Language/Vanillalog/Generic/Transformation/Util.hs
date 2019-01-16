@@ -9,6 +9,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 module Language.Vanillalog.Generic.Transformation.Util
@@ -16,7 +17,7 @@ module Language.Vanillalog.Generic.Transformation.Util
   , Algebra, Coalgebra
   , transformHeadM, transformHead
   , transformBodyM, transformBody
-  , peepholeM, peephole
+--  , peepholeM, peephole
   ) where
 
 import Protolude
@@ -29,56 +30,57 @@ type Coalgebra f a = a -> f a
 purify :: ((a -> Identity a) -> (b -> Identity b)) -> (a -> a) -> (b -> b)
 purify f g = runIdentity . f (pure <$> g)
 
-class Transformable a decl hop bop where
-  transformM :: Monad m => (a -> m a) -> Program decl hop bop -> m (Program decl hop bop)
-  transform  ::            (a -> a)   -> Program decl hop bop ->    Program decl hop bop
+class Transformable a b where
+  transformM :: Monad m => (a -> m a) -> b -> m b
+  transform  ::            (a ->   a) -> b ->   b
   transform = purify transformM
 
-instance Transformable (Program decl hop bop) decl hop bop where
-  transformM f = f
-
-instance Transformable (Statement decl hop bop) decl hop bop where
+instance Transformable (Statement decl hop bop) (Program decl hop bop) where
   transformM f Program{..} = Program _span <$> traverse f _statements
 
-instance Transformable (Sentence hop bop) decl hop bop where
-  transformM :: forall m decl hop bop. Monad m
-             => (Sentence hop bop -> m (Sentence hop bop))
-             -> Program decl hop bop -> m (Program decl hop bop)
-  transformM f = transformM go
-    where
-    go :: Statement decl hop bop -> m (Statement decl hop bop)
-    go StSentence{..} = StSentence _span <$> f _sentence
-    go s              = pure s
+instance Transformable (Sentence hop bop) (Statement decl hop bop) where
+  transformM f StSentence{..} = StSentence _span <$> f _sentence
+  transformM _ s              = pure s
 
-instance Transformable (Clause hop bop) decl hop bop where
-  transformM :: forall m decl hop bop. Monad m
-             => (Clause hop bop -> m (Clause hop bop))
-             -> Program decl hop bop -> m (Program decl hop bop)
-  transformM f = transformM go
-    where
-    go :: Sentence hop bop -> m (Sentence hop bop)
-    go SClause{..} = SClause _span <$> f _clause
-    go s           = pure s
+instance Transformable (Sentence hop bop) (Program decl hop bop) where
+  transformM f =
+    transformM (transformM @(Sentence hop bop) @(Statement decl hop bop) f)
 
-instance Transformable (Query hop bop) decl hop bop where
-  transformM :: forall m decl hop bop. Monad m
-             => (Query hop bop -> m (Query hop bop))
-             -> Program decl hop bop -> m (Program decl hop bop)
-  transformM f = transformM go
-    where
-    go :: Sentence hop bop -> m (Sentence hop bop)
-    go SQuery{..} = SQuery _span <$> f _query
-    go s          = pure s
+instance Transformable (Clause hop bop) (Sentence hop bop) where
+  transformM f SClause{..} = SClause _span <$> f _clause
+  transformM _ s           = pure s
 
-instance Transformable (Fact hop) decl hop bop where
-  transformM :: forall m decl hop bop. Monad m
-             => (Fact hop -> m (Fact hop))
-             -> Program decl hop bop -> m (Program decl hop bop)
-  transformM f = transformM go
-    where
-    go :: Sentence hop bop -> m (Sentence hop bop)
-    go SFact{..} = SFact _span <$> f _fact
-    go s         = pure s
+instance Transformable (Clause hop bop) (Statement decl hop bop) where
+  transformM f =
+    transformM (transformM @(Clause hop bop) @(Sentence hop bop) f)
+
+instance Transformable (Clause hop bop) (Program decl hop bop) where
+  transformM f =
+    transformM (transformM @(Clause hop bop) @(Statement decl hop bop) f)
+
+instance Transformable (Query hop bop) (Sentence hop bop) where
+  transformM f SQuery{..} = SQuery _span <$> f _query
+  transformM f s          = pure s
+
+instance Transformable (Query hop bop) (Statement decl hop bop) where
+  transformM f =
+    transformM (transformM @(Query hop bop) @(Sentence hop bop) f)
+
+instance Transformable (Query hop bop) (Program decl hop bop) where
+  transformM f =
+    transformM (transformM @(Query hop bop) @(Statement decl hop bop) f)
+
+instance Transformable (Fact hop) (Sentence hop bop) where
+  transformM f SFact{..} = SFact _span <$> f _fact
+  transformM f s         = pure s
+
+instance Transformable (Fact hop) (Statement decl hop bop) where
+  transformM f =
+    transformM (transformM @(Fact hop) @(Sentence hop bop) f)
+
+instance Transformable (Fact hop) (Program decl hop bop) where
+  transformM f =
+    transformM (transformM @(Fact hop) @(Statement decl hop bop) f)
 
 transformHeadM :: forall m decl hop bop. Monad m
                => (Subgoal hop Term -> m (Subgoal hop Term))
@@ -104,28 +106,44 @@ transformBodyM f = transformM go
 
 transformBody = purify transformBodyM
 
-instance Transformable (AtomicFormula Term) decl hop bop where
+instance Transformable (AtomicFormula a) (Subgoal op a) where
+  transformM f SAtom{..} = SAtom _span <$> f _atom
+  transformM f s         = pure s
+
+instance Transformable (AtomicFormula Term) (Sentence hop bop) where
   transformM :: forall m decl hop bop. Monad m
              => (AtomicFormula Term -> m (AtomicFormula Term))
-             -> Program decl hop bop -> m (Program decl hop bop)
-  transformM f = transformHeadM (go @hop) >=> transformBodyM (go @bop)
+             -> Sentence hop bop -> m (Sentence hop bop)
+  transformM f = go
     where
-    go :: forall a. Subgoal (a :: OpKind -> *) Term -> m (Subgoal a Term)
-    go SAtom{..} = SAtom _span <$> f _atom
-    go s         = pure s
+    f' :: forall op. Subgoal op Term -> m (Subgoal op Term)
+    f' = transformM f
+
+    go :: Sentence hop bop -> m (Sentence hop bop)
+    go (SClause s Clause{..}) = (\h -> SClause s . Clause _span h)    <$> f' _head <*> f' _body
+    go (SQuery  s Query{..})  =        SQuery  s . Query  _span _head <$> f' _body
+    go (SFact   s Fact{..})   =        SFact   s . Fact   _span       <$> f' _head
+
+instance Transformable (AtomicFormula Term) (Statement decl hop bop) where
+  transformM f =
+    transformM (transformM @(AtomicFormula Term) @(Sentence hop bop) f)
+
+instance Transformable (AtomicFormula Term) (Program decl hop bop) where
+  transformM f =
+    transformM (transformM @(AtomicFormula Term) @(Statement decl hop bop) f)
 
 -- |Transform only the atomic subgoals in clause/query bodies.
 peepholeM :: forall m decl hop bop
-           . (Transformable (Subgoal bop Term) decl hop bop, Monad m)
+           . (Transformable (Subgoal bop Term) (Program decl hop bop), Monad m)
           => (AtomicFormula Term -> m (AtomicFormula Term))
           -> Program decl hop bop -> m (Program decl hop bop)
-peepholeM f = transformM go
+peepholeM f = transformBodyM go
   where
   go :: Subgoal bop Term -> m (Subgoal bop Term)
   go SAtom{..} = SAtom _span <$> f _atom
   go s         = pure s
 
-peephole :: forall decl hop bop. Transformable (Subgoal bop Term) decl hop bop
+peephole :: forall decl hop bop. Transformable (Subgoal bop Term) (Program decl hop bop)
          => (AtomicFormula Term -> AtomicFormula Term)
          -> Program decl hop bop -> Program decl hop bop
 peephole = purify peepholeM
