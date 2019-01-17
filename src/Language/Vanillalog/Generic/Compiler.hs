@@ -60,9 +60,9 @@ instance ( Compilable (Clause hop bop)
         , R.fromList edb
         )
 
-    clauses = [ _clause s | StSentence _ s@SClause{} <- _statements ]
-    facts   = [ _fact   s | StSentence _ s@SFact{}   <- _statements ]
-    queries = [ _query  s | StSentence _ s@SQuery{}  <- _statements ]
+    clauses = [ _clause s | StSentence s@SClause{} <- _statements ]
+    facts   = [ _fact   s | StSentence s@SFact{}   <- _statements ]
+    queries = [ _query  s | StSentence s@SQuery{}  <- _statements ]
 
     queryPreds = map (E.predicateBox . E.head)
 

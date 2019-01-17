@@ -36,8 +36,8 @@ data Program decl hop bop = Program
   }
 
 data Statement decl hop bop =
-    StDeclaration { _span :: SrcSpan, _declaration :: decl             }
-  | StSentence    { _span :: SrcSpan, _sentence    :: Sentence hop bop }
+    StDeclaration { _declaration :: decl             }
+  | StSentence    { _sentence    :: Sentence hop bop }
 
 data Sentence hop bop =
     SClause { _clause :: Clause hop bop }

@@ -65,7 +65,7 @@ separateTopLevelDisjunctions G.Program{..} =
 
   step :: Statement -> L.LoggerM [ Statement ]
   step G.StSentence{..} =
-    fmap (\sent -> G.StSentence (span sent) sent) <$> step' _sentence
+    fmap G.StSentence <$> step' _sentence
   step decl@G.StDeclaration{} = pure [ decl ]
 
   step' :: Sentence -> L.LoggerM [ Sentence ]

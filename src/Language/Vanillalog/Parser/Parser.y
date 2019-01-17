@@ -49,7 +49,7 @@ PROGRAM :: { Program }
 : CLAUSES eof { G.Program (span $1) . reverse $ $1 }
 
 CLAUSES :: { [ Statement ] }
-: CLAUSES CLAUSE { G.StSentence (span $2) $2 : $1 }
+: CLAUSES CLAUSE { G.StSentence $2 : $1 }
 |                { [] }
 
 CLAUSE :: { Sentence }

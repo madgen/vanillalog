@@ -35,7 +35,7 @@ instance Transformable (Statement decl hop bop) (Program decl hop bop) where
   transformM f Program{..} = Program _span <$> traverse f _statements
 
 instance Transformable (Sentence hop bop) (Statement decl hop bop) where
-  transformM f StSentence{..} = StSentence _span <$> f _sentence
+  transformM f StSentence{..} = StSentence <$> f _sentence
   transformM _ s              = pure s
 
 instance Transformable (Sentence hop bop) (Program decl hop bop) where
