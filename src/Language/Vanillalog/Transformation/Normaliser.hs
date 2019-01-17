@@ -72,13 +72,13 @@ separateTopLevelDisjunctions G.Program{..} =
   step' fact@G.SFact{} = pure [ fact ]
   step' sentence@G.SClause{..}
     | G.Clause _ head (SDisj s sub1 sub2) <- _clause =
-      pure $ G.SClause _span <$> [ G.Clause s head sub1, G.Clause s head sub2 ]
+      pure $ G.SClause <$> [ G.Clause s head sub1, G.Clause s head sub2 ]
     | otherwise = pure [ sentence ]
   step' sentence@G.SQuery{..}
     | G.Query _ head@Just{} body <- _query =
       pure $ case body of
         SDisj s sub1 sub2 ->
-          G.SQuery _span <$> [ G.Query s head sub1, G.Query s head sub2 ]
+          G.SQuery <$> [ G.Query s head sub1, G.Query s head sub2 ]
         _                 -> [ sentence ]
     | otherwise = L.scream (Just _span)
       "There should be no unnamed queries at this point."

@@ -40,9 +40,9 @@ data Statement decl hop bop =
   | StSentence    { _span :: SrcSpan, _sentence    :: Sentence hop bop }
 
 data Sentence hop bop =
-    SClause { _span :: SrcSpan, _clause :: Clause hop bop }
-  | SFact   { _span :: SrcSpan, _fact   :: Fact hop       }
-  | SQuery  { _span :: SrcSpan, _query  :: Query hop bop  }
+    SClause { _clause :: Clause hop bop }
+  | SFact   { _fact   :: Fact hop       }
+  | SQuery  { _query  :: Query hop bop  }
 
 data Query hop bop = Query
   { _span :: SrcSpan
@@ -194,6 +194,11 @@ makeBaseFunctor ''Subgoal
 instance Spannable Term where
   span TVar{..} = span _var
   span TSym{..} = span _sym
+
+instance Spannable (Sentence hop bop) where
+  span SFact{..}   = span _fact
+  span SClause{..} = span _clause
+  span SQuery{..}  = span _query
 
 --------------------------------------------------------------------------------
 -- Helper functions

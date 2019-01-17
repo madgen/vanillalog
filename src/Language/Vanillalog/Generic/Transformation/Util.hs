@@ -43,7 +43,7 @@ instance Transformable (Sentence hop bop) (Program decl hop bop) where
     transformM (transformM @(Sentence hop bop) @(Statement decl hop bop) f)
 
 instance Transformable (Clause hop bop) (Sentence hop bop) where
-  transformM f SClause{..} = SClause _span <$> f _clause
+  transformM f SClause{..} = SClause <$> f _clause
   transformM _ s           = pure s
 
 instance Transformable (Clause hop bop) (Statement decl hop bop) where
@@ -55,7 +55,7 @@ instance Transformable (Clause hop bop) (Program decl hop bop) where
     transformM (transformM @(Clause hop bop) @(Statement decl hop bop) f)
 
 instance Transformable (Query hop bop) (Sentence hop bop) where
-  transformM f SQuery{..} = SQuery _span <$> f _query
+  transformM f SQuery{..} = SQuery <$> f _query
   transformM f s          = pure s
 
 instance Transformable (Query hop bop) (Statement decl hop bop) where
@@ -67,7 +67,7 @@ instance Transformable (Query hop bop) (Program decl hop bop) where
     transformM (transformM @(Query hop bop) @(Statement decl hop bop) f)
 
 instance Transformable (Fact hop) (Sentence hop bop) where
-  transformM f SFact{..} = SFact _span <$> f _fact
+  transformM f SFact{..} = SFact <$> f _fact
   transformM f s         = pure s
 
 instance Transformable (Fact hop) (Statement decl hop bop) where
@@ -84,9 +84,9 @@ transformHeadM :: forall m decl hop bop. Monad m
 transformHeadM f = transformM go
   where
   go :: Sentence hop bop -> m (Sentence hop bop)
-  go (SClause s Clause{..}) = (\h -> SClause s Clause{_head = h,..}) <$> f _head
-  go (SFact   s Fact{..})   = (\h -> SFact   s Fact{_head = h,..})   <$> f _head
-  go s@SQuery{}             = pure s
+  go (SClause Clause{..}) = (\h -> SClause Clause{_head = h,..}) <$> f _head
+  go (SFact   Fact{..})   = (\h -> SFact   Fact{_head = h,..})   <$> f _head
+  go s@SQuery{}           = pure s
 
 transformHead = purify transformHeadM
 
@@ -96,9 +96,9 @@ transformBodyM :: forall m decl hop bop. Monad m
 transformBodyM f = transformM go
   where
   go :: Sentence hop bop -> m (Sentence hop bop)
-  go (SClause s Clause{..}) = SClause s . Clause _span _head <$> f _body
-  go (SQuery  s Query{..})  = SQuery  s . Query  _span _head <$> f _body
-  go s                      = pure s
+  go (SClause Clause{..}) = SClause . Clause _span _head <$> f _body
+  go (SQuery  Query{..})  = SQuery  . Query  _span _head <$> f _body
+  go s                    = pure s
 
 transformBody = purify transformBodyM
 
@@ -116,9 +116,9 @@ instance Transformable (AtomicFormula Term) (Sentence hop bop) where
     f' = transformM f
 
     go :: Sentence hop bop -> m (Sentence hop bop)
-    go (SClause s Clause{..}) = (\h -> SClause s . Clause _span h)    <$> f' _head <*> f' _body
-    go (SQuery  s Query{..})  =        SQuery  s . Query  _span _head <$> f' _body
-    go (SFact   s Fact{..})   =        SFact   s . Fact   _span       <$> f' _head
+    go (SClause Clause{..}) = (\h -> SClause . Clause _span h)    <$> f' _head <*> f' _body
+    go (SQuery  Query{..})  =        SQuery  . Query  _span _head <$> f' _body
+    go (SFact   Fact{..})   =        SFact   . Fact   _span       <$> f' _head
 
 instance Transformable (AtomicFormula Term) (Statement decl hop bop) where
   transformM f =

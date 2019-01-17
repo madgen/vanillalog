@@ -53,9 +53,9 @@ CLAUSES :: { [ Statement ] }
 |                { [] }
 
 CLAUSE :: { Sentence }
-: ATOMIC_FORMULA ":-" SUBGOAL "." { let s = span ($1,$4) in G.SClause s $ G.Clause s (SAtom (span $1) $1) $3 }
-| ATOMIC_FORMULA "."              { let s = span ($1,$2) in G.SFact   s $ G.Fact   s (SAtom (span $1) $1) }
-| "?-" SUBGOAL "."                { let s = span ($1,$3) in G.SQuery  s $ G.Query  s Nothing $2 }
+: ATOMIC_FORMULA ":-" SUBGOAL "." { G.SClause $ G.Clause (span ($1,$4)) (SAtom (span $1) $1) $3 }
+| ATOMIC_FORMULA "."              { G.SFact   $ G.Fact   (span ($1,$2)) (SAtom (span $1) $1) }
+| "?-" SUBGOAL "."                { G.SQuery  $ G.Query  (span ($1,$3)) Nothing              $2 }
 
 SUBGOAL :: { Subgoal Op Term}
 : ATOMIC_FORMULA      { SAtom (span $1) $1 }

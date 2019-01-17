@@ -13,6 +13,7 @@ import Data.Text (pack)
 
 import           Language.Vanillalog.Generic.AST
 import qualified Language.Vanillalog.Generic.Logger as L
+import           Language.Vanillalog.Generic.Parser.SrcLoc (span)
 import           Language.Vanillalog.Generic.Transformation.Util
 
 nameQueries :: forall decl hop bop
@@ -20,18 +21,18 @@ nameQueries :: forall decl hop bop
 nameQueries pr = evalStateT (transformM go pr) 0
   where
   go :: Sentence hop bop -> StateT Int L.LoggerM (Sentence hop bop)
-  go (SQuery s Query{_head = Nothing, ..}) =
-    SQuery s <$> (Query _span <$> (Just <$> sub) <*> pure _body)
+  go (SQuery Query{_head = Nothing, ..}) =
+    SQuery <$> (Query _span <$> (Just <$> sub) <*> pure _body)
     where
     sub :: StateT Int L.LoggerM (Subgoal hop Var)
     sub = do
       name <- freshQueryName
-      pure $ SAtom s $ AtomicFormula s name $ vars _body
+      pure $ SAtom _span $ AtomicFormula _span name $ vars _body
 
     freshQueryName :: StateT Int L.LoggerM PredicateSymbol
     freshQueryName = do
       modify (+ 1)
       fromString . ("query_" <>) . show <$> get
   go s@SQuery{..} =
-    lift $ L.scream (Just _span) "Query has already been named."
+    lift $ L.scream (Just . span $ s) "Query has already been named."
   go s = pure s
