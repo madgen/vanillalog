@@ -74,6 +74,9 @@ instance {-# OVERLAPPING #-} (Spannable a, Spannable b) => Spannable (a,b) where
 instance {-# OVERLAPPING #-} Spannable a => Spannable [ a ] where
   span as = listSpan (map span as)
 
+instance Spannable Void where
+  span = absurd
+
 printSpan :: MonadIO m => SrcSpan -> m ()
 printSpan (SrcSpan loc1 loc2) = liftIO $ do
   putStrLn . render . nest 2 $ "Context:"
