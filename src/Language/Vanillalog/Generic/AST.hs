@@ -200,6 +200,10 @@ instance Spannable (Sentence hop bop) where
   span SClause{..} = span _clause
   span SQuery{..}  = span _query
 
+instance Spannable decl => Spannable (Statement decl hop bop) where
+  span StSentence{..}    = span _sentence
+  span StDeclaration{..} = span _declaration
+
 --------------------------------------------------------------------------------
 -- Helper functions
 --------------------------------------------------------------------------------
