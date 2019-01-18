@@ -18,6 +18,8 @@ module Language.Vanillalog.Generic.Transformation.Util
 
 import Protolude
 
+import Data.Functor.Foldable (cata, embed, Base)
+
 import Language.Vanillalog.Generic.AST
 
 type Algebra f a = f a -> a
@@ -103,8 +105,14 @@ transformBodyM f = transformM go
 transformBody = purify transformBodyM
 
 instance Transformable (AtomicFormula a) (Subgoal op a) where
-  transformM f SAtom{..} = SAtom _span <$> f _atom
-  transformM f s         = pure s
+  transformM :: forall m op. Monad m
+             => (AtomicFormula a -> m (AtomicFormula a))
+             -> Subgoal op a -> m (Subgoal op a)
+  transformM f = cata alg
+    where
+    alg :: Algebra (Base (Subgoal op a)) (m (Subgoal op a))
+    alg (SAtomF span atom) = SAtom span <$> f atom
+    alg subf               = embed <$> sequence subf
 
 instance Transformable (AtomicFormula Term) (Sentence hop bop) where
   transformM :: forall m decl hop bop. Monad m
