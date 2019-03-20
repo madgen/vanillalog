@@ -10,7 +10,7 @@
 
 module Language.Vanillalog.Generic.Transformation.Util
   ( Transformable(..)
-  , Algebra, AlgebraM, Coalgebra, CoalgebraM
+  , Algebra, Coalgebra
   , transformHeadM, transformHead
   , transformBodyM, transformBody
 --  , peepholeM, peephole
@@ -23,9 +23,7 @@ import Data.Functor.Foldable (cata, embed, Base)
 import Language.Vanillalog.Generic.AST
 
 type Algebra f a = f a -> a
-type AlgebraM m f a = f a -> m a
 type Coalgebra f a = a -> f a
-type CoalgebraM m f a = a -> m (f a)
 
 purify :: ((a -> Identity a) -> (b -> Identity b)) -> (a -> a) -> (b -> b)
 purify f g = runIdentity . f (pure <$> g)
