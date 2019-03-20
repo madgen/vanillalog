@@ -219,35 +219,34 @@ operation s@SNullOp{} = SomeOp (_nullOp s)
 operation s@SUnOp{}   = SomeOp (_unOp s)
 operation s@SBinOp{}  = SomeOp (_binOp s)
 
-class HasAtoms a where
-  atoms :: a -> [ AtomicFormula Term ]
+class HasAtoms a term where
+  atoms :: a -> [ AtomicFormula term ]
 
-instance HasAtoms (Program decl hop bop) where
+instance HasAtoms (Program decl hop bop) Term where
   atoms Program{..} = concatMap atoms _statements
 
-instance HasAtoms (Statement decl hop bop) where
+instance HasAtoms (Statement decl hop bop) Term where
   atoms StSentence{..} = atoms _sentence
   atoms StDeclaration{..} = []
 
-instance HasAtoms (Sentence hop bop) where
+instance HasAtoms (Sentence hop bop) Term where
   atoms SClause{..} = atoms _clause
   atoms SQuery{..} = atoms _query
   atoms SFact{..} = atoms _fact
 
-instance HasAtoms (Clause hop bop) where
+instance HasAtoms (Clause hop bop) Term where
   atoms Clause{..} = atoms _head <> atoms _body
 
--- Ignores the head atom even if there is one
-instance HasAtoms (Query hop bop) where
-  atoms Query{..} = atoms _body
+instance HasAtoms (Query hop bop) Term where
+  atoms Query{..} = (fmap TVar <$> maybe [] atoms _head) <> atoms _body
 
-instance HasAtoms (Fact hop) where
+instance HasAtoms (Fact hop) Term where
   atoms Fact{..} = atoms _head
 
-instance HasAtoms (Subgoal op Term) where
+instance HasAtoms (Subgoal op term) term where
   atoms = cata alg
     where
-    alg :: Base (Subgoal op Term) [ AtomicFormula Term ] -> [ AtomicFormula Term ]
+    alg :: Base (Subgoal op term) [ AtomicFormula term ] -> [ AtomicFormula term ]
     alg s@SAtomF{..} = [ _atomF ]
     alg SNullOpF{}   = []
     alg SUnOpF{..}   = _childF
