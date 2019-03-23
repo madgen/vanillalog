@@ -273,6 +273,7 @@ instance HasVariables (AtomicFormula t) => HasVariables (Subgoal op t) where
   vars = nub . cata varAlg
     where
     varAlg (SAtomF _ atom@AtomicFormula{}) = vars atom
+    varAlg (SNullOpF _ _)                  = []
     varAlg (SUnOpF _ _ vars)               = vars
     varAlg (SBinOpF _ _ vars1 vars2)       = vars1 ++ vars2
 
