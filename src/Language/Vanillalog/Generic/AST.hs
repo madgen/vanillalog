@@ -137,6 +137,7 @@ instance ( Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary)
   SBinOp{_binOp = op, _child1 = c1, _child2 = c2} ==
     SBinOp{_binOp = op', _child1 = c1', _child2 = c2'} =
     op == op' && c1 == c1' && c2 == c2'
+  _ == _ = False
 
 deriving instance
   (Ord (op 'Nullary), Ord (op 'Unary), Ord (op 'Binary), Ord term)
