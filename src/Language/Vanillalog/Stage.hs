@@ -14,11 +14,11 @@ import qualified Data.ByteString.Lazy.Char8 as BS
 
 import qualified Language.Exalog.Core as E
 import qualified Language.Exalog.Relation as R
+import qualified Language.Exalog.Logger as Log
 
 import           Language.Vanillalog.AST
 import qualified Language.Vanillalog.Generic.AST as AG
 import           Language.Vanillalog.Generic.Compiler (compile)
-import qualified Language.Vanillalog.Generic.Logger as Log
 import qualified Language.Vanillalog.Parser.Lexer as Lexer
 import qualified Language.Vanillalog.Parser.Parser as Parser
 import qualified Language.Vanillalog.Generic.Parser.Lexeme as L
@@ -26,7 +26,7 @@ import           Language.Vanillalog.Generic.RangeRestriction (checkRangeRestric
 import           Language.Vanillalog.Generic.Transformation.Query (nameQueries)
 import           Language.Vanillalog.Transformation.Normaliser (normalise)
 
-type Stage a = FilePath -> BS.ByteString -> Log.LoggerM a
+type Stage a = FilePath -> BS.ByteString -> Log.Logger a
 
 lex :: Stage [ L.Lexeme (Lexer.Token Text) ]
 lex = Lexer.lex

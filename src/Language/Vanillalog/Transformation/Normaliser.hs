@@ -7,13 +7,14 @@ import Protolude
 
 import Data.Functor.Foldable
 
+import qualified Language.Exalog.Logger as L
+import           Language.Exalog.SrcLoc (span)
+
 import           Language.Vanillalog.AST
 import qualified Language.Vanillalog.Generic.AST as G
-import qualified Language.Vanillalog.Generic.Logger as L
-import           Language.Vanillalog.Generic.Parser.SrcLoc (span)
 import           Language.Vanillalog.Generic.Transformation.Util
 
-normalise :: Program -> L.LoggerM Program
+normalise :: Program -> L.Logger Program
 normalise = separateTopLevelDisjunctions
           . bubbleUpDisjunction
           . pushNegation
@@ -54,21 +55,21 @@ bubbleUpDisjunction = transformBody budSub
   alg (SConjF span sub1 (SDisj _ sub2 sub3)) = SDisj span (SConj span sub1 sub2) (SConj span sub1 sub3)
   alg s = embed s
 
-separateTopLevelDisjunctions :: Program -> L.LoggerM Program
+separateTopLevelDisjunctions :: Program -> L.Logger Program
 separateTopLevelDisjunctions G.Program{..} =
   G.Program _span <$> yakk _statements
   where
-  yakk :: [ Statement ] -> L.LoggerM [ Statement ]
+  yakk :: [ Statement ] -> L.Logger [ Statement ]
   yakk = fix $ \f sol -> do
     newSol <- join <$> traverse step sol
     if sol == newSol then pure newSol else f newSol
 
-  step :: Statement -> L.LoggerM [ Statement ]
+  step :: Statement -> L.Logger [ Statement ]
   step G.StSentence{..} =
     fmap G.StSentence <$> step' _sentence
   step decl@G.StDeclaration{} = pure [ decl ]
 
-  step' :: Sentence -> L.LoggerM [ Sentence ]
+  step' :: Sentence -> L.Logger [ Sentence ]
   step' fact@G.SFact{} = pure [ fact ]
   step' sentence@G.SClause{..}
     | G.Clause _ head (SDisj s sub1 sub2) <- _clause =

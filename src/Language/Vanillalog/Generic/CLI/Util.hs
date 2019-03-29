@@ -10,10 +10,10 @@ import qualified Data.Text as T
 
 
 import           Language.Vanillalog.Generic.AST
-import qualified Language.Vanillalog.Generic.Logger as L
+import qualified Language.Exalog.Logger as L
 import           Language.Vanillalog.Generic.Pretty (pp)
 
-succeedOrDie :: (BS.ByteString -> L.LoggerM b)
+succeedOrDie :: (BS.ByteString -> L.Logger b)
              -> BS.ByteString
              -> (b -> IO a)
              -> IO a

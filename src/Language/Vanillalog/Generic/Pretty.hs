@@ -15,7 +15,6 @@ module Language.Vanillalog.Generic.Pretty
 import Protolude hiding ((<>), empty, head)
 
 import Data.Functor.Foldable (Base, para, project)
-import Data.Text (unpack)
 
 import Text.PrettyPrint
 
@@ -107,8 +106,3 @@ instance Pretty Sym where
   pretty (SymText _ bs)    = doubleQuotes $ pretty bs
   pretty (SymBool _ True)  = "true"
   pretty (SymBool _ False) = "false"
-
--- Generic instances
-
-instance Pretty Text where
-  pretty = text . unpack

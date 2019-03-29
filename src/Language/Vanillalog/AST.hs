@@ -29,12 +29,11 @@ import Protolude
 
 import qualified Data.List.NonEmpty as NE
 
-
 import qualified Language.Exalog.Core as E
+import qualified Language.Exalog.Logger as L
 
 import qualified Language.Vanillalog.Generic.AST as AG
 import           Language.Vanillalog.Generic.Compiler (ClosureCompilable(..), Closure(..))
-import qualified Language.Vanillalog.Generic.Logger as L
 import           Language.Vanillalog.Generic.Pretty (Pretty(..), HasPrecedence(..))
 
 type Program = AG.Program Void (Const Void) Op

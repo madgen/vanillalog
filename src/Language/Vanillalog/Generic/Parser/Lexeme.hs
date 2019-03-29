@@ -4,7 +4,7 @@ module Language.Vanillalog.Generic.Parser.Lexeme where
 
 import Protolude
 
-import Language.Vanillalog.Generic.Parser.SrcLoc (SrcSpan)
+import Language.Exalog.SrcLoc (SrcSpan)
 
 data Lexeme tok = Lexeme
   { _span :: SrcSpan

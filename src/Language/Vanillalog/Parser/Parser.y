@@ -6,17 +6,18 @@ import Protolude (Text, bimap, pure)
 
 import Control.Monad ((>=>))
 
+import qualified Language.Exalog.Logger as Log
+import           Language.Exalog.SrcLoc
+
 import           Language.Vanillalog.AST
 import qualified Language.Vanillalog.Generic.AST as G
-import qualified Language.Vanillalog.Generic.Logger as Log
 import qualified Language.Vanillalog.Generic.Parser.Lexeme as L
-import           Language.Vanillalog.Generic.Parser.SrcLoc
 import           Language.Vanillalog.Parser.Lexer (Token(..), lex)
 }
 
 %name      programParser1 PROGRAM
 %name      clauseFactParser1 CLAUSE
-%monad     { Log.LoggerM }
+%monad     { Log.Logger }
 %tokentype { L.Lexeme (Token Text) }
 %error     { parseError }
 
@@ -88,7 +89,7 @@ VAR :: { Var }
 : var { Var (span $1) . _tStr . L._token $ $1 }
 
 {
-parseError :: [ L.Lexeme (Token Text) ] -> Log.LoggerM a
+parseError :: [ L.Lexeme (Token Text) ] -> Log.Logger a
 parseError tokens = Log.scold (Just . span . head $ tokens) ("Parse error.")
 
 programParser    file = lex file >=> programParser1

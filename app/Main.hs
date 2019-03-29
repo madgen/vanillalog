@@ -7,6 +7,7 @@ import Protolude
 import qualified Data.ByteString.Lazy.Char8 as BS
 import qualified Data.Text as T
 
+import qualified Language.Exalog.Logger as L
 import           Language.Exalog.Pretty ()
 import qualified Language.Exalog.Solver as S
 
@@ -33,8 +34,8 @@ run RunOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile file
   succeedOrDie (Stage.compiled file) bs $
     \(exalogProgram, initEDB) -> do
-      finalEDB <- S.solve exalogProgram initEDB
-      putStrLn $ pp finalEDB
+      mFinalEDB <- L.runLoggerT $ S.solve exalogProgram initEDB
+      maybe (pure ()) (putStrLn . pp) mFinalEDB
 
 repl :: ReplOptions -> IO ()
 repl opts = panic "REPL is not yet supported."

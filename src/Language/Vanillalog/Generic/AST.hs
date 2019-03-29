@@ -28,7 +28,7 @@ import Data.Functor.Foldable.TH (makeBaseFunctor)
 
 import GHC.OverloadedLabels
 
-import Language.Vanillalog.Generic.Parser.SrcLoc
+import Language.Exalog.SrcLoc
 
 data Program decl hop bop = Program
   { _span       :: SrcSpan
