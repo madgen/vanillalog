@@ -92,8 +92,8 @@ instance Compilable (Fact hop) where
     _ -> L.scream (Just _span) "The head is not ready for compilation."
     where
     castToSym :: Term -> L.Logger Sym
-    castToSym TVar{_var = Var{..}} = L.scream (Just _span)
-      "Facts cannot have variables. This should have been caught earlier."
+    castToSym TVar{_var = Var{..}} = L.scold (Just _span)
+      "Facts cannot have variables. Range restriction is violated."
     castToSym TSym{..} = pure _sym
 
 instance (ClosureCompilable bop) => Compilable (Clause hop bop) where
