@@ -103,12 +103,11 @@ data Term =
 
 data TermType = TTInt | TTText | TTBool deriving (Eq, Ord)
 
-data Var = Var { _span :: SrcSpan, _varName :: Text } deriving (Ord)
+data Var = Var { _span :: SrcSpan, _varName :: Text }
 data Sym =
     SymInt  { _span :: SrcSpan, _int  :: Int  }
   | SymText { _span :: SrcSpan, _text :: Text }
   | SymBool { _span :: SrcSpan, _bool :: Bool }
-  deriving (Ord)
 
 --------------------------------------------------------------------------------
 -- Eq & Ord instances
@@ -120,8 +119,22 @@ instance Eq Sym where
   SymText{_text = t} == SymText{_text = t'} = t == t'
   _ == _ = False
 
+instance Ord Sym where
+  SymInt{_int = i}   `compare` SymInt{_int = i'}   = i `compare` i'
+  SymBool{_bool = b} `compare` SymBool{_bool = b'} = b `compare` b'
+  SymText{_text = t} `compare` SymText{_text = t'} = t `compare` t'
+  SymInt{}  `compare` SymText{} = LT
+  SymText{} `compare` SymInt{}  = GT
+  SymInt{}  `compare` SymBool{} = LT
+  SymBool{} `compare` SymInt{}  = GT
+  SymText{} `compare` SymBool{} = LT
+  SymBool{} `compare` SymText{} = GT
+
 instance Eq Var where
   Var{_varName = v} == Var{_varName = v'} = v == v'
+
+instance Ord Var where
+  Var{_varName = v} `compare` Var{_varName = v'} = v `compare` v'
 
 instance Eq a => Eq (AtomicFormula a) where
   AtomicFormula{_predSym = sym, _terms = ts} ==
