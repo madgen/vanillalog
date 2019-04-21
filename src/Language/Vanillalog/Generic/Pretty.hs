@@ -92,6 +92,7 @@ instance Pretty a => Pretty (AtomicFormula a) where
 instance Pretty Term where
   pretty TVar{ _var = v } = pretty v
   pretty TSym{ _sym = s } = pretty s
+  pretty TWild{}          = "_"
 
 instance Pretty TermType where
   pretty TTInt  = "int"
