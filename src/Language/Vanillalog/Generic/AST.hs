@@ -97,8 +97,9 @@ data AtomicFormula a =
     } deriving (Ord, Functor, Foldable, Traversable)
 
 data Term =
-    TVar { _var :: Var }
-  | TSym { _sym :: Sym }
+    TVar  { _var  :: Var }
+  | TSym  { _sym  :: Sym }
+  | TWild { _span :: SrcSpan }
   deriving (Eq,Ord)
 
 data TermType = TTInt | TTText | TTBool deriving (Eq, Ord)
@@ -206,8 +207,9 @@ makeBaseFunctor ''Subgoal
 --------------------------------------------------------------------------------
 
 instance Spannable Term where
-  span TVar{..} = span _var
-  span TSym{..} = span _sym
+  span TVar{..}  = span _var
+  span TSym{..}  = span _sym
+  span TWild{..} = _span
 
 instance Spannable (Sentence hop bop) where
   span SFact{..}   = span _fact

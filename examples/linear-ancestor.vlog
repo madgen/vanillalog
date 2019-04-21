@@ -8,5 +8,6 @@ ancestor(X,Y) :- advisor(X,Y).
 ancestor(X,Z) :- advisor(X,Y), ancestor(Y,Z).
 
 ?- ancestor(X, "Mistral Contrastin").
+?- ancestor(_X, "Mistral Contrastin").
 ?- ancestor("Mistral Contrastin", "Mistral Contrastin").
 ?- ancestor("David Wheeler", "Andrew Rice").

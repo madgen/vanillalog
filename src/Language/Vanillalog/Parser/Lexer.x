@@ -25,6 +25,7 @@ import Debug.Trace
 
 @idChar   = [a-zA-Z0-9_']
 @var      = [A-Z]@idChar*
+@wild     = _@var?
 @fxSym    = [a-z]@idChar*
 
 @positive = [1-9][0-9]*
@@ -54,6 +55,7 @@ token :-
 <scA>   true     { basic (TBool True) }
 <scA>   false    { basic (TBool False) }
 <scA>   @var     { useInput TVariable }
+<scA>   @wild    { basic TWildcard }
 <scA>   @int     { useInput (TInt . read . BS.unpack) }
 
 <scA> \"         { enterStartCodeAnd str skip }
@@ -73,6 +75,7 @@ data Token str =
   | TNeg
   | TFxSym    { _tStr  :: str }
   | TVariable { _tStr  :: str }
+  | TWildcard
   | TStr      { _tStr  :: str }
   | TInt      { _tInt  :: Int }
   | TBool     { _tBool :: Bool }

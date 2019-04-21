@@ -163,6 +163,7 @@ instance Compilable Term where
   type Output Term = E.Term
   compile TVar{ _var = v } = E.TVar $ compile v
   compile TSym{ _sym = s } = E.TSym $ compile s
+  compile TWild{}          = E.TWild
 
 instance Compilable Var where
   type Output Var = E.Var
