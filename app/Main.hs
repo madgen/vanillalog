@@ -5,13 +5,10 @@ module Main where
 import Protolude
 
 import qualified Data.ByteString.Lazy.Char8 as BS
-import qualified Data.Text as T
 
-import qualified Language.Exalog.Logger as L
 import           Language.Exalog.Pretty ()
 import qualified Language.Exalog.Solver as S
 
-import           Language.Vanillalog.AST (Program)
 import           Language.Vanillalog.Generic.Pretty (pp)
 import qualified Language.Vanillalog.Stage as Stage
 

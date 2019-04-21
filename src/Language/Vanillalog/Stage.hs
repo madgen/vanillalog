@@ -19,7 +19,6 @@ import           Language.Exalog.RangeRestriction (checkRangeRestriction)
 import           Language.Exalog.WellModing (checkWellModedness)
 
 import           Language.Vanillalog.AST
-import qualified Language.Vanillalog.Generic.AST as AG
 import           Language.Vanillalog.Generic.Compiler (compile)
 import qualified Language.Vanillalog.Parser.Lexer as Lexer
 import qualified Language.Vanillalog.Parser.Parser as Parser

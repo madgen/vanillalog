@@ -67,12 +67,11 @@ instance ( Compilable (Clause hop bop)
     queryPreds = map (E.predicateBox . E.head)
 
 instance Compilable (Fact hop) where
-  type Output (Fact hop) = L.Logger (R.Relation E.ABase)
+  type Output (Fact hop) = L.Logger (R.Relation 'E.ABase)
   compile Fact{_head = sub,..} = case sub of
     SAtom{_atom = AtomicFormula{..}} ->
       withSomeSing (fromInteger . toInteger . length $ _terms) $
-        \(arity :: SNat n) -> do
-          syms <- traverse castToSym _terms
+        \(arity :: SNat n) ->
           withKnownNat arity $ do
             tuples <-
               case V.fromListN @n _terms of
@@ -94,7 +93,9 @@ instance Compilable (Fact hop) where
     castToSym :: Term -> L.Logger Sym
     castToSym TVar{_var = Var{..}} = L.scold (Just _span)
       "Facts cannot have variables. Range restriction is violated."
-    castToSym TSym{..} = pure _sym
+    castToSym TWild{}              = L.scold (Just _span)
+      "Facts cannot have wildcards."
+    castToSym TSym{..}             = pure _sym
 
 instance (ClosureCompilable bop) => Compilable (Clause hop bop) where
   type Output (Clause hop bop) = L.Logger (E.Clause 'E.ABase)
@@ -122,10 +123,12 @@ bodyCompile = para alg
   where
   alg :: Base (Subgoal op Term) (Subgoal op Term, L.Logger (E.Body 'E.ABase))
       -> L.Logger (E.Body 'E.ABase)
-  alg (SAtomF  _ atom) = (NE.:| []) <$> compile atom
-  alg (SUnOpF  _ op (ch,m)) = cCompile =<< (CUnary op . (ch,) <$> m)
+  alg (SAtomF  _ atom)                 = (NE.:| []) <$> compile atom
+  alg (SUnOpF  _ op (ch,m))            = cCompile =<< (CUnary op . (ch,) <$> m)
   alg (SBinOpF _ op (ch1,m1) (ch2,m2)) =
     cCompile =<< liftA2 (CBinary op) ((ch1,) <$> m1) ((ch2,) <$> m2)
+  alg (SNullOpF s _)                   =
+    L.scream (Just s) "Nullary operators cannot be compiled."
 
 data Closure op =
     CUnary  (op 'Unary)  (Subgoal op Term, E.Body 'E.ABase)

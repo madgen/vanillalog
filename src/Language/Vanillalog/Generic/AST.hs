@@ -26,8 +26,6 @@ import Data.Text (pack)
 import Data.Functor.Foldable
 import Data.Functor.Foldable.TH (makeBaseFunctor)
 
-import GHC.OverloadedLabels
-
 import Language.Exalog.SrcLoc
 
 data Program decl hop bop = Program
@@ -185,6 +183,7 @@ instance ( Eq (Fact hop), Eq (Clause hop bop), Eq (Query hop bop)
   SFact{_fact = f}     == SFact{_fact = f'}     = f == f'
   SQuery{_query = q}   == SQuery{_query = q'}   = q == q'
   SClause{_clause = c} == SClause{_clause = c'} = c == c'
+  _                    == _                     = False
 
 deriving instance (Ord (Fact hop), Ord (Clause hop bop), Ord (Query hop bop))
   => Ord (Sentence hop bop)
@@ -192,6 +191,7 @@ deriving instance (Ord (Fact hop), Ord (Clause hop bop), Ord (Query hop bop))
 instance (Eq decl , Eq (Sentence hop bop)) => Eq (Statement decl hop bop) where
   StDeclaration{_declaration = d} == StDeclaration{_declaration = d'} = d == d'
   StSentence{_sentence = s}       == StSentence{_sentence = s'}       = s == s'
+  _                               == _                                = False
 
 deriving instance (Ord decl, Ord (Sentence hop bop))
   => Ord (Statement decl hop bop)
@@ -263,10 +263,10 @@ instance HasAtoms (Subgoal op term) term where
   atoms = cata alg
     where
     alg :: Base (Subgoal op term) [ AtomicFormula term ] -> [ AtomicFormula term ]
-    alg s@SAtomF{..} = [ _atomF ]
-    alg SNullOpF{}   = []
-    alg SUnOpF{..}   = _childF
-    alg SBinOpF{..}  = _child1F ++ _child2F
+    alg SAtomF{..}  = [ _atomF ]
+    alg SNullOpF{}  = []
+    alg SUnOpF{..}  = _childF
+    alg SBinOpF{..} = _child1F ++ _child2F
 
 class HasVariables a where
   vars :: a -> [ Var ]

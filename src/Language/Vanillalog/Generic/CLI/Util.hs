@@ -5,13 +5,8 @@ import Protolude
 import System.Exit (exitFailure)
 
 import qualified Data.ByteString.Lazy.Char8 as BS
-import           Data.String (fromString)
-import qualified Data.Text as T
 
-
-import           Language.Vanillalog.Generic.AST
 import qualified Language.Exalog.Logger as L
-import           Language.Vanillalog.Generic.Pretty (pp)
 
 succeedOrDie :: (BS.ByteString -> L.Logger b)
              -> BS.ByteString

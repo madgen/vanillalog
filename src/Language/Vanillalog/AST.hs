@@ -7,11 +7,11 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 
 module Language.Vanillalog.AST
-  ( Program(..)
-  , Statement(..)
-  , Sentence(..)
-  , Query(..)
-  , Clause(..)
+  ( Program
+  , Statement
+  , Sentence
+  , Query
+  , Clause
   , AG.Fact(..)
   , Subgoal
   , pattern SAtom, pattern SNeg, pattern SConj, pattern SDisj

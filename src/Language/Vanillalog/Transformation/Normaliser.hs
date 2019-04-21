@@ -3,12 +3,11 @@
 
 module Language.Vanillalog.Transformation.Normaliser (normalise) where
 
-import Protolude
+import Protolude hiding (head)
 
 import Data.Functor.Foldable
 
 import qualified Language.Exalog.Logger as L
-import           Language.Exalog.SrcLoc (span)
 
 import           Language.Vanillalog.AST
 import qualified Language.Vanillalog.Generic.AST as G

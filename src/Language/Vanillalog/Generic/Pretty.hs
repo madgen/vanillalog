@@ -14,7 +14,7 @@ module Language.Vanillalog.Generic.Pretty
 
 import Protolude hiding ((<>), empty, head)
 
-import Data.Functor.Foldable (Base, para, project)
+import Data.Functor.Foldable (Base, para)
 
 import Text.PrettyPrint
 
@@ -66,9 +66,9 @@ instance ( Pretty (op 'Nullary)
     alg :: Base (Subgoal op term) (Subgoal op term, Doc) -> Doc
     alg (SAtomF _ atom) = pretty atom
     alg (SNullOpF _ op) = pretty op
-    alg s@(SUnOpF _ op (ch,doc)) =
+    alg (SUnOpF _ op (ch,doc)) =
       pretty op <> mParens (SomeOp op) (operation ch) doc
-    alg s@(SBinOpF _ op (ch,doc) (ch',doc')) =
+    alg (SBinOpF _ op (ch,doc) (ch',doc')) =
          mParens (SomeOp op) (operation ch) doc
       <> pretty op
       <> mParens (SomeOp op) (operation ch') doc'

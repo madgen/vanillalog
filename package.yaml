@@ -21,6 +21,12 @@ default-extensions:
 - LambdaCase
 - OverloadedStrings
 
+ghc-options:
+- -Wall
+- -fwarn-tabs
+- -fwarn-incomplete-uni-patterns
+- -fwarn-incomplete-record-updates
+
 build-tools:
   alex: 3.2.*
   happy: 1.19.*

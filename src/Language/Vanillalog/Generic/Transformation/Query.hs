@@ -9,7 +9,6 @@ module Language.Vanillalog.Generic.Transformation.Query (nameQueries) where
 import Protolude
 
 import Data.String (fromString)
-import Data.Text (pack)
 
 import qualified Language.Exalog.Logger as L
 import           Language.Exalog.SrcLoc (span)
