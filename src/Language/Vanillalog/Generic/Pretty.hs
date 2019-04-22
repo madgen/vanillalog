@@ -18,6 +18,7 @@ import Data.Functor.Foldable (Base, para)
 
 import Text.PrettyPrint
 
+import Language.Exalog.Pretty ()
 import Language.Exalog.Pretty.Helper
 
 import Language.Vanillalog.Generic.AST
@@ -81,10 +82,6 @@ instance ( Pretty (op 'Nullary)
 
 class HasPrecedence (op :: OpKind -> *) where
   precedence :: SomeOp op -> Int
-
-instance Pretty PredicateSymbol where
-  pretty (PredicateSymbol names) =
-    hcat . punctuate colon . prettyC . reverse $ names
 
 instance Pretty a => Pretty (AtomicFormula a) where
   pretty AtomicFormula{..} = pretty _predSym <> parens (csep . prettyC $ _terms)

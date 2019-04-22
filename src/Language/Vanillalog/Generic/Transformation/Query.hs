@@ -10,6 +10,7 @@ import Protolude
 
 import Data.String (fromString)
 
+import           Language.Exalog.Core (PredicateSymbol)
 import qualified Language.Exalog.Logger as L
 import           Language.Exalog.SrcLoc (span)
 

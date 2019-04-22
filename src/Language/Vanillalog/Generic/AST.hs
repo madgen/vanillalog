@@ -26,6 +26,7 @@ import Data.Text (pack)
 import Data.Functor.Foldable
 import Data.Functor.Foldable.TH (makeBaseFunctor)
 
+import Language.Exalog.Core (PredicateSymbol)
 import Language.Exalog.SrcLoc
 
 data Program decl hop bop = Program
@@ -84,8 +85,6 @@ data Subgoal op term =
 data SomeOp (op :: OpKind -> *) = NoOp | forall opKind . SomeOp (op opKind)
 
 data OpKind = Binary | Unary | Nullary
-
-newtype PredicateSymbol = PredicateSymbol [ Text ] deriving (Eq, Ord)
 
 data AtomicFormula a =
   AtomicFormula
@@ -318,10 +317,3 @@ instance IsLabel "_head" (Clause hop bop -> Subgoal hop Term) where
 
 instance IsLabel "_head" (Query hop bop -> Maybe (Subgoal hop Var)) where
   fromLabel Query{..} = _head
-
---------------------------------------------------------------------------------
--- IsString instances
---------------------------------------------------------------------------------
-
-instance IsString PredicateSymbol where
-  fromString = PredicateSymbol . pure . pack

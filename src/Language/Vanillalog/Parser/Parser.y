@@ -6,6 +6,7 @@ import Protolude (Text, bimap, pure)
 
 import Control.Monad ((>=>))
 
+import           Language.Exalog.Core (PredicateSymbol(..))
 import qualified Language.Exalog.Logger as Log
 import           Language.Exalog.SrcLoc
 
@@ -70,8 +71,8 @@ ATOMIC_FORMULA :: { AtomicFormula Term }
 : FX_SYM "(" TERMS ")" { AtomicFormula (transSpan (fst $1) (span $4)) (snd $1) (reverse $3) }
 | FX_SYM               { AtomicFormula (fst $1)                       (snd $1) [] }
 
-FX_SYM :: { (SrcSpan, G.PredicateSymbol) }
-: fxSym { (span $1, G.PredicateSymbol . pure . _tStr . L._token $ $1) }
+FX_SYM :: { (SrcSpan, PredicateSymbol) }
+: fxSym { (span $1, PredicateSymbol . _tStr . L._token $ $1) }
 
 TERMS :: { [ Term ] }
 : TERMS "," TERM { $3 : $1 }
