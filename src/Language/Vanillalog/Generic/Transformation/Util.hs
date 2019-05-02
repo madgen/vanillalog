@@ -89,7 +89,7 @@ transformHeadM f = transformM go
   go (SFact   Fact{..})   = (\h -> SFact   Fact{_head = h,..})   <$> f _head
   go s@SQuery{}           = pure s
 
-transformHead :: forall m decl hop bop
+transformHead :: forall decl hop bop
                . (Subgoal hop Term -> Subgoal hop Term)
               -> Program decl hop bop -> Program decl hop bop
 transformHead = purify transformHeadM
@@ -104,13 +104,13 @@ transformBodyM f = transformM go
   go (SQuery  Query{..})  = SQuery  . Query  _span _head <$> f _body
   go s                    = pure s
 
-transformBody :: forall m decl hop bop
+transformBody :: forall decl hop bop
                . (Subgoal bop Term -> Subgoal bop Term)
               -> Program decl hop bop -> Program decl hop bop
 transformBody = purify transformBodyM
 
 instance Transformable (AtomicFormula a) (Subgoal op a) where
-  transformM :: forall m op. Monad m
+  transformM :: forall m. Monad m
              => (AtomicFormula a -> m (AtomicFormula a))
              -> Subgoal op a -> m (Subgoal op a)
   transformM f = cata alg
@@ -120,7 +120,7 @@ instance Transformable (AtomicFormula a) (Subgoal op a) where
     alg subf               = embed <$> sequence subf
 
 instance Transformable (AtomicFormula Term) (Sentence hop bop) where
-  transformM :: forall m hop bop. Monad m
+  transformM :: forall m. Monad m
              => (AtomicFormula Term -> m (AtomicFormula Term))
              -> Sentence hop bop -> m (Sentence hop bop)
   transformM f = go

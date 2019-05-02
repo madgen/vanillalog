@@ -17,11 +17,9 @@
 
 module Language.Vanillalog.Generic.AST where
 
-import Protolude
+import Protolude hiding (sym)
 
 import Data.List (nub)
-import Data.String (IsString(..))
-import Data.Text (pack)
 
 import Data.Functor.Foldable
 import Data.Functor.Foldable.TH (makeBaseFunctor)
