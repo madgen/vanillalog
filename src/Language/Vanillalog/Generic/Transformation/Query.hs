@@ -28,7 +28,7 @@ nameQueries pr = evalStateT (transformM go pr) 0
     sub :: StateT Int L.Logger (Subgoal hop Var)
     sub = do
       name <- freshQueryName
-      pure $ SAtom _span $ AtomicFormula _span name $ vars _body
+      pure $ SAtom _span $ AtomicFormula _span name $ variables _body
 
     freshQueryName :: StateT Int L.Logger PredicateSymbol
     freshQueryName = do

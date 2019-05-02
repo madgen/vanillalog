@@ -21,7 +21,7 @@ module Language.Vanillalog.AST
   , AG.Term(..)
   , AG.Var(..)
   , AG.Sym(..)
-  , AG.vars
+  , AG.variables
   , AG.operation
   ) where
 

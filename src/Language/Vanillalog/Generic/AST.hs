@@ -268,39 +268,39 @@ instance HasAtoms (Subgoal op term) term where
     alg SBinOpF{..} = _child1F ++ _child2F
 
 class HasVariables a where
-  vars :: a -> [ Var ]
+  variables :: a -> [ Var ]
 
 instance HasVariables (Sentence hop bop) where
-  vars SFact{..}   = vars _fact
-  vars SClause{..} = vars _clause
-  vars SQuery{..}  = vars _query
+  variables SFact{..}   = variables _fact
+  variables SClause{..} = variables _clause
+  variables SQuery{..}  = variables _query
 
 instance HasVariables (Clause hop bop) where
-  vars Clause{..} = nub $ vars _head ++ vars _body
+  variables Clause{..} = variables _head ++ variables _body
 
 instance HasVariables (Query hop bop) where
-  vars Query{..} = vars _body
+  variables Query{..} = variables _body
 
 instance HasVariables (Fact hop) where
-  vars Fact{..} = vars _head
+  variables Fact{..} = variables _head
 
 instance HasVariables (AtomicFormula t) => HasVariables (Subgoal op t) where
-  vars = nub . cata varAlg
+  variables = nub . cata varAlg
     where
-    varAlg (SAtomF _ atom@AtomicFormula{}) = vars atom
+    varAlg (SAtomF _ atom@AtomicFormula{}) = variables atom
     varAlg (SNullOpF _ _)                  = []
     varAlg (SUnOpF _ _ vars)               = vars
     varAlg (SBinOpF _ _ vars1 vars2)       = vars1 ++ vars2
 
 instance HasVariables (AtomicFormula Term) where
-  vars AtomicFormula{..} = nub $
+  variables AtomicFormula{..} =
     mapMaybe (\case {TVar{..} -> Just _var; _ -> Nothing}) _terms
 
 instance HasVariables (AtomicFormula Var) where
-  vars AtomicFormula{..} = nub _terms
+  variables AtomicFormula{..} = _terms
 
 instance HasVariables (AtomicFormula Sym) where
-  vars AtomicFormula{..} = []
+  variables AtomicFormula{..} = []
 
 --------------------------------------------------------------------------------
 -- IsLabel instances
