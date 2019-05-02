@@ -221,6 +221,31 @@ instance Spannable decl => Spannable (Statement decl hop bop) where
 -- Helper functions
 --------------------------------------------------------------------------------
 
+declarations :: Program decl hop bop -> [ decl ]
+declarations pr = (`mapMaybe` _statements pr) $ \case
+  StDeclaration decl -> Just decl
+  _                  -> Nothing
+
+sentences :: Program decl hop bop -> [ Sentence hop bop ]
+sentences pr = (`mapMaybe` _statements pr) $ \case
+  StSentence sent -> Just sent
+  _               -> Nothing
+
+queries :: Program decl hop bop -> [ Query hop bop ]
+queries pr = (`mapMaybe` sentences pr) $ \case
+  SQuery query -> Just query
+  _            -> Nothing
+
+clauses :: Program decl hop bop -> [ Clause hop bop ]
+clauses pr = (`mapMaybe` sentences pr) $ \case
+  SClause clause -> Just clause
+  _              -> Nothing
+
+facts :: Program decl hop bop -> [ Fact hop ]
+facts pr = (`mapMaybe` sentences pr) $ \case
+  SFact fact -> Just fact
+  _          -> Nothing
+
 termType :: Sym -> TermType
 termType SymInt{}  = TTInt
 termType SymText{} = TTText
