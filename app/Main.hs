@@ -17,19 +17,25 @@ import Language.Vanillalog.Generic.CLI.Util
 
 import Options.Applicative
 
-data Stage = VanillaLex | VanillaParse | VanillaNormal | Exalog
+data Stage =
+    VanillaLex
+  | VanillaParse
+  | VanillaNormal
+  | ExalogRangeRepair
+  | Exalog
 
 stageParser :: Parser Stage
 stageParser =
-     stageFlag' VanillaLex    "lex"    "Lexer output"
- <|> stageFlag' VanillaParse  "parse"  "Parser output"
- <|> stageFlag' VanillaNormal "normal" "Normal form"
- <|> stageFlag' Exalog        "exalog" "Exalog core"
+     stageFlag' VanillaLex        "lex"          "Lexer output"
+ <|> stageFlag' VanillaParse      "parse"        "Parser output"
+ <|> stageFlag' VanillaNormal     "normal"       "Normal form"
+ <|> stageFlag' ExalogRangeRepair "range-repair" "Repair range restriction"
+ <|> stageFlag' Exalog            "exalog"       "Exalog core"
 
 run :: RunOptions -> IO ()
 run RunOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile file
-  succeedOrDie (Stage.compiled file >=> uncurry S.solve) bs $
+  succeedOrDie (Stage.safetyChecked file >=> uncurry S.solve) bs $
       putStrLn . pp
 
 repl :: ReplOptions -> IO ()
@@ -39,10 +45,15 @@ prettyPrint :: PPOptions Stage -> IO ()
 prettyPrint PPOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile file
   case stage of
-    VanillaLex    -> succeedOrDie (Stage.lex file) bs print
-    VanillaParse  -> succeedOrDie (Stage.parse file) bs $ putStrLn . pp
-    VanillaNormal -> succeedOrDie (Stage.normalised file) bs $ putStrLn . pp
-    Exalog        -> succeedOrDie (Stage.compiled file) bs $
+    VanillaLex        -> succeedOrDie (Stage.lex file) bs print
+    VanillaParse      -> succeedOrDie (Stage.parse file) bs $ putStrLn . pp
+    VanillaNormal     -> succeedOrDie (Stage.normalised file) bs $ putStrLn . pp
+    ExalogRangeRepair -> succeedOrDie (Stage.rangeRestrictionRepaired file) bs $
+      \(exalogProgram, initEDB) -> do
+        putStrLn $ pp exalogProgram
+        putStrLn ("" :: Text)
+        putStrLn $ pp initEDB
+    Exalog            -> succeedOrDie (Stage.safetyChecked file) bs $
       \(exalogProgram, initEDB) -> do
         putStrLn $ pp exalogProgram
         putStrLn ("" :: Text)

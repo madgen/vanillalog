@@ -5,7 +5,8 @@ module Language.Vanillalog.Stage
   , parse
   , namedQueries
   , normalised
-  , compiled
+  , rangeRestrictionRepaired
+  , safetyChecked
   ) where
 
 import Protolude
@@ -15,7 +16,7 @@ import qualified Data.ByteString.Lazy.Char8 as BS
 import qualified Language.Exalog.Core as E
 import qualified Language.Exalog.Relation as R
 import qualified Language.Exalog.Logger as Log
-import           Language.Exalog.RangeRestriction (checkRangeRestriction)
+import           Language.Exalog.RangeRestriction (fixRangeRestriction)
 import           Language.Exalog.WellModing (checkWellModedness)
 
 import           Language.Vanillalog.AST
@@ -40,9 +41,13 @@ namedQueries file = parse file >=> nameQueries
 normalised :: Stage Program
 normalised file = namedQueries file >=> normalise
 
-compiled :: Stage (E.Program 'E.ABase, R.Solution 'E.ABase)
-compiled file bs = do
-  res@(pr, _) <- (normalised file >=> compile) bs
-  checkRangeRestriction pr
+rangeRestrictionRepaired :: Stage (E.Program 'E.ABase, R.Solution 'E.ABase)
+rangeRestrictionRepaired file bs = do
+  res <- (normalised file >=> compile) bs
+  fixRangeRestriction res
+
+safetyChecked :: Stage (E.Program 'E.ABase, R.Solution 'E.ABase)
+safetyChecked file bs = do
+  res@(pr, _) <- rangeRestrictionRepaired file bs
   checkWellModedness pr
   pure res
