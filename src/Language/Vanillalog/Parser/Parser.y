@@ -69,7 +69,7 @@ SUBGOAL :: { Subgoal Op Term}
 
 ATOMIC_FORMULA :: { AtomicFormula Term }
 : FX_SYM "(" TERMS ")" { AtomicFormula (transSpan (fst $1) (span $4)) (snd $1) (reverse $3) }
-| FX_SYM               { AtomicFormula (fst $1)                       (snd $1) [] }
+| FX_SYM "("       ")" { AtomicFormula (transSpan (fst $1) (span $3)) (snd $1) [] }
 
 FX_SYM :: { (SrcSpan, PredicateSymbol) }
 : fxSym { (span $1, PredicateSymbol . _tStr . L._token $ $1) }
