@@ -22,6 +22,7 @@ data Stage =
   | VanillaParse
   | VanillaNormal
   | ExalogRangeRepair
+  | ExalogWellMode
   | Exalog
 
 stageParser :: Parser Stage
@@ -30,6 +31,7 @@ stageParser =
  <|> stageFlag' VanillaParse      "parse"        "Parser output"
  <|> stageFlag' VanillaNormal     "normal"       "Normal form"
  <|> stageFlag' ExalogRangeRepair "range-repair" "Repair range restriction"
+ <|> stageFlag' ExalogWellMode    "well-mode"    "Repair moding"
  <|> stageFlag' Exalog            "exalog"       "Exalog core"
 
 run :: RunOptions -> IO ()
@@ -48,16 +50,14 @@ prettyPrint PPOptions{..} = do
     VanillaLex        -> succeedOrDie (Stage.lex file) bs print
     VanillaParse      -> succeedOrDie (Stage.parse file) bs $ putStrLn . pp
     VanillaNormal     -> succeedOrDie (Stage.normalised file) bs $ putStrLn . pp
-    ExalogRangeRepair -> succeedOrDie (Stage.rangeRestrictionRepaired file) bs $
-      \(exalogProgram, initEDB) -> do
-        putStrLn $ pp exalogProgram
-        putStrLn ("" :: Text)
-        putStrLn $ pp initEDB
-    Exalog            -> succeedOrDie (Stage.safetyChecked file) bs $
-      \(exalogProgram, initEDB) -> do
-        putStrLn $ pp exalogProgram
-        putStrLn ("" :: Text)
-        putStrLn $ pp initEDB
+    ExalogRangeRepair -> succeedOrDie (Stage.rangeRestrictionRepaired file) bs printExalog
+    ExalogWellMode    -> succeedOrDie (Stage.wellModed file) bs printExalog
+    Exalog            -> succeedOrDie (Stage.safetyChecked file) bs printExalog
+  where
+  printExalog (exalogProgram, initEDB) = do
+    putStrLn $ pp exalogProgram
+    putStrLn ("" :: Text)
+    putStrLn $ pp initEDB
 
 main :: IO ()
 main = do

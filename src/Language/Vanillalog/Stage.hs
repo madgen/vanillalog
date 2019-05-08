@@ -6,6 +6,7 @@ module Language.Vanillalog.Stage
   , namedQueries
   , normalised
   , rangeRestrictionRepaired
+  , wellModed
   , safetyChecked
   ) where
 
@@ -15,6 +16,7 @@ import qualified Data.ByteString.Lazy.Char8 as BS
 
 import qualified Language.Exalog.Core as E
 import qualified Language.Exalog.Relation as R
+import           Language.Exalog.Renamer (rename)
 import qualified Language.Exalog.Logger as Log
 import           Language.Exalog.RangeRestriction (fixRangeRestriction)
 import           Language.Exalog.WellModing (checkWellModedness)
@@ -42,12 +44,18 @@ normalised :: Stage Program
 normalised file = namedQueries file >=> normalise
 
 rangeRestrictionRepaired :: Stage (E.Program 'E.ABase, R.Solution 'E.ABase)
-rangeRestrictionRepaired file bs = do
-  res <- (normalised file >=> compile) bs
-  fixRangeRestriction res
+rangeRestrictionRepaired file = normalised file
+                            >=> compile
+                            >=> rename
+                            >=> fixRangeRestriction
+
+wellModed :: Stage (E.Program 'E.ABase, R.Solution 'E.ABase)
+wellModed file = rangeRestrictionRepaired file
+             >=> rename
+             >=> fixRangeRestriction
 
 safetyChecked :: Stage (E.Program 'E.ABase, R.Solution 'E.ABase)
 safetyChecked file bs = do
-  res@(pr, _) <- rangeRestrictionRepaired file bs
+  res@(pr, _) <- wellModed file bs
   checkWellModedness pr
   pure res
