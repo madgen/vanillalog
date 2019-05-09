@@ -32,12 +32,11 @@ stageParser =
  <|> stageFlag' VanillaNormal     "normal"       "Normal form"
  <|> stageFlag' ExalogRangeRepair "range-repair" "Repair range restriction"
  <|> stageFlag' ExalogWellMode    "well-mode"    "Repair moding"
- <|> stageFlag' Exalog            "exalog"       "Exalog core"
 
 run :: RunOptions -> IO ()
 run RunOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile file
-  succeedOrDie (Stage.safetyChecked file >=> uncurry S.solve) bs $
+  succeedOrDie (Stage.wellModed file >=> uncurry S.solve) bs $
       putStrLn . pp
 
 repl :: ReplOptions -> IO ()
@@ -52,7 +51,6 @@ prettyPrint PPOptions{..} = do
     VanillaNormal     -> succeedOrDie (Stage.normalised file) bs $ putStrLn . pp
     ExalogRangeRepair -> succeedOrDie (Stage.rangeRestrictionRepaired file) bs printExalog
     ExalogWellMode    -> succeedOrDie (Stage.wellModed file) bs printExalog
-    Exalog            -> succeedOrDie (Stage.safetyChecked file) bs printExalog
   where
   printExalog (exalogProgram, initEDB) = do
     putStrLn $ pp exalogProgram

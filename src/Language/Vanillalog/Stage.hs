@@ -7,7 +7,6 @@ module Language.Vanillalog.Stage
   , normalised
   , rangeRestrictionRepaired
   , wellModed
-  , safetyChecked
   ) where
 
 import Protolude
@@ -19,7 +18,7 @@ import qualified Language.Exalog.Relation as R
 import           Language.Exalog.Renamer (rename)
 import qualified Language.Exalog.Logger as Log
 import           Language.Exalog.RangeRestriction (fixRangeRestriction)
-import           Language.Exalog.WellModing (checkWellModedness)
+import           Language.Exalog.WellModing (fixModing)
 
 import           Language.Vanillalog.AST
 import           Language.Vanillalog.Generic.Compiler (compile)
@@ -52,10 +51,4 @@ rangeRestrictionRepaired file = normalised file
 wellModed :: Stage (E.Program 'E.ABase, R.Solution 'E.ABase)
 wellModed file = rangeRestrictionRepaired file
              >=> rename
-             >=> fixRangeRestriction
-
-safetyChecked :: Stage (E.Program 'E.ABase, R.Solution 'E.ABase)
-safetyChecked file bs = do
-  res@(pr, _) <- wellModed file bs
-  checkWellModedness pr
-  pure res
+             >=> fixModing
