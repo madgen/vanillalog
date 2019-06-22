@@ -14,12 +14,13 @@ import qualified Data.ByteString.Lazy.Char8 as BS
 import qualified Language.Exalog.Core as E
 import qualified Language.Exalog.Logger as L
 import           Language.Exalog.Pretty (pp)
-import           Language.Exalog.Pretty.Helper (prettyC)
+import           Language.Exalog.Pretty.Helper (Pretty, prettyC)
 import qualified Language.Exalog.Relation as R
 import qualified Language.Exalog.Tuples as T
 
 import           Language.Vanillalog.AST
 import qualified Language.Vanillalog.Generic.AST as AG
+import           Language.Vanillalog.Generic.Pretty (HasPrecedence)
 
 succeedOrDie :: (BS.ByteString -> L.Logger b)
              -> BS.ByteString
@@ -31,7 +32,10 @@ succeedOrDie processor bs action = do
     Just result -> action result
     Nothing     -> exitFailure
 
-display :: Program -> R.Solution 'E.ABase -> IO ()
+display :: Pretty (hop 'Nullary) => Pretty (hop 'Unary) => Pretty (hop 'Binary)
+        => Pretty (bop 'Nullary) => Pretty (bop 'Unary) => Pretty (bop 'Binary)
+        => HasPrecedence hop => HasPrecedence bop
+        => AG.Program decl hop bop -> R.Solution 'E.ABase -> IO ()
 display program sol =
   forM_ (zip [(1 :: Int)..] (AG.queries program)) $ \(ix, query) -> do
     putStrLn . pp $ query
