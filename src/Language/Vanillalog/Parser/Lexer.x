@@ -56,8 +56,9 @@ token :-
 <scA>   @wild    { basic TWildcard }
 <scA>   @int     { useInput (TInt . read . BS.unpack) }
 
+<scA> \"\"       { basic (TStr "") } -- Empty string
 <scA> \"         { enterStartCodeAnd str skip }
-<str> [^\"]+     { useInput TStr }
+<str> [^\"]*     { useInput TStr }
 <str> \"         { exitStartCodeAnd skip }
 
 {
