@@ -53,7 +53,7 @@ instance ( Compilable (Clause hop bop)
       return
         ( E.Program
             { annotation = E.ProgABase _span
-            , clauses    = compiledClauses ++ compiledQueries
+            , strata     = [ E.Stratum $ compiledClauses ++ compiledQueries ]
             , queryPreds = queryPreds compiledQueries
             }
         , R.fromList edb
