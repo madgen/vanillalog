@@ -24,6 +24,7 @@ data Stage =
   | Exalog
   | ExalogRangeRepair
   | ExalogWellMode
+  | ExalogStratify
 
 stageParser :: Parser Stage
 stageParser =
@@ -33,13 +34,14 @@ stageParser =
  <|> stageFlag' Exalog            "exalog"       "Compile to Exalog"
  <|> stageFlag' ExalogRangeRepair "range-repair" "Repair range restriction"
  <|> stageFlag' ExalogWellMode    "well-mode"    "Repair moding"
+ <|> stageFlag' ExalogStratify    "stratify"     "Stratify"
 
 run :: RunOptions -> IO ()
 run RunOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile file
 
   succeedOrDie (Stage.parse file) bs $ \ast ->
-    succeedOrDie (Stage.wellModed file >=> uncurry S.solve) bs $ display ast
+    succeedOrDie (Stage.stratified file >=> uncurry S.solve) bs $ display ast
 
 repl :: ReplOptions -> IO ()
 repl opts = panic "REPL is not yet supported."
@@ -54,6 +56,7 @@ prettyPrint PPOptions{..} = do
     Exalog            -> succeedOrDie (Stage.compiled file) bs printExalog
     ExalogRangeRepair -> succeedOrDie (Stage.rangeRestrictionRepaired file) bs printExalog
     ExalogWellMode    -> succeedOrDie (Stage.wellModed file) bs printExalog
+    ExalogStratify    -> succeedOrDie (Stage.stratified file) bs printExalog
   where
   printExalog (exalogProgram, initEDB) = do
     putStrLn $ pp exalogProgram

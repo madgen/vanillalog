@@ -8,6 +8,7 @@ module Language.Vanillalog.Stage
   , compiled
   , rangeRestrictionRepaired
   , wellModed
+  , stratified
   ) where
 
 import Protolude
@@ -20,6 +21,7 @@ import           Language.Exalog.Renamer (rename)
 import qualified Language.Exalog.Logger as Log
 import           Language.Exalog.RangeRestriction (fixRangeRestriction)
 import           Language.Exalog.WellModing (fixModing)
+import           Language.Exalog.Stratification (stratify)
 
 import           Language.Vanillalog.AST
 import           Language.Vanillalog.Generic.Compiler (compile)
@@ -55,3 +57,9 @@ wellModed :: Stage (E.Program 'E.ABase, R.Solution 'E.ABase)
 wellModed file = rangeRestrictionRepaired file
              >=> rename
              >=> fixModing
+
+stratified :: Stage (E.Program 'E.ABase, R.Solution 'E.ABase)
+stratified file bs = do
+  (pr, sol) <- wellModed file bs
+  pr' <- stratify $ E.decorate pr
+  pure $ (pr', sol)
