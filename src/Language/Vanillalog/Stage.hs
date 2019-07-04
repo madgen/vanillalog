@@ -5,6 +5,7 @@ module Language.Vanillalog.Stage
   , parse
   , namedQueries
   , normalised
+  , compiled
   , rangeRestrictionRepaired
   , wellModed
   ) where
@@ -42,9 +43,11 @@ namedQueries file = parse file >=> nameQueries
 normalised :: Stage Program
 normalised file = namedQueries file >=> normalise
 
+compiled :: Stage (E.Program 'E.ABase, R.Solution 'E.ABase)
+compiled file = normalised file >=> compile
+
 rangeRestrictionRepaired :: Stage (E.Program 'E.ABase, R.Solution 'E.ABase)
-rangeRestrictionRepaired file = normalised file
-                            >=> compile
+rangeRestrictionRepaired file = compiled file
                             >=> rename
                             >=> fixRangeRestriction
 

@@ -21,15 +21,16 @@ data Stage =
     VanillaLex
   | VanillaParse
   | VanillaNormal
+  | Exalog
   | ExalogRangeRepair
   | ExalogWellMode
-  | Exalog
 
 stageParser :: Parser Stage
 stageParser =
      stageFlag' VanillaLex        "lex"          "Lexer output"
  <|> stageFlag' VanillaParse      "parse"        "Parser output"
  <|> stageFlag' VanillaNormal     "normal"       "Normal form"
+ <|> stageFlag' Exalog            "exalog"       "Compile to Exalog"
  <|> stageFlag' ExalogRangeRepair "range-repair" "Repair range restriction"
  <|> stageFlag' ExalogWellMode    "well-mode"    "Repair moding"
 
@@ -50,6 +51,7 @@ prettyPrint PPOptions{..} = do
     VanillaLex        -> succeedOrDie (Stage.lex file) bs print
     VanillaParse      -> succeedOrDie (Stage.parse file) bs $ putStrLn . pp
     VanillaNormal     -> succeedOrDie (Stage.normalised file) bs $ putStrLn . pp
+    Exalog            -> succeedOrDie (Stage.compiled file) bs printExalog
     ExalogRangeRepair -> succeedOrDie (Stage.rangeRestrictionRepaired file) bs printExalog
     ExalogWellMode    -> succeedOrDie (Stage.wellModed file) bs printExalog
   where
