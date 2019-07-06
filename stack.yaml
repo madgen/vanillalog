@@ -4,7 +4,7 @@ packages:
 - .
 - location:
     git: https://github.com/madgen/exalog.git
-    commit: d7bb1f70cdfe55c777885a29f7d89e2f68b5e1f9
+    commit: ce8cebac545f24910588813eda1df36e4ff2c16c
   extra-dep: true
 - location:
     git: git@github.com:clash-lang/ghc-typelits-natnormalise
