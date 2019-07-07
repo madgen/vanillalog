@@ -102,12 +102,12 @@ alexEOF :: Alex (L.Lexeme (Token str))
 alexEOF = return eof
 
 data AlexUserState = AlexUserState
-  { file :: FilePath
-  , startCodeStack :: [ Int ]
+  { _file :: FilePath
+  , _startCodeStack :: [ Int ]
   }
 
 alexInitUserState :: AlexUserState
-alexInitUserState = AlexUserState { file = "", startCodeStack = [] }
+alexInitUserState = AlexUserState {_file = "", _startCodeStack = []}
 
 getUserState :: Alex AlexUserState
 getUserState = Alex $ \s -> Right (s, alex_ust $ s)
@@ -120,18 +120,18 @@ setUserState :: AlexUserState -> Alex ()
 setUserState = modifyUserState . const
 
 getFile :: Alex FilePath
-getFile = file <$> getUserState
+getFile = _file <$> getUserState
 
 setFile :: FilePath -> Alex ()
-setFile file = modifyUserState (\s -> s {file = file})
+setFile file = modifyUserState (\s -> s {_file = file})
 
 pushStartCode :: Int -> Alex ()
 pushStartCode startCode =
-  modifyUserState (\s -> s {startCodeStack = startCode : startCodeStack s})
+  modifyUserState (\s -> s {_startCodeStack = startCode : _startCodeStack s})
 
 topStartCode :: Alex Int
 topStartCode = do
-  stack <- startCodeStack <$> getUserState
+  stack <- _startCodeStack <$> getUserState
   case stack of
     (x:_) -> return x
     _     -> Alex . const $
@@ -140,7 +140,7 @@ topStartCode = do
 popStartCode :: Alex Int
 popStartCode = do
   startCode <- topStartCode
-  modifyUserState (\s -> s {startCodeStack = tail . startCodeStack $ s})
+  modifyUserState (\s -> s {_startCodeStack = tail . _startCodeStack $ s})
   pure startCode
 
 enterStartCode' :: Int -> Alex ()
@@ -174,7 +174,7 @@ lex file source =
 
 #if defined (DEBUG) && defined (LEXER)
     traceShowM tok
-    stack <- fmap StartCode . startCodeStack <$> getUserState
+    stack <- fmap StartCode . _startCodeStack <$> getUserState
     traceM $ "Start code stack: " <> show stack
     startCode <- alexGetStartCode
     traceM $ "Current start code: " <> show (StartCode startCode)

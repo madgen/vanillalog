@@ -15,7 +15,7 @@ import qualified Language.Vanillalog.Stage as Stage
 import Language.Vanillalog.Generic.CLI.Arguments
 import Language.Vanillalog.Generic.CLI.Util
 
-import Options.Applicative
+import Options.Applicative hiding (command)
 
 data Stage =
     VanillaLex
@@ -38,25 +38,25 @@ stageParser =
 
 run :: RunOptions -> IO ()
 run RunOptions{..} = do
-  bs <- BS.fromStrict . encodeUtf8 <$> readFile file
+  bs <- BS.fromStrict . encodeUtf8 <$> readFile _file
 
-  succeedOrDie (Stage.parse file) bs $ \ast ->
-    succeedOrDie (Stage.stratified file >=> uncurry S.solve) bs $ display ast
+  succeedOrDie (Stage.parse _file) bs $ \ast ->
+    succeedOrDie (Stage.stratified _file >=> uncurry S.solve) bs $ display ast
 
 repl :: ReplOptions -> IO ()
-repl opts = panic "REPL is not yet supported."
+repl _ = panic "REPL is not yet supported."
 
 prettyPrint :: PPOptions Stage -> IO ()
 prettyPrint PPOptions{..} = do
-  bs <- BS.fromStrict . encodeUtf8 <$> readFile file
-  case stage of
-    VanillaLex        -> succeedOrDie (Stage.lex file) bs print
-    VanillaParse      -> succeedOrDie (Stage.parse file) bs $ putStrLn . pp
-    VanillaNormal     -> succeedOrDie (Stage.normalised file) bs $ putStrLn . pp
-    Exalog            -> succeedOrDie (Stage.compiled file) bs printExalog
-    ExalogRangeRepair -> succeedOrDie (Stage.rangeRestrictionRepaired file) bs printExalog
-    ExalogWellMode    -> succeedOrDie (Stage.wellModed file) bs printExalog
-    ExalogStratify    -> succeedOrDie (Stage.stratified file) bs printExalog
+  bs <- BS.fromStrict . encodeUtf8 <$> readFile _file
+  case _stage of
+    VanillaLex        -> succeedOrDie (Stage.lex _file) bs print
+    VanillaParse      -> succeedOrDie (Stage.parse _file) bs $ putStrLn . pp
+    VanillaNormal     -> succeedOrDie (Stage.normalised _file) bs $ putStrLn . pp
+    Exalog            -> succeedOrDie (Stage.compiled _file) bs printExalog
+    ExalogRangeRepair -> succeedOrDie (Stage.rangeRestrictionRepaired _file) bs printExalog
+    ExalogWellMode    -> succeedOrDie (Stage.wellModed _file) bs printExalog
+    ExalogStratify    -> succeedOrDie (Stage.stratified _file) bs printExalog
   where
   printExalog (exalogProgram, initEDB) = do
     putStrLn $ pp exalogProgram
@@ -65,7 +65,7 @@ prettyPrint PPOptions{..} = do
 
 main :: IO ()
 main = do
-  command <- execParser (info (opts (ppOptions stageParser)) idm)
+  command <- execParser (info (opts (fromStageParser stageParser)) idm)
   case command of
     Run runOpts   -> run  runOpts
     Repl replOpts -> repl replOpts

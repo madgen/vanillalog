@@ -62,4 +62,4 @@ stratified :: Stage (E.Program 'E.ABase, R.Solution 'E.ABase)
 stratified file bs = do
   (pr, sol) <- wellModed file bs
   pr' <- stratify $ E.decorate pr
-  pure $ (pr', sol)
+  pure (pr', sol)

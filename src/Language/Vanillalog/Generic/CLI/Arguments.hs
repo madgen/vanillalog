@@ -1,5 +1,4 @@
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE RecordWildCards #-}
 
 module Language.Vanillalog.Generic.CLI.Arguments where
 
@@ -7,14 +6,14 @@ import Protolude
 
 import Options.Applicative
 
-data RunOptions = RunOptions
-  { file :: FilePath }
+newtype RunOptions = RunOptions
+  { _file :: FilePath }
 
 data ReplOptions = ReplOptions
 
 data PPOptions stage = PPOptions
-  { file  :: FilePath
-  , stage :: stage
+  { _file  :: FilePath
+  , _stage :: stage
   }
 
 fileParser :: Parser FilePath
@@ -28,8 +27,8 @@ fileParser = strOption
 stageFlag' :: stage -> [ Char ] -> [ Char ] -> Parser stage
 stageFlag' stage longName helpMsg = flag' stage (long longName <> help helpMsg)
 
-ppOptions :: Parser stage -> Parser (PPOptions stage)
-ppOptions stageParser = PPOptions <$> fileParser <*> stageParser
+fromStageParser :: Parser stage -> Parser (PPOptions stage)
+fromStageParser stageParser = PPOptions <$> fileParser <*> stageParser
 
 runOptions :: Parser RunOptions
 runOptions = RunOptions <$> fileParser

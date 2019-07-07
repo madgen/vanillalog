@@ -1,5 +1,8 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -29,6 +32,7 @@ import Protolude
 
 import qualified Data.List.NonEmpty as NE
 
+import           Language.Exalog.SrcLoc (SrcSpan)
 import qualified Language.Exalog.Core as E
 import qualified Language.Exalog.Logger as L
 
@@ -55,10 +59,18 @@ data Op (k :: AG.OpKind) where
 
 deriving instance Eq (Op opKind)
 
+pattern SAtom        :: forall (op :: AG.OpKind -> *) term. SrcSpan -> AG.AtomicFormula term                    -> AG.Subgoal op term
+pattern SNeg         :: forall                        term. SrcSpan -> AG.Subgoal Op term                       -> AG.Subgoal Op term
+pattern SConj, SDisj :: forall                        term. SrcSpan -> AG.Subgoal Op term -> AG.Subgoal Op term -> AG.Subgoal Op term
+
 pattern SAtom span atom      = AG.SAtom span atom
 pattern SNeg  span sub       = AG.SUnOp span Negation sub
 pattern SConj span sub1 sub2 = AG.SBinOp span Conjunction sub1 sub2
 pattern SDisj span sub1 sub2 = AG.SBinOp span Disjunction sub1 sub2
+
+pattern SAtomF         :: forall (op :: AG.OpKind -> *) term r. SrcSpan -> AG.AtomicFormula term -> AG.SubgoalF op term r
+pattern SNegF          :: forall                        term r. SrcSpan -> r                     -> AG.SubgoalF Op term r
+pattern SConjF, SDisjF :: forall                        term r. SrcSpan -> r -> r                -> AG.SubgoalF Op term r
 
 pattern SAtomF span atom          = AG.SAtomF span atom
 pattern SNegF  span child         = AG.SUnOpF span Negation child

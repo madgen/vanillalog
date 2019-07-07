@@ -47,9 +47,9 @@ instance ( Compilable (Clause hop bop)
   compile Program{..} = action
     where
     action = do
-      edb <- traverse compile facts
-      compiledClauses <- traverse compile clauses
-      compiledQueries <- traverse compile queries
+      edb             <- traverse compile facts'
+      compiledClauses <- traverse compile clauses'
+      compiledQueries <- traverse compile queries'
       return
         ( E.Program
             { _annotation = E.ProgABase _span
@@ -59,9 +59,9 @@ instance ( Compilable (Clause hop bop)
         , R.fromList edb
         )
 
-    clauses = [ _clause s | StSentence s@SClause{} <- _statements ]
-    facts   = [ _fact   s | StSentence s@SFact{}   <- _statements ]
-    queries = [ _query  s | StSentence s@SQuery{}  <- _statements ]
+    clauses' = [ _clause s | StSentence s@SClause{} <- _statements ]
+    facts'   = [ _fact   s | StSentence s@SFact{}   <- _statements ]
+    queries' = [ _query  s | StSentence s@SQuery{}  <- _statements ]
 
     queryPreds = map (E.predicateBox . E._head)
 
