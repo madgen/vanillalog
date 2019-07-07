@@ -10,7 +10,7 @@ import           Data.Text.Lazy (toStrict)
 import qualified Data.ByteString.Lazy.Char8 as BS
 
 import qualified Language.Exalog.Logger as Log
-import           Language.Exalog.SrcLoc hiding (file)
+import           Language.Exalog.SrcLoc hiding (_file)
 
 import qualified Language.Vanillalog.Generic.Parser.Lexeme as L
 
