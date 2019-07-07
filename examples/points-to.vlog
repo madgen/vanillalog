@@ -1,0 +1,198 @@
+%% Pointer Analysis by Yannis Smaragdakis and George Balatsouras
+%  DOI: 10.1561/2500000014
+
+%% Input relations
+% alloc(Var : V, Heap : H, InMeth : M)           , i.e., var = new ...
+% move(To : V, From : V)                         , i.e., to = from
+% load(To : V, Base : V, Fld : F)                , i.e., to = base.fld
+% store(Base : V, Fld : F, From : V)             , i.e., base.fld = from
+% v_call(Base : V, Sig : S, Invo : I, InMeth : M), i.e., base.sig(..)
+%
+% formal_arg(Meth : M, N : N, Arg : V)
+% actual_arg(Invo : I, N : N, Arg : V)
+% formal_return(Meth : M, Ret : V)
+% actual_return(Invo : I, Var : V)      % Fx of invocation to the storing Var
+% this_var(Meth : M, This : V)
+% heap_type(Heap : H, Type : T)         % Fx Heap object to its type
+% lookup(Type : T, Sig : S, Meth : M)   % Match Sig to actual Meth def in Type
+% var_type(Var: V, Type: T)
+% in_method(Instr : I, Meth : M)
+% subtype(Type : T, SuperT : T)
+
+%% Computed relations:
+%
+% var_points_to(Var : V, Heap : H)           , i.e., Var  |--> Heap
+% call_graph(Invo : I, Meth : M)             , i.e., Invo i--> ToMeth
+% fld_points_to(BaseH : H, Fld : F, Heap : H), i.e., Var  o--> Heap
+% inter_proc_assign(To : V, From : V)        , i.e., To i= From
+% reachable(Meth : M)
+
+%% Anderson's analysis
+
+% Var = new Heap
+% -------------
+% Var |--> Heap
+var_points_to(Var, Heap) :- reachable(Method), alloc(Var, Heap, Method).
+
+% To = From
+% From |--> Heap
+% -------------
+% to |--> Heap
+var_points_to(To,  Heap) :- move(To, From), var_points_to(From, Heap).
+
+% Base.Fld = From
+% From |--> Heap
+% Base |--> BaseH
+% -------------------
+% BaseH.Fld o--> Heap
+fld_points_to(BaseH, Fld, Heap) :-
+  store(Base, Fld, From), var_points_to(From, Heap), var_points_to(Base, BaseH).
+
+% To = Base.Fld
+% Base |--> BaseH
+% BaseH.Fld o--> Heap
+% -------------------
+% To |--> Heap.
+var_points_to(To, Heap) :-
+  load(To, Base, Fld), var_points_to(Base, BaseH),
+  fld_points_to(BaseH, Fld, Heap).
+
+% InMeth(..) { ...; Base.Sig(...); ... }
+% reachable(InMeth)
+% Base |--> Heap
+% typeof(Heap) = HeapT
+% class HeapT {...; ToMeth; ...} and ToMeth == Sig { ... }
+% this_var(ToMeth) == This
+% --------------------------
+% This (in ToMeth) |--> Heap
+% reachable(ToMeth)
+% Invo c--> ToMeth
+
+blah(ToMeth,This,Heap,Invo) :-
+  v_call(Base, Sig, Invo, InMeth), reachable(InMeth),
+  var_points_to(Base, Heap),
+  heap_type(Heap,HeapT), lookup(HeapT, Sig, ToMeth),
+  this_var(ToMeth, This).
+
+reachable(ToMeth)         :- blah(ToMeth,_,_,_).
+var_points_to(This, Heap) :- blah(_,This,Heap,_).
+call_graph(Invo, ToMeth)  :- blah(ToMeth,_,_,Invo).
+
+% sig(..,From,...)        where From is the Nth actual argument
+% sig(...,To,...) { ... } where To   is the Nth formal parameter
+% -----------------------
+% To i= From
+inter_proc_assign(To,From) :-
+  call_graph(Invo,Meth),
+  formal_arg(Meth,N,To), actual_arg(Invo,N,From).
+
+% To = sig(...)
+% sig(...) { ...; return From }
+% -----------------------------
+% To i= From
+inter_proc_assign(To,From) :-
+  call_graph(Invo,Meth),
+  formal_return(Meth,From), actual_return(Meth,To).
+
+% To i= From
+% From |--> Heap
+% --------------
+% To |--> Heap
+var_points_to(To, Heap) :- inter_proc_assign(To,From), var_points_to(From,Heap).
+
+%% Extended example
+%
+% void fun1() {
+%   Object a = new A1();
+%   Object b = id(a);
+% }
+%
+% void fun2() {
+%   Object a = new A2();
+%   Object b = id(a);
+% }
+%
+% Object id(Object a) { return a; }
+%
+% main() {
+%   a = new A1();
+%   a.fun1();
+%   a.fun2();
+% }
+
+%% Make everything in the type explicit
+% class Object {
+%   static Object::A1() { .. }
+%   static Object::A2() { .. }
+%
+%   void Object::fun1() {
+%     Object Object::fun1::a = new A1();
+%     Object Object::fun1::b = Object::this.id(Object::fun1::a);
+%   }
+%
+%   void Object::fun2() {
+%     Object Object::fun2::a = new A2();
+%     Object Object::fun2::b = Object::this.id(Object::fun2::a);
+%   }
+%
+%   Object Object::id(Object Object::id::a) { return Object::id::a; }
+%  }
+%
+%  main() {
+%    main::a = new Object::A1();
+%    main::a.fun1();
+%    main::a.fun2();
+%  }
+
+% Not used anywhere in Anderson style analysis?
+var_type("Object::fun1::a","Object").
+var_type("Object::fun2::a","Object").
+var_type("Object::fun1::b","Object").
+var_type("Object::fun2::b","Object").
+var_type("Object::this",   "Object").
+var_type("main::a","Object").
+
+alloc("Object::fun1::a", "new A1()", "Object::fun1").
+alloc("Object::fun2::a", "new A2()", "Object::fun2").
+alloc("main::a",         "new A1()", "main").
+
+v_call("Object::this", "Object Object::id(Object Object::id::a)", "Object Object::fun1::b = Object::this.id(Object::fun1::a)", "Object::fun1").
+v_call("Object::this", "Object Object::id(Object Object::id::a)", "Object Object::fun2::b = Object::this.id(Object::fun2::a)", "Object::fun2").
+v_call("main::a",      "Object Object::fun1()"                  , "a.fun1()"                                                 , "main").
+v_call("main::a",      "Object Object::fun2()"                  , "a.fun2()"                                                 , "main").
+
+formal_arg("Object::id",1,"Object::id::a").
+
+actual_arg("Object Object::fun1::b = Object::this.id(Object::fun1::a)", 1, "Object::fun1::a").
+actual_arg("Object Object::fun2::b = Object::this.id(Object::fun2::a)", 1, "Object::fun2::a").
+
+formal_return("Object::id","Object::id::a").
+
+actual_return("Object fun1::b = Object::this.id(fun1::a)","Object::fun1::b").
+actual_return("Object fun2::b = Object::this.id(fun2::a)","Object::fun2::b").
+
+heap_type("new A1()","Object").
+heap_type("new A2()","Object").
+
+lookup("Object", "Object Object::fun1()"                  , "Object::fun1").
+lookup("Object", "Object Object::fun2()"                  , "Object::fun2").
+lookup("Object", "Object Object::id(Object Object::id::a)", "Object::id").
+
+in_method("Object fun1::a = new A1()",                 "Object::fun1").
+in_method("Object fun2::a = new A2()",                 "Object::fun2").
+in_method("Object fun1::b = Object::this.id(fun1::a)", "Object::fun1").
+in_method("Object fun2::b = Object::this.id(fun2::a)", "Object::fun2").
+in_method("return Object::id::a"                     , "Object::id").
+in_method("Object main::a = new A1()"                , "main").
+in_method("main::a.fun1()"                           , "main").
+in_method("main::a.fun2()"                           , "main").
+
+this_var("Object::fun1","Object::this").
+this_var("Object::fun2","Object::this").
+this_var("Object::id"  ,"Object::this").
+
+reachable("main").
+
+?- var_points_to(Var,Heap).
+?- reachable(Method).
+?- call_graph(Invo,Method).
