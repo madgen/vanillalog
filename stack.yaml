@@ -2,6 +2,6 @@ resolver: lts-13.18
 
 extra-deps:
 - git: https://github.com/madgen/exalog.git
-  commit: ce8cebac545f24910588813eda1df36e4ff2c16c
+  commit: be94a736371265702b34304bc9c3c7e62c83c78f
 - git: git@github.com:clash-lang/ghc-typelits-natnormalise
   commit: 45080a9f50b040178e145c0e9b489c26c17a6d52

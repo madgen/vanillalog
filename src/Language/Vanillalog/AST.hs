@@ -97,7 +97,7 @@ instance Pretty (Const Void (a :: AG.OpKind)) where
 instance ClosureCompilable Op where
   cCompile (CUnary Negation rec)
     | (SAtom{}, core NE.:| []) <- rec =
-      pure $ core { E.polarity = E.Negative } NE.:| []
+      pure $ core { E._polarity = E.Negative } NE.:| []
     | otherwise = L.scream Nothing
       "Negation over non-atoms should be eliminated at this point."
   cCompile (CBinary Conjunction (_,core1) (_,core2)) = pure $ append core1 core2

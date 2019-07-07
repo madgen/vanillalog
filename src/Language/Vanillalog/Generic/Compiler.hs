@@ -52,9 +52,9 @@ instance ( Compilable (Clause hop bop)
       compiledQueries <- traverse compile queries
       return
         ( E.Program
-            { annotation = E.ProgABase _span
-            , strata     = [ E.Stratum $ compiledClauses ++ compiledQueries ]
-            , queryPreds = queryPreds compiledQueries
+            { _annotation = E.ProgABase _span
+            , _strata     = [ E.Stratum $ compiledClauses ++ compiledQueries ]
+            , _queries    = queryPreds compiledQueries
             }
         , R.fromList edb
         )
@@ -63,7 +63,7 @@ instance ( Compilable (Clause hop bop)
     facts   = [ _fact   s | StSentence s@SFact{}   <- _statements ]
     queries = [ _query  s | StSentence s@SQuery{}  <- _statements ]
 
-    queryPreds = map (E.predicateBox . E.head)
+    queryPreds = map (E.predicateBox . E._head)
 
 instance Compilable (Fact hop) where
   type Output (Fact hop) = L.Logger (R.Relation 'E.ABase)
@@ -81,10 +81,10 @@ instance Compilable (Fact hop) where
                   "length of terms is not the length of terms."
             pure $ R.Relation
               E.Predicate
-                { annotation = E.PredABase _span
-                , fxSym = _predSym
-                , arity = arity
-                , nature = E.Logical
+                { _annotation = E.PredABase _span
+                , _predSym    = _predSym
+                , _arity      = arity
+                , _nature     = E.Logical
                 }
               tuples
     _ -> L.scream (Just _span) "The head is not ready for compilation."
@@ -148,14 +148,14 @@ instance Compilable (AtomicFormula Term) where
             Nothing -> L.scream (Just _span)
               "Length of terms is not the length of terms."
         pure $ E.Literal
-          { annotation = E.LitABase _span
-          , polarity   = E.Positive
-          , predicate  = E.Predicate
-              { annotation = E.PredABase _span
-              , fxSym      = _predSym
-              , arity      = arity
-              , nature     = E.Logical }
-          , terms = terms
+          { _annotation = E.LitABase _span
+          , _polarity   = E.Positive
+          , _predicate  = E.Predicate
+              { _annotation = E.PredABase _span
+              , _predSym    = _predSym
+              , _arity      = arity
+              , _nature     = E.Logical }
+          , _terms = terms
           }
 
 instance Compilable Term where
