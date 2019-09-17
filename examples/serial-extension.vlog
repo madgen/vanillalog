@@ -1,0 +1,9 @@
+rel(1,2).
+rel(2,3).
+rel(2,4).
+
+serial_rel(T,T') :- rel(T,T').
+serial_rel(T,T)  :- rel(_,T), ! v(T,_).
+
+?- rel(T,_).        % Expecting (1,2)
+?- serial_rel(T,_). % Expecting (1,2,3,4)
