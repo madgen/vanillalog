@@ -6,35 +6,21 @@
 packages:
 - completed:
     cabal-file:
-      size: 3924
-      sha256: 4cca0aff7c4b5a58d8e08699dc6515f07f5e83db1b3dc825d025750597d6e7c2
+      size: 3992
+      sha256: b106431ca402e655b43fa0bc1ab90684c6916ef2c2775b83d9906dc27f0ef956
     name: exalog-engine
     version: 0.1.0.0
     git: https://github.com/madgen/exalog.git
     pantry-tree:
-      size: 3788
-      sha256: 2bb965eac7174957ef14931d6296e65278f129d3a7063f426fcf515281624642
-    commit: 7c1a3dff4a3fe616c2e02b2e029187d0c46014db
+      size: 3742
+      sha256: 3fdb5ad558fd62c47ae688cc5c6b0598d0818ff4a94d96682682e81d15ccb243
+    commit: 19720d39795bc6b107e97cc007be54a1ddb727f6
   original:
     git: https://github.com/madgen/exalog.git
-    commit: 7c1a3dff4a3fe616c2e02b2e029187d0c46014db
-- completed:
-    cabal-file:
-      size: 3301
-      sha256: 50331e37069a9c17169a199432221bd5b33a195333c38b6239540369e6c17957
-    name: ghc-typelits-natnormalise
-    version: 0.6.3
-    git: git@github.com:clash-lang/ghc-typelits-natnormalise
-    pantry-tree:
-      size: 843
-      sha256: 2f50f0d66e1705cd0ad9dd24c78a80b97d90a88e8a83d2fb39f8b64d6d23ca28
-    commit: 45080a9f50b040178e145c0e9b489c26c17a6d52
-  original:
-    git: git@github.com:clash-lang/ghc-typelits-natnormalise
-    commit: 45080a9f50b040178e145c0e9b489c26c17a6d52
+    commit: 19720d39795bc6b107e97cc007be54a1ddb727f6
 snapshots:
 - completed:
-    size: 498365
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/13/18.yaml
-    sha256: c813b03544da8a9053b722f00f3f9a0aade23443130ac7160fefa89e01f5fb17
-  original: lts-13.18
+    size: 529130
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/nightly/2019/9/16.yaml
+    sha256: a8c2355f4f1c46896e5c32aa0b576bbacf0677ff8a164333fa29733d39c3cf4f
+  original: nightly-2019-09-16
