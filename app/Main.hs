@@ -7,10 +7,10 @@ import Protolude
 import qualified Data.ByteString.Lazy.Char8 as BS
 
 import           Language.Exalog.Pretty ()
-import qualified Language.Exalog.Solver as S
+import qualified Language.Exalog.Solver as Solver
 
 import           Language.Vanillalog.Generic.Pretty (pp)
-import qualified Language.Vanillalog.Stage as Stage
+import qualified Language.Vanillalog.Stage as S
 
 import Language.Vanillalog.Generic.CLI.Arguments
 import Language.Vanillalog.Generic.CLI.Util
@@ -40,23 +40,42 @@ run :: RunOptions -> IO ()
 run RunOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile _file
 
-  succeedOrDie (Stage.parse _file) bs $ \ast ->
-    succeedOrDie (Stage.stratified _file >=> uncurry S.solve) bs $ display ast
+  let stageEnv =  S.StageEnv _file bs S.SProgram
+  succeedOrDie stageEnv S.parse $ \ast ->
+    succeedOrDie stageEnv (S.stratified >>= lift . uncurry Solver.solve) $
+      display ast
 
 repl :: ReplOptions -> IO ()
-repl _ = panic "REPL is not yet supported."
+repl _ = do
+  putStrLn @Text "Interactive Vanillalog environment - REPL"
+  HLine.runInputT HLine.defaultSettings loop
+  where
+  loop :: HLine.InputT IO ()
+  loop = do
+    minput <- HLine.getInputLine "?- "
+    case minput of
+      Nothing      -> pure ()
+      Just command
+        | command `elem` [ ":e", ":exit",  ":q", ":quit" ] -> pure ()
+        | otherwise -> do -- Interpret it as a query
+          -- sentenceParser ("?- " ++ command)
+          return ()
+--      Just input -> do
+--        HLine.outputStrLn $ "Input was: " ++ input
+--        loop
 
 prettyPrint :: PPOptions Stage -> IO ()
 prettyPrint PPOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile _file
+  let stageEnv = S.StageEnv _file bs S.SProgram
   case _stage of
-    VanillaLex        -> succeedOrDie (Stage.lex _file) bs print
-    VanillaParse      -> succeedOrDie (Stage.parse _file) bs $ putStrLn . pp
-    VanillaNormal     -> succeedOrDie (Stage.normalised _file) bs $ putStrLn . pp
-    Exalog            -> succeedOrDie (Stage.compiled _file) bs printExalog
-    ExalogRangeRepair -> succeedOrDie (Stage.rangeRestrictionRepaired _file) bs printExalog
-    ExalogWellMode    -> succeedOrDie (Stage.wellModed _file) bs printExalog
-    ExalogStratify    -> succeedOrDie (Stage.stratified _file) bs printExalog
+    VanillaLex        -> succeedOrDie stageEnv S.lex print
+    VanillaParse      -> succeedOrDie stageEnv S.parse $ putStrLn . pp
+    VanillaNormal     -> succeedOrDie stageEnv S.normalised $ putStrLn . pp
+    Exalog            -> succeedOrDie stageEnv S.compiled printExalog
+    ExalogRangeRepair -> succeedOrDie stageEnv S.rangeRestrictionRepaired printExalog
+    ExalogWellMode    -> succeedOrDie stageEnv S.wellModed printExalog
+    ExalogStratify    -> succeedOrDie stageEnv S.stratified printExalog
   where
   printExalog (exalogProgram, initEDB) = do
     putStrLn $ pp exalogProgram

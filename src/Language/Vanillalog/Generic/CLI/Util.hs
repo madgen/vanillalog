@@ -9,7 +9,6 @@ import System.Exit (exitFailure)
 import Text.PrettyPrint hiding ((<>))
 
 import           Data.Text (pack)
-import qualified Data.ByteString.Lazy.Char8 as BS
 
 import qualified Language.Exalog.Core as E
 import qualified Language.Exalog.Logger as L
@@ -20,14 +19,15 @@ import qualified Language.Exalog.Tuples as T
 
 import           Language.Vanillalog.AST
 import qualified Language.Vanillalog.Generic.AST as AG
+import qualified Language.Vanillalog.Generic.Stage as S
 import           Language.Vanillalog.Generic.Pretty (HasPrecedence)
 
-succeedOrDie :: (BS.ByteString -> L.Logger b)
-             -> BS.ByteString
-             -> (b -> IO a)
-             -> IO a
-succeedOrDie processor bs action = do
-  mResult <- L.runLoggerT $ processor bs
+succeedOrDie :: S.StageEnv
+             -> S.Stage a
+             -> (a -> IO b)
+             -> IO b
+succeedOrDie env processor action = do
+  mResult <- L.runLoggerT $ S.runStageT env processor
   case mResult of
     Just result -> action result
     Nothing     -> exitFailure
