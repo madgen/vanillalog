@@ -33,7 +33,7 @@ display :: Pretty (hop 'Nullary) => Pretty (hop 'Unary) => Pretty (hop 'Binary)
         => HasPrecedence hop => HasPrecedence bop
         => AG.Program decl hop bop -> R.Solution 'E.ABase -> IO ()
 display program sol =
-  forM_ (zip [(1 :: Int)..] (AG.queries program)) $ \(ix, query) -> do
+  forM_ (zip [(0 :: Int)..] (AG.queries program)) $ \(ix, query) -> do
     putStrLn . pp $ query
     R.findTuplesByPredSym (E.PredicateSymbol $ "query_" <> (pack . show) ix) sol $
       putStrLn . displayTuples
