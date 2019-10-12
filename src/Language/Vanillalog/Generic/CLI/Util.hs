@@ -1,6 +1,10 @@
 {-# LANGUAGE DataKinds #-}
 
-module Language.Vanillalog.Generic.CLI.Util where
+module Language.Vanillalog.Generic.CLI.Util
+  ( succeedOrDie
+  , display
+  , displayTuples
+  ) where
 
 import Protolude
 
@@ -34,8 +38,8 @@ display program sol =
     R.findTuplesByPredSym (E.PredicateSymbol $ "query_" <> (pack . show) ix) sol $
       putStrLn . displayTuples
     putStrLn ("" :: Text)
-  where
-  displayTuples :: T.Tuples n -> Text
-  displayTuples tuples
-    | T.isEmpty tuples = "There are no answers to this query."
-    | otherwise        = pack . render . vcat . prettyC $ tuples
+
+displayTuples :: T.Tuples n -> Text
+displayTuples tuples
+  | T.isEmpty tuples = "There are no answers to this query."
+  | otherwise        = pack . render . vcat . prettyC $ tuples
