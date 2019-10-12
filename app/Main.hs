@@ -62,18 +62,20 @@ repl ReplOptions{..} = do
     succeedOrDie stageEnv (S.solved mempty)
 
   loop baseSol = do
-    mInput <- HLine.getInputLine "?- "
+    mInput <- HLine.getInputLine prefix
     case mInput of
       Nothing -> pure ()
       Just input
         | input `elem` [ ":e", ":exit", ":q", ":quit" ] -> pure ()
         | otherwise -> do -- Interpret it as a query
-          mSolution <- lift $ S.runStage (mkReplEnv input) (S.solved baseSol)
+          mSolution <- lift $
+            S.runStage (mkReplEnv $ prefix <> input) (S.solved baseSol)
           HLine.outputStrLn $ case mSolution of
             Just sol -> T.unpack $ pp sol
             Nothing  -> "Ill-formed query. Try again."
           loop baseSol
 
+  prefix = "?- "
   mkReplEnv inp = S.StageEnv "STDIN" (BS.pack inp) S.SSentence S.OnlyQueryPreds
 
 prettyPrint :: PPOptions Stage -> IO ()

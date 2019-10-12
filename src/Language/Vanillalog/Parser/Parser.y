@@ -52,7 +52,7 @@ PROGRAM :: { Program }
 : CLAUSES eof { G.Program (span $1) . reverse $ $1 }
 
 REPL_LINE :: { Query }
-: SUBGOAL "." eof { G.Query (span ($1,$2)) Nothing $1 }
+: "?-" SUBGOAL "." eof { G.Query (span ($1,$3)) Nothing $2 }
 
 CLAUSES :: { [ Statement ] }
 : CLAUSES CLAUSE { G.StSentence $2 : $1 }
