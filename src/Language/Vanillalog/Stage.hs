@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Language.Vanillalog.Stage
   ( lex
@@ -74,4 +75,13 @@ stratified = do
   pure (pr', sol)
 
 solved :: Stage (R.Solution 'E.ABase)
-solved = stratified >>= lift . uncurry Solver.solve
+solved = do
+  (program, edb) <- stratified
+  keepPredicates <- _keepPredicates <$> ask
+  lift $ case keepPredicates of
+    OnlyQueryPreds -> Solver.solve program edb
+    AllPreds       -> Solver.solve (mkEveryPredQueriable program) edb
+  where
+  mkEveryPredQueriable :: E.Program 'E.ABase -> E.Program 'E.ABase
+  mkEveryPredQueriable pr@E.Program{..} =
+    E.Program{_queries = E.intentionals pr,..}

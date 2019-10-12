@@ -2,6 +2,7 @@ module Language.Vanillalog.Generic.Stage
   ( Stage
   , StageEnv(..)
   , ParserScope(..)
+  , KeepPredicates(..)
   , runStageT
   ) where
 
@@ -13,10 +14,13 @@ import qualified Language.Exalog.Logger as Log
 
 data ParserScope = SProgram | SSentence
 
+data KeepPredicates = OnlyQueryPreds | AllPreds
+
 data StageEnv = StageEnv
-  { _file        :: FilePath
-  , _input       :: BS.ByteString
-  , _parserScope :: ParserScope
+  { _file           :: FilePath
+  , _input          :: BS.ByteString
+  , _parserScope    :: ParserScope
+  , _keepPredicates :: KeepPredicates
   }
 
 runStageT :: StageEnv -> Stage a -> Log.Logger a

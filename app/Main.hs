@@ -40,7 +40,7 @@ run :: RunOptions -> IO ()
 run RunOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile _file
 
-  let stageEnv =  S.StageEnv _file bs S.SProgram
+  let stageEnv =  S.StageEnv _file bs S.SProgram S.AllPreds
   ast <- succeedOrDie stageEnv S.parse
   sol <- succeedOrDie stageEnv S.solved
   display ast sol
@@ -67,7 +67,7 @@ repl _ = do
 prettyPrint :: PPOptions Stage -> IO ()
 prettyPrint PPOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile _file
-  let stageEnv = S.StageEnv _file bs S.SProgram
+  let stageEnv = S.StageEnv _file bs S.SProgram S.AllPreds
   case _stage of
     VanillaLex        -> print         =<< succeedOrDie stageEnv S.lex
     VanillaParse      -> putStrLn . pp =<< succeedOrDie stageEnv S.parse
