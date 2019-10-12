@@ -58,4 +58,5 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
+    - haskeline >= 0.7 && < 0.8
     - vanillalog

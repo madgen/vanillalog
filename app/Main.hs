@@ -1,10 +1,16 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Main where
 
 import Protolude
 
 import qualified Data.ByteString.Lazy.Char8 as BS
+import qualified Data.Text as T
+
+import qualified System.Console.Haskeline as HLine
+
+import Options.Applicative hiding (command, header)
 
 import           Language.Exalog.Pretty ()
 
@@ -13,8 +19,6 @@ import qualified Language.Vanillalog.Stage as S
 
 import Language.Vanillalog.Generic.CLI.Arguments
 import Language.Vanillalog.Generic.CLI.Util
-
-import Options.Applicative hiding (command, header)
 
 data Stage =
     VanillaLex
@@ -39,29 +43,38 @@ run :: RunOptions -> IO ()
 run RunOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile _file
 
-  let stageEnv =  S.StageEnv _file bs S.SProgram S.AllPreds
+  let stageEnv =  S.StageEnv _file bs S.SProgram S.OnlyQueryPreds
   ast <- succeedOrDie stageEnv S.parse
-  sol <- succeedOrDie stageEnv S.solved
+  sol <- succeedOrDie stageEnv (S.solved mempty)
   display ast sol
 
 repl :: ReplOptions -> IO ()
-repl _ = do
+repl ReplOptions{..} = do
   putStrLn @Text "Interactive Vanillalog environment - REPL"
-  HLine.runInputT HLine.defaultSettings loop
+
+  baseSolution <- computeBase
+
+  HLine.runInputT HLine.defaultSettings (loop baseSolution)
   where
-  loop :: HLine.InputT IO ()
-  loop = do
-    minput <- HLine.getInputLine "?- "
-    case minput of
-      Nothing      -> pure ()
-      Just command
-        | command `elem` [ ":e", ":exit",  ":q", ":quit" ] -> pure ()
+  computeBase =  do
+    bs <- BS.fromStrict . encodeUtf8 <$> readFile _file
+    let stageEnv = S.StageEnv _file bs S.SProgram S.AllPreds
+    succeedOrDie stageEnv (S.solved mempty)
+
+  loop baseSol = do
+    mInput <- HLine.getInputLine "?- "
+    case mInput of
+      Nothing -> pure ()
+      Just input
+        | input `elem` [ ":e", ":exit", ":q", ":quit" ] -> pure ()
         | otherwise -> do -- Interpret it as a query
-          -- sentenceParser ("?- " ++ command)
-          return ()
---      Just input -> do
---        HLine.outputStrLn $ "Input was: " ++ input
---        loop
+          mSolution <- lift $ S.runStage (mkReplEnv input) (S.solved baseSol)
+          HLine.outputStrLn $ case mSolution of
+            Just sol -> T.unpack $ pp sol
+            Nothing  -> "Ill-formed query. Try again."
+          loop baseSol
+
+  mkReplEnv inp = S.StageEnv "STDIN" (BS.pack inp) S.SSentence S.OnlyQueryPreds
 
 prettyPrint :: PPOptions Stage -> IO ()
 prettyPrint PPOptions{..} = do
@@ -88,8 +101,8 @@ main = do
       (prefs showHelpOnEmpty)
       (optsParser (fromStageParser stageParser) header)
   case command of
-    Run runOpts   -> run  runOpts
-    Repl replOpts -> repl replOpts
+    Run runOpts        -> run runOpts
+    Repl replOpts      -> repl replOpts
     PrettyPrint ppOpts -> prettyPrint ppOpts
   where
   header = "vanillalog - a simple Datalog compiler"

@@ -12,13 +12,27 @@ If you do `stack install`, you shouldn't need the prefix  `stack exec --`. From 
 
 ## Usage
 
-Running `vanillalog` lists all the options, but in summary, one can `run` or inspect (`pp`) a datalog program. There is a `repl` option listed as well, but it is not yet implemented.
+Running `vanillalog` lists all the options, but in summary, one can `run` or
+inspect (`pp`) a datalog program. There is a `repl` as well.
 
-The most common usage should be
+The most common usage to evaluate a program and see the results to queries in
+the source is:
 
 ```
 vanillalog run -f <filepath>
 ```
+
+The REPL also evaluates a Datalog file, but it also provides a loop to write
+further queries on it. It's invocation is as follows:
+
+```
+vanillalog repl -f <filepath>
+```
+
+You can use `:q`, `:quit`, `:e`, `:exit`, or `Ctrl+D` to exit it.
+
+The REPL doesn't yet allow extending existing predicates or defining recursive
+queries.
 
 ## Syntax
 
@@ -75,7 +89,3 @@ Body ::= Atomic Formula | Body , Body | Body ; Body | ! Body | ( Body )
 ## Semantics
 
 To be continued...
-
-## Roadmap for development
-
- - REPL (requires work on the backend)

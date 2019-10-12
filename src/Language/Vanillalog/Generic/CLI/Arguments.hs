@@ -9,7 +9,8 @@ import Options.Applicative
 newtype RunOptions = RunOptions
   { _file :: FilePath }
 
-data ReplOptions = ReplOptions
+newtype ReplOptions = ReplOptions
+  { _file :: FilePath }
 
 data PPOptions stage = PPOptions
   { _file  :: FilePath
@@ -34,7 +35,7 @@ runOptions :: Parser RunOptions
 runOptions = RunOptions <$> fileParser
 
 replOptions :: Parser ReplOptions
-replOptions = pure ReplOptions
+replOptions = ReplOptions <$> fileParser
 
 data Command stage =
   Run RunOptions | Repl ReplOptions | PrettyPrint (PPOptions stage)

@@ -74,14 +74,15 @@ stratified = do
   pr' <- lift $ stratify $ E.decorate pr
   pure (pr', sol)
 
-solved :: Stage (R.Solution 'E.ABase)
-solved = do
-  (program, edb) <- stratified
+solved :: R.Solution 'E.ABase -> Stage (R.Solution 'E.ABase)
+solved baseEDB = do
+  (program, initEDB) <- stratified
   keepPredicates <- _keepPredicates <$> ask
+  let edb = baseEDB <> initEDB
   lift $ case keepPredicates of
     OnlyQueryPreds -> Solver.solve program edb
     AllPreds       -> Solver.solve (mkEveryPredQueriable program) edb
   where
   mkEveryPredQueriable :: E.Program 'E.ABase -> E.Program 'E.ABase
   mkEveryPredQueriable pr@E.Program{..} =
-    E.Program{_queries = E.intentionals pr,..}
+    E.Program{_queries = E.predicates pr,..}
