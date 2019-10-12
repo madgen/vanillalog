@@ -41,9 +41,9 @@ run RunOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile _file
 
   let stageEnv =  S.StageEnv _file bs S.SProgram
-  succeedOrDie stageEnv S.parse $ \ast ->
-    succeedOrDie stageEnv (S.stratified >>= lift . uncurry Solver.solve) $
-      display ast
+  ast <- succeedOrDie stageEnv S.parse
+  sol <- succeedOrDie stageEnv S.solved
+  display ast sol
 
 repl :: ReplOptions -> IO ()
 repl _ = do
@@ -69,13 +69,13 @@ prettyPrint PPOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile _file
   let stageEnv = S.StageEnv _file bs S.SProgram
   case _stage of
-    VanillaLex        -> succeedOrDie stageEnv S.lex print
-    VanillaParse      -> succeedOrDie stageEnv S.parse $ putStrLn . pp
-    VanillaNormal     -> succeedOrDie stageEnv S.normalised $ putStrLn . pp
-    Exalog            -> succeedOrDie stageEnv S.compiled printExalog
-    ExalogRangeRepair -> succeedOrDie stageEnv S.rangeRestrictionRepaired printExalog
-    ExalogWellMode    -> succeedOrDie stageEnv S.wellModed printExalog
-    ExalogStratify    -> succeedOrDie stageEnv S.stratified printExalog
+    VanillaLex        -> print         =<< succeedOrDie stageEnv S.lex
+    VanillaParse      -> putStrLn . pp =<< succeedOrDie stageEnv S.parse
+    VanillaNormal     -> putStrLn . pp =<< succeedOrDie stageEnv S.normalised
+    Exalog            -> printExalog   =<< succeedOrDie stageEnv S.compiled
+    ExalogRangeRepair -> printExalog   =<< succeedOrDie stageEnv S.rangeRestrictionRepaired
+    ExalogWellMode    -> printExalog   =<< succeedOrDie stageEnv S.wellModed
+    ExalogStratify    -> printExalog   =<< succeedOrDie stageEnv S.stratified
   where
   printExalog (exalogProgram, initEDB) = do
     putStrLn $ pp exalogProgram

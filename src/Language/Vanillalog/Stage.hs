@@ -9,6 +9,7 @@ module Language.Vanillalog.Stage
   , rangeRestrictionRepaired
   , wellModed
   , stratified
+  , solved
   , module Stage
   ) where
 
@@ -17,6 +18,7 @@ import Protolude
 import qualified Language.Exalog.Core as E
 import qualified Language.Exalog.Relation as R
 import           Language.Exalog.Renamer (rename)
+import qualified Language.Exalog.Solver as Solver
 import           Language.Exalog.SrcLoc (span)
 import           Language.Exalog.RangeRestriction (fixRangeRestriction)
 import           Language.Exalog.WellModing (fixModing)
@@ -70,3 +72,6 @@ stratified = do
   (pr, sol) <- wellModed
   pr' <- lift $ stratify $ E.decorate pr
   pure (pr', sol)
+
+solved :: Stage (R.Solution 'E.ABase)
+solved = stratified >>= lift . uncurry Solver.solve

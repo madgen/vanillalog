@@ -24,13 +24,10 @@ import           Language.Vanillalog.Generic.Pretty (HasPrecedence)
 
 succeedOrDie :: S.StageEnv
              -> S.Stage a
-             -> (a -> IO b)
-             -> IO b
-succeedOrDie env processor action = do
+             -> IO a
+succeedOrDie env processor = do
   mResult <- L.runLoggerT $ S.runStageT env processor
-  case mResult of
-    Just result -> action result
-    Nothing     -> exitFailure
+  maybe exitFailure pure mResult
 
 display :: Pretty (hop 'Nullary) => Pretty (hop 'Unary) => Pretty (hop 'Binary)
         => Pretty (bop 'Nullary) => Pretty (bop 'Unary) => Pretty (bop 'Binary)
