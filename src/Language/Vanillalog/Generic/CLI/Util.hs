@@ -11,7 +11,6 @@ import Text.PrettyPrint hiding ((<>))
 import           Data.Text (pack)
 
 import qualified Language.Exalog.Core as E
-import qualified Language.Exalog.Logger as L
 import           Language.Exalog.Pretty (pp)
 import           Language.Exalog.Pretty.Helper (Pretty, prettyC)
 import qualified Language.Exalog.Relation as R
@@ -22,12 +21,8 @@ import qualified Language.Vanillalog.Generic.AST as AG
 import qualified Language.Vanillalog.Generic.Stage as S
 import           Language.Vanillalog.Generic.Pretty (HasPrecedence)
 
-succeedOrDie :: S.StageEnv
-             -> S.Stage a
-             -> IO a
-succeedOrDie env processor = do
-  mResult <- L.runLoggerT $ S.runStageT env processor
-  maybe exitFailure pure mResult
+succeedOrDie :: S.StageEnv -> S.Stage a -> IO a
+succeedOrDie env processor = maybe exitFailure pure =<< S.runStage env processor
 
 display :: Pretty (hop 'Nullary) => Pretty (hop 'Unary) => Pretty (hop 'Binary)
         => Pretty (bop 'Nullary) => Pretty (bop 'Unary) => Pretty (bop 'Binary)

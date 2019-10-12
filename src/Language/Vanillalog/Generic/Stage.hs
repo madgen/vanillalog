@@ -3,7 +3,7 @@ module Language.Vanillalog.Generic.Stage
   , StageEnv(..)
   , ParserScope(..)
   , KeepPredicates(..)
-  , runStageT
+  , runStage
   ) where
 
 import Protolude
@@ -23,7 +23,7 @@ data StageEnv = StageEnv
   , _keepPredicates :: KeepPredicates
   }
 
-runStageT :: StageEnv -> Stage a -> Log.Logger a
-runStageT env = (`runReaderT` env)
+runStage :: StageEnv -> Stage a -> IO (Maybe a)
+runStage env = Log.runLoggerT . (`runReaderT` env)
 
 type Stage a = ReaderT StageEnv Log.Logger a

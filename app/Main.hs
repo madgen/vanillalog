@@ -7,7 +7,6 @@ import Protolude
 import qualified Data.ByteString.Lazy.Char8 as BS
 
 import           Language.Exalog.Pretty ()
-import qualified Language.Exalog.Solver as Solver
 
 import           Language.Vanillalog.Generic.Pretty (pp)
 import qualified Language.Vanillalog.Stage as S
