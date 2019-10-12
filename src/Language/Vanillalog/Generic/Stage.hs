@@ -3,6 +3,7 @@ module Language.Vanillalog.Generic.Stage
   , StageEnv(..)
   , ParserScope(..)
   , KeepPredicates(..)
+  , defaultStageEnv
   , runStage
   ) where
 
@@ -16,12 +17,18 @@ data ParserScope = SProgram | SSentence
 
 data KeepPredicates = OnlyQueryPreds | AllPreds
 
+type ReservedNames = [ Text ]
+
 data StageEnv = StageEnv
   { _file           :: FilePath
   , _input          :: BS.ByteString
   , _parserScope    :: ParserScope
   , _keepPredicates :: KeepPredicates
+  , _reservedNames  :: ReservedNames
   }
+
+defaultStageEnv :: StageEnv
+defaultStageEnv = StageEnv "STDIN" "" SProgram OnlyQueryPreds []
 
 runStage :: StageEnv -> Stage a -> IO (Maybe a)
 runStage env = Log.runLoggerT . (`runReaderT` env)

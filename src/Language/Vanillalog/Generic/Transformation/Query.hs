@@ -18,10 +18,13 @@ import           Language.Vanillalog.Generic.AST
 import           Language.Vanillalog.Generic.Transformation.Util
 
 nameQueries :: forall decl hop bop
-             . Program decl hop bop -> L.Logger (Program decl hop bop)
-nameQueries pr = runFreshT (Just "query_") reserved (transformM go pr)
+             . [ Text ]
+            -> Program decl hop bop
+            -> L.Logger (Program decl hop bop)
+nameQueries edbReserved pr =
+  runFreshT (Just "query_") (edbReserved <> prReserved) (transformM go pr)
   where
-  reserved = (\(PredicateSymbol txt) -> txt) . _predSym <$> atoms @_ @Term pr
+  prReserved = (\(PredicateSymbol txt) -> txt) . _predSym <$> atoms @_ @Term pr
 
   go :: Sentence hop bop -> FreshT L.Logger (Sentence hop bop)
   go (SQuery Query{_head = Nothing, ..}) =

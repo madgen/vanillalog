@@ -50,7 +50,10 @@ parse = do
       pure $ G.Program (span query) [ G.StSentence (G.SQuery query) ]
 
 namedQueries :: Stage Program
-namedQueries = parse >>= lift . nameQueries
+namedQueries = do
+  ast <- parse
+  reserved <- _reservedNames <$> ask
+  lift $ nameQueries reserved ast
 
 normalised :: Stage Program
 normalised = namedQueries >>= lift . normalise

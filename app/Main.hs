@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeApplications #-}
 
@@ -12,7 +13,9 @@ import qualified System.Console.Haskeline as HLine
 
 import Options.Applicative hiding (command, header)
 
+import qualified Language.Exalog.Core as E
 import           Language.Exalog.Pretty ()
+import qualified Language.Exalog.Relation as R
 
 import           Language.Vanillalog.Generic.Pretty (pp)
 import qualified Language.Vanillalog.Stage as S
@@ -43,7 +46,7 @@ run :: RunOptions -> IO ()
 run RunOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile _file
 
-  let stageEnv =  S.StageEnv _file bs S.SProgram S.OnlyQueryPreds
+  let stageEnv =  S.defaultStageEnv {S._file = _file, S._input =  bs}
   ast <- succeedOrDie stageEnv S.parse
   sol <- succeedOrDie stageEnv (S.solved mempty)
   display ast sol
@@ -58,7 +61,11 @@ repl ReplOptions{..} = do
   where
   computeBase =  do
     bs <- BS.fromStrict . encodeUtf8 <$> readFile _file
-    let stageEnv = S.StageEnv _file bs S.SProgram S.AllPreds
+    let stageEnv = S.defaultStageEnv
+          { S._file           = _file
+          , S._input          = bs
+          , S._keepPredicates = S.AllPreds
+          }
     succeedOrDie stageEnv (S.solved mempty)
 
   loop baseSol = do
@@ -69,19 +76,30 @@ repl ReplOptions{..} = do
         | input `elem` [ ":e", ":exit", ":q", ":quit" ] -> pure ()
         | otherwise -> do -- Interpret it as a query
           mSolution <- lift $
-            S.runStage (mkReplEnv $ prefix <> input) (S.solved baseSol)
+            S.runStage (mkReplEnv baseSol $ prefix <> input) (S.solved baseSol)
           HLine.outputStrLn $ case mSolution of
             Just sol -> T.unpack $ pp sol
             Nothing  -> "Ill-formed query. Try again."
           loop baseSol
 
   prefix = "?- "
-  mkReplEnv inp = S.StageEnv "STDIN" (BS.pack inp) S.SSentence S.OnlyQueryPreds
+
+  mkReplEnv :: R.Solution 'E.ABase -> [ Char ] -> S.StageEnv
+  mkReplEnv sol inp = S.defaultStageEnv
+    { S._input          = BS.pack inp
+    , S._parserScope    = S.SSentence
+    , S._keepPredicates = S.OnlyQueryPreds
+    , S._reservedNames  = reserved sol
+    }
+
+  reserved :: R.Solution 'E.ABase -> [ Text ]
+  reserved sol = ((\E.Predicate{_predSym = E.PredicateSymbol txt} -> txt) E.$$)
+             <$> R.predicates sol
 
 prettyPrint :: PPOptions Stage -> IO ()
 prettyPrint PPOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile _file
-  let stageEnv = S.StageEnv _file bs S.SProgram S.AllPreds
+  let stageEnv = S.StageEnv _file bs S.SProgram S.AllPreds []
   case _stage of
     VanillaLex        -> print         =<< succeedOrDie stageEnv S.lex
     VanillaParse      -> putStrLn . pp =<< succeedOrDie stageEnv S.parse
