@@ -46,8 +46,8 @@ parse = do
   case _parserScope env of
     SProgram  -> lift $ Parser.programParser (_file env) (_input env)
     SSentence -> do
-      sent <- lift $ Parser.sentenceParser (_file env) (_input env)
-      pure $ G.Program (span sent) [ G.StSentence sent ]
+      query <- lift $ Parser.replParser (_file env) (_input env)
+      pure $ G.Program (span query) [ G.StSentence (G.SQuery query) ]
 
 namedQueries :: Stage Program
 namedQueries = parse >>= lift . nameQueries

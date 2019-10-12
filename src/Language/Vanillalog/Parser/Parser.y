@@ -17,7 +17,7 @@ import           Language.Vanillalog.Parser.Lexer (Token(..), lex)
 }
 
 %name      programParser1 PROGRAM
-%name      sentenceParser1 CLAUSE
+%name      replParser1 REPL_LINE
 %monad     { Log.Logger }
 %tokentype { L.Lexeme (Token Text) }
 %error     { parseError }
@@ -50,6 +50,9 @@ import           Language.Vanillalog.Parser.Lexer (Token(..), lex)
 
 PROGRAM :: { Program }
 : CLAUSES eof { G.Program (span $1) . reverse $ $1 }
+
+REPL_LINE :: { Query }
+: SUBGOAL "." eof { G.Query (span ($1,$2)) Nothing $1 }
 
 CLAUSES :: { [ Statement ] }
 : CLAUSES CLAUSE { G.StSentence $2 : $1 }
@@ -96,5 +99,5 @@ parseError :: [ L.Lexeme (Token Text) ] -> Log.Logger a
 parseError tokens = Log.scold (Just . span . head $ tokens) ("Parse error.")
 
 programParser  file = lex file >=> programParser1
-sentenceParser file = lex file >=> sentenceParser1
+replParser file = lex file >=> replParser1
 }
