@@ -15,7 +15,7 @@ import qualified Language.Vanillalog.Stage as Stage
 import Language.Vanillalog.Generic.CLI.Arguments
 import Language.Vanillalog.Generic.CLI.Util
 
-import Options.Applicative hiding (command)
+import Options.Applicative hiding (command, header)
 
 data Stage =
     VanillaLex
@@ -65,8 +65,13 @@ prettyPrint PPOptions{..} = do
 
 main :: IO ()
 main = do
-  command <- execParser (info (opts (fromStageParser stageParser)) idm)
+  command <-
+    customExecParser
+      (prefs showHelpOnEmpty)
+      (optsParser (fromStageParser stageParser) header)
   case command of
     Run runOpts   -> run  runOpts
     Repl replOpts -> repl replOpts
     PrettyPrint ppOpts -> prettyPrint ppOpts
+  where
+  header = "vanillalog - a simple Datalog compiler"
