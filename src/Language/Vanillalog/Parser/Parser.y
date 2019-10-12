@@ -17,7 +17,7 @@ import           Language.Vanillalog.Parser.Lexer (Token(..), lex)
 }
 
 %name      programParser1 PROGRAM
-%name      clauseFactParser1 CLAUSE
+%name      sentenceParser1 CLAUSE
 %monad     { Log.Logger }
 %tokentype { L.Lexeme (Token Text) }
 %error     { parseError }
@@ -95,6 +95,6 @@ VAR :: { Var }
 parseError :: [ L.Lexeme (Token Text) ] -> Log.Logger a
 parseError tokens = Log.scold (Just . span . head $ tokens) ("Parse error.")
 
-programParser    file = lex file >=> programParser1
-clauseFactParser file = lex file >=> clauseFactParser1
+programParser  file = lex file >=> programParser1
+sentenceParser file = lex file >=> sentenceParser1
 }
