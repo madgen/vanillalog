@@ -44,21 +44,20 @@ instance ( Compilable (Clause hop bop)
   type Output (Program Void hop bop) =
     L.Logger (E.Program 'E.ABase, R.Solution 'E.ABase)
 
-  compile Program{..} = action
-    where
-    action = do
-      edb             <- traverse compile facts'
-      compiledClauses <- traverse compile clauses'
-      compiledQueries <- traverse compile queries'
-      return
-        ( E.Program
-            { _annotation = E.ProgABase _span
-            , _strata     = [ E.Stratum $ compiledClauses ++ compiledQueries ]
-            , _queries    = queryPreds compiledQueries
-            }
-        , R.fromList edb
-        )
+  compile Program{..} = do
+    edb             <- traverse compile facts'
+    compiledClauses <- traverse compile clauses'
+    compiledQueries <- traverse compile queries'
+    return
+      ( E.Program
+          { _annotation = E.ProgABase _span
+          , _strata     = [ E.Stratum $ compiledClauses ++ compiledQueries ]
+          , _queries    = queryPreds compiledQueries
+          }
+      , R.fromList edb
+      )
 
+    where
     clauses' = [ _clause s | StSentence s@SClause{} <- _statements ]
     facts'   = [ _fact   s | StSentence s@SFact{}   <- _statements ]
     queries' = [ _query  s | StSentence s@SQuery{}  <- _statements ]
