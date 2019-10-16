@@ -6,7 +6,7 @@ module Language.Vanillalog.Generic.CLI.Util
   , displayTuples
   ) where
 
-import Protolude
+import Protolude hiding (pred)
 
 import System.Exit (exitFailure)
 
@@ -16,9 +16,11 @@ import           Data.Text (pack)
 
 import qualified Language.Exalog.Core as E
 import           Language.Exalog.Pretty (pp)
-import           Language.Exalog.Pretty.Helper (Pretty, prettyC)
+import           Language.Exalog.Pretty.Helper (Pretty, prettyC, pretty)
 import qualified Language.Exalog.Relation as R
 import qualified Language.Exalog.Tuples as T
+import qualified Language.Exalog.Logger as L
+import           Language.Exalog.SrcLoc (span, SrcSpan)
 
 import           Language.Vanillalog.AST
 import qualified Language.Vanillalog.Generic.AST as AG
@@ -32,14 +34,30 @@ display :: Pretty (hop 'Nullary) => Pretty (hop 'Unary) => Pretty (hop 'Binary)
         => Pretty (bop 'Nullary) => Pretty (bop 'Unary) => Pretty (bop 'Binary)
         => HasPrecedence hop => HasPrecedence bop
         => AG.Program decl hop bop -> R.Solution 'E.ABase -> IO ()
-display program sol =
-  forM_ (zip [(0 :: Int)..] (AG.queries program)) $ \(ix, query) -> do
-    putStrLn . pp $ query
-    R.findTuplesByPredSym (E.PredicateSymbol $ "query_" <> (pack . show) ix) sol $
-      putStrLn . displayTuples
-    putStrLn ("" :: Text)
+display program sol = do
+  forM_ (R.toList sol) $ \(R.Relation pred tuples) -> do
+    -- Generated query heads contain the span of the overall query
+    let querySpan = span pred
+    mQuery <- findQueryM program querySpan
 
-displayTuples :: T.Tuples n -> Text
-displayTuples tuples
-  | T.isEmpty tuples = "There are no answers to this query."
-  | otherwise        = pack . render . vcat . prettyC $ tuples
+    case mQuery of
+      Just query -> do
+        putStrLn $ pp query
+        putStrLn $ pack . render . displayTuples $ tuples
+      Nothing -> pure ()
+
+findQueryM :: AG.Program decl hop bop -> SrcSpan -> IO (Maybe (AG.Query hop bop))
+findQueryM program querySpan = L.runLoggerT $
+  case findQuery program querySpan of
+    Just query -> pure query
+    Nothing    -> L.scream (Just querySpan) "This query cannot be found."
+
+findQuery :: AG.Program decl hop bop -> SrcSpan -> Maybe (AG.Query hop bop)
+findQuery pr s = find ((== s) . span) (AG.queries pr)
+
+displayTuples :: T.Tuples a -> Doc
+displayTuples tuples = nest 2 $
+     "There are " <>  pretty nOfTuples <> " solutions." $$ ""
+  $+$ if nOfTuples == 0 then mempty else (vcat $ prettyC tuples)
+  where
+  nOfTuples = T.size tuples

@@ -13,11 +13,11 @@ packages:
     git: https://github.com/madgen/exalog.git
     pantry-tree:
       size: 3742
-      sha256: 3fdb5ad558fd62c47ae688cc5c6b0598d0818ff4a94d96682682e81d15ccb243
-    commit: 19720d39795bc6b107e97cc007be54a1ddb727f6
+      sha256: 261eaa50645f65e1821f7d218a47b15fe45ccc3d952daf43ba4bf6eb09d9f3e8
+    commit: 9fd27ce7d93086e082944c8bcc9b117cbcdf9145
   original:
     git: https://github.com/madgen/exalog.git
-    commit: 19720d39795bc6b107e97cc007be54a1ddb727f6
+    commit: 9fd27ce7d93086e082944c8bcc9b117cbcdf9145
 snapshots:
 - completed:
     size: 529130

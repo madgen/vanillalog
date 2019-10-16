@@ -7,7 +7,8 @@ module Main where
 import Protolude
 
 import qualified Data.ByteString.Lazy.Char8 as BS
-import qualified Data.Text as T
+
+import Text.PrettyPrint (render)
 
 import qualified System.Console.Haskeline as HLine
 
@@ -49,6 +50,7 @@ run RunOptions{..} = do
   let stageEnv =  S.defaultStageEnv {S._file = _file, S._input =  bs}
   ast <- succeedOrDie stageEnv S.parse
   sol <- succeedOrDie stageEnv (S.solved mempty)
+
   display ast sol
 
 repl :: ReplOptions -> IO ()
@@ -78,7 +80,10 @@ repl ReplOptions{..} = do
           mSolution <- lift $
             S.runStage (mkReplEnv baseSol $ prefix <> input) (S.solved baseSol)
           HLine.outputStrLn $ case mSolution of
-            Just sol -> T.unpack $ pp sol
+            Just solution ->
+              case R.toList solution of
+                [ R.Relation _ tuples ] -> render $ displayTuples tuples
+                _ -> "Impossible! Solution doesn't have unique relation."
             Nothing  -> "Ill-formed query. Try again."
           loop baseSol
 
