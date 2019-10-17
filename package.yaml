@@ -60,3 +60,18 @@ executables:
     dependencies:
     - haskeline >= 0.7 && < 0.8
     - vanillalog
+
+tests:
+  vanillalog-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - hspec >= 2.7 && < 2.8
+    - exalog-engine
+    - vanillalog
+    build-tools:
+    - hspec-discover >= 2.7 && < 2.8
