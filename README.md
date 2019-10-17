@@ -4,7 +4,9 @@
 
 A statically-typed Datalog variant that is as vanilla as it gets.
 
-This is a frontend that compiles to [Exalog](https://github.com/madgen/exalog) for evaluation and optimisation.
+When used as a library, it provides an abstract AST acting as an intermediate target for Datalog variants with interesting operators. For example, see [Temporalog](https://github.com/madgen/temporalog) for using Computation Tree Logic (CTL) operators in Datalog formulae.
+
+This frontend (or intermediate representation) compiles to [Exalog](https://github.com/madgen/exalog) for evaluation and optimisation.
 
 ## Installation
 
