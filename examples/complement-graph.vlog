@@ -1,7 +1,7 @@
 % Complement of the transitive closure
 
-v(x)    :- r(x,y).
-v(y)    :- r(x,y).
-t(x,y)  :- r(x,y).
-t(x,y)  :- t(x,z), r(z,y).
-tc(x,y) :- v(x), v(y), !t(x,y).
+v(X)    :- r(X,Y).
+v(Y)    :- r(X,Y).
+t(X,Y)  :- r(X,Y).
+t(X,Y)  :- t(X,Z), r(Z,Y).
+tc(X,Y) :- v(X), v(Y), ! t(X,Y).
