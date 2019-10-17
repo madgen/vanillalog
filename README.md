@@ -1,5 +1,7 @@
 # Vanillalog
 
+[![Build Status](https://travis-ci.com/madgen/vanillalog.svg?branch=master)](https://travis-ci.com/madgen/vanillalog)
+
 A statically-typed Datalog variant that is as vanilla as it gets.
 
 This is a frontend that compiles to [Exalog](https://github.com/madgen/exalog) for evaluation and optimisation.
