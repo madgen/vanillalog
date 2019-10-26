@@ -2,4 +2,4 @@ resolver: nightly-2019-09-16
 
 extra-deps:
 - git: https://github.com/madgen/exalog.git
-  commit: 9fd27ce7d93086e082944c8bcc9b117cbcdf9145
+  commit: 6899c9bd445e96a2e78629bdfd1380ddbdd7ae49
