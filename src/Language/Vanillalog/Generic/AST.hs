@@ -24,7 +24,7 @@ import Data.List (nub)
 import Data.Functor.Foldable
 import Data.Functor.Foldable.TH (makeBaseFunctor)
 
-import Language.Exalog.Core (PredicateSymbol, SomeNature)
+import Language.Exalog.Core (PredicateSymbol, SomeForeignFunc)
 import Language.Exalog.SrcLoc
 
 data Program decl hop bop = Program
@@ -88,7 +88,7 @@ data AtomicFormula a =
   AtomicFormula
     { _span    :: SrcSpan
     , _predSym :: PredicateSymbol
-    , _nature  :: SomeNature
+    , _nature  :: Maybe SomeForeignFunc
     , _terms   :: [ a ]
     } deriving (Functor, Foldable, Traversable)
 

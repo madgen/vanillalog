@@ -6,9 +6,8 @@
 
 {-| A small library of foreign functions. -}
 module Language.Vanillalog.Generic.Foreign
-  ( FFILookupStatus(..)
-  -- * Arithmetic
-  , add
+  ( -- * Arithmetic
+    add
   , subtract
   , lt
   , lte
@@ -36,11 +35,6 @@ import qualified Data.Vector as V
 
 import Language.Exalog.Core
 import Language.Exalog.ForeignFunction
-
-data FFILookupStatus n =
-    NotFound
-  | WrongArity
-  | Found (ForeignFunc n)
 
 add :: ForeignFunc 3
 add = liftFunction ((+) :: Int -> Int -> Int)

@@ -9,10 +9,7 @@ import Protolude (Text, bimap, pure)
 
 import Control.Monad ((>=>))
 
-import           Language.Exalog.Core ( PredicateSymbol(..)
-                                      , SomeNature(..)
-                                      , Nature(Logical)
-                                      )
+import           Language.Exalog.Core (PredicateSymbol(..))
 import qualified Language.Exalog.Logger as Log
 import           Language.Exalog.SrcLoc
 
@@ -77,8 +74,8 @@ SUBGOAL :: { Subgoal Op Term}
 | SUBGOAL disj SUBGOAL { SDisj (span ($1,$3)) $1 $3 }
 
 ATOMIC_FORMULA :: { AtomicFormula Term }
-: FX_SYM "(" TERMS ")" { AtomicFormula (transSpan (fst $1) (span $4)) (snd $1) (SN (Logical @0))(reverse $3) }
-| FX_SYM "("       ")" { AtomicFormula (transSpan (fst $1) (span $3)) (snd $1) (SN (Logical @0)) [] }
+: FX_SYM "(" TERMS ")" { AtomicFormula (transSpan (fst $1) (span $4)) (snd $1) Nothing (reverse $3) }
+| FX_SYM "("       ")" { AtomicFormula (transSpan (fst $1) (span $3)) (snd $1) Nothing [] }
 
 FX_SYM :: { (SrcSpan, PredicateSymbol) }
 : fxSym { (span $1, PredicateSymbol . _tStr . L._token $ $1) }

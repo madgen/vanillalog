@@ -10,9 +10,7 @@ module Language.Vanillalog.Generic.Transformation.Query (nameQueries) where
 
 import Protolude
 
-import           Language.Exalog.Core ( PredicateSymbol(..)
-                                      , Nature(Logical)
-                                      , SomeNature(..))
+import           Language.Exalog.Core (PredicateSymbol(..))
 import           Language.Exalog.Fresh
 import qualified Language.Exalog.Logger as L
 import           Language.Exalog.SrcLoc (span)
@@ -37,7 +35,7 @@ nameQueries edbReserved pr =
     sub = do
       name <- PredicateSymbol <$> fresh
       pure $
-        SAtom _span $ AtomicFormula _span name (SN @0 Logical) (variables _body)
+        SAtom _span $ AtomicFormula _span name Nothing (variables _body)
 
   go s@SQuery{..} =
     lift $ L.scream (Just . span $ s) "Query has already been named."
