@@ -18,6 +18,7 @@ module Language.Vanillalog.Generic.Compiler
 
 import Protolude hiding (head)
 
+import GHC.TypeLits (sameNat)
 
 import           Data.Functor.Foldable (Base, para)
 import qualified Data.List.NonEmpty as NE
@@ -30,6 +31,7 @@ import qualified Language.Exalog.Logger as L
 import qualified Language.Exalog.Tuples as T
 import qualified Language.Exalog.Relation as R
 import           Language.Exalog.SrcLoc (span)
+import           Language.Exalog.Pretty (pp)
 
 import           Language.Vanillalog.Generic.AST
 
@@ -141,11 +143,27 @@ instance Compilable (AtomicFormula Term) where
   compile AtomicFormula{..} =
     withSomeSing (fromInteger . toInteger $ length _terms) $
       \(arity :: SNat n) -> do
-        terms <- withKnownNat arity $
-          case V.fromListN @n _terms of
-            Just vec -> pure $ fmap compile vec
-            Nothing -> L.scream (Just _span)
-              "Length of terms is not the length of terms."
+        (terms, nature) <- withKnownNat arity $ do
+          terms <-
+            case V.fromListN @n _terms of
+              Just vec -> pure $ fmap compile vec
+              Nothing -> L.scream (Just _span)
+                "Length of terms is not the length of terms."
+
+          nature <-
+            case _nature of
+              Just (E.SFF (foreignFunc :: E.ForeignFunc m)) ->
+                case Proxy @n `sameNat` Proxy @m of
+                  Just Refl -> pure $ E.Extralogical foreignFunc
+                  Nothing -> L.scold (Just _span) $
+                       "The foreign function has arity "
+                    <> pp (fromIntegral @_ @Int $ natVal (Proxy @n))
+                    <> ", but you've given "
+                    <> pp (fromIntegral @_ @Int $ natVal arity) <> "."
+              Nothing -> pure E.Logical
+
+          pure(terms, nature)
+
         pure $ E.Literal
           { _annotation = E.LitABase _span
           , _polarity   = E.Positive
@@ -153,7 +171,7 @@ instance Compilable (AtomicFormula Term) where
               { _annotation = E.PredABase _span
               , _predSym    = _predSym
               , _arity      = arity
-              , _nature     = E.Logical }
+              , _nature     = nature }
           , _terms = terms
           }
 
