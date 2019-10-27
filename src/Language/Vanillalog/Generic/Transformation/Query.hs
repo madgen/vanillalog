@@ -1,15 +1,18 @@
 {-# OPTIONS_GHC -Wno-simplifiable-class-constraints #-}
 
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Language.Vanillalog.Generic.Transformation.Query (nameQueries) where
 
 import Protolude
 
-import           Language.Exalog.Core (PredicateSymbol(..))
+import           Language.Exalog.Core ( PredicateSymbol(..)
+                                      , Nature(Logical)
+                                      , SomeNature(..))
 import           Language.Exalog.Fresh
 import qualified Language.Exalog.Logger as L
 import           Language.Exalog.SrcLoc (span)
@@ -33,7 +36,8 @@ nameQueries edbReserved pr =
     sub :: FreshT L.Logger (Subgoal hop Var)
     sub = do
       name <- PredicateSymbol <$> fresh
-      pure $ SAtom _span $ AtomicFormula _span name $ variables _body
+      pure $
+        SAtom _span $ AtomicFormula _span name (SN @0 Logical) (variables _body)
 
   go s@SQuery{..} =
     lift $ L.scream (Just . span $ s) "Query has already been named."

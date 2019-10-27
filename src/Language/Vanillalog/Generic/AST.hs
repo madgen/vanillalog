@@ -24,7 +24,7 @@ import Data.List (nub)
 import Data.Functor.Foldable
 import Data.Functor.Foldable.TH (makeBaseFunctor)
 
-import Language.Exalog.Core (PredicateSymbol)
+import Language.Exalog.Core (PredicateSymbol, SomeNature)
 import Language.Exalog.SrcLoc
 
 data Program decl hop bop = Program
@@ -88,8 +88,9 @@ data AtomicFormula a =
   AtomicFormula
     { _span    :: SrcSpan
     , _predSym :: PredicateSymbol
+    , _nature  :: SomeNature
     , _terms   :: [ a ]
-    } deriving (Ord, Functor, Foldable, Traversable)
+    } deriving (Functor, Foldable, Traversable)
 
 data Term =
     TVar  { _var  :: Var }
@@ -135,6 +136,11 @@ instance Ord Var where
 instance Eq a => Eq (AtomicFormula a) where
   AtomicFormula{_predSym = sym, _terms = ts} ==
     AtomicFormula{_predSym = sym', _terms = ts'} = sym == sym' && ts == ts'
+
+instance Ord a => Ord (AtomicFormula a) where
+  atom1 `compare` atom2 =
+    (_predSym atom1, _terms atom1) `compare`
+    (_predSym atom2, _terms atom2)
 
 instance ( Eq (op 'Nullary), Eq (op 'Unary), Eq (op 'Binary)
          , Eq (AtomicFormula term)
