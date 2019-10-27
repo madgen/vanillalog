@@ -142,8 +142,8 @@ instance Compilable (AtomicFormula Term) where
   type Output (AtomicFormula Term) = L.Logger (E.Literal 'E.ABase)
   compile AtomicFormula{..} =
     withSomeSing (fromInteger . toInteger $ length _terms) $
-      \(arity :: SNat n) -> do
-        (terms, nature) <- withKnownNat arity $ do
+      \(arity :: SNat n) ->
+        withKnownNat arity $ do
           terms <-
             case V.fromListN @n _terms of
               Just vec -> pure $ fmap compile vec
@@ -162,18 +162,16 @@ instance Compilable (AtomicFormula Term) where
                     <> pp (fromIntegral @_ @Int $ natVal arity) <> "."
               Nothing -> pure E.Logical
 
-          pure(terms, nature)
-
-        pure $ E.Literal
-          { _annotation = E.LitABase _span
-          , _polarity   = E.Positive
-          , _predicate  = E.Predicate
-              { _annotation = E.PredABase _span
-              , _predSym    = _predSym
-              , _arity      = arity
-              , _nature     = nature }
-          , _terms = terms
-          }
+          pure $ E.Literal
+            { _annotation = E.LitABase _span
+            , _polarity   = E.Positive
+            , _predicate  = E.Predicate
+                { _annotation = E.PredABase _span
+                , _predSym    = _predSym
+                , _arity      = arity
+                , _nature     = nature }
+            , _terms = terms
+            }
 
 instance Compilable Term where
   type Output Term = E.Term
