@@ -63,14 +63,7 @@ unifyBool :: ForeignFunc 2
 unifyBool = liftPredicate ((==) :: Bool -> Bool -> Bool)
 
 csv1 :: ForeignFunc 2
-csv1 = liftFunctionME go
-  where
-  go :: Text -> Foreign [ Text ]
-  go filePath = do
-    csvFileT <- lift $ readFile (T.unpack filePath)
-    let csvFileBS = LT.encodeUtf8 $ fromStrict csvFileT
-    let eCSV = CSV.decode @(CSV.Only Text) CSV.NoHeader csvFileBS
-    map CSV.fromOnly . V.toList <$> withExceptT T.pack (except eCSV)
+csv1 = liftFunctionME (fmap (CSV.fromOnly <$>) <$> srcToResults @(CSV.Only Text))
 
 csv2 :: ForeignFunc 3
 csv2 = liftFunctionME (srcToResults @(Text,Text))
