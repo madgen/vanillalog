@@ -30,7 +30,7 @@ embedForeign foreignTable = transformM go
     pure $ SClause $ Clause _span _head (transform setForeign _body)
   go (SQuery Query{..}) = do
     traverse_ (transformM (checkForeignClash @Var)) _head
-    pure $ SQuery $ Query _span _head _body
+    pure $ SQuery $ Query _span _head (transform setForeign _body)
 
   -- |Check if the predicate name for the atom clashes with a foreign function.
   checkForeignClash :: forall term
