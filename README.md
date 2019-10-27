@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.com/madgen/vanillalog.svg?branch=master)](https://travis-ci.com/madgen/vanillalog)
 
-A statically-typed Datalog variant that is as vanilla as it gets.
+A Datalog variant that is as vanilla as it gets.
 
 When used as a library, it provides an abstract AST acting as an intermediate target for Datalog variants with interesting operators. For example, see [Temporalog](https://github.com/madgen/temporalog) for using Computation Tree Logic (CTL) operators in Datalog formulae.
 
@@ -89,6 +89,38 @@ A _body_ is structured like expressions are in most languages. The binary operat
 ```
 Body ::= Atomic Formula | Body , Body | Body ; Body | ! Body | ( Body )
 ```
+
+## Foreign predicates
+
+There are a number of foreign predicates included for your convenience.
+
+### Arithmetic
+
+|Predicate name|Type|Mode|Description|
+|--------------|----|----|-----------|
+|`add`| `Int x Int x Int`|`++?`|Puts the sum of first two params. into the third.|
+|`subtract`| `Int x Int x Int`|`++?`|Take a guess.|
+|`lt`| `Int x Int`|`++`|Holds when first param. is less than the second.|
+|`lte`| `Int x Int`|`++`|Take a guess.|
+|`gt`| `Int x Int`|`++`|Take a guess.|
+|`gte`| `Int x Int`|`++`|Take a guess.|
+
+### Unification
+
+|Predicate name|Type|Mode|Description|
+|--------------|----|----|-----------|
+|`unify_int`| `Int x Int`|`+?`|Unifies the first parameter with the second.|
+|`unify_text`| `Text x Text`|`+?`|Ditto.|
+|`unify_bool`| `Bool x Bool`|`+?`|Ditto.|
+
+### IO
+
+|Predicate name|Type|Mode|Description|
+|--------------|----|----|-----------|
+|`csv1`| `Text x Text`|`+?`|Reads a CSV file with one column places each row in the second parameter.|
+|`csv2`| `Text x Text x Text`|`+??`|Take a guess.|
+|`csv3`| `Text x Text x Text x Text`|`+??`|Take a guess.|
+|`csv4`| `Text x Text x Text x Text x Text`|`+??`|Take a guess.|
 
 ## Semantics
 
