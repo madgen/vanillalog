@@ -157,9 +157,9 @@ instance Compilable (AtomicFormula Term) where
                   Just Refl -> pure $ E.Extralogical foreignFunc
                   Nothing -> L.scold (Just _span) $
                        "The foreign function has arity "
-                    <> pp (fromIntegral @_ @Int $ natVal (Proxy @n))
+                    <> pp (fromIntegral @_ @Int $ natVal (Proxy @m))
                     <> ", but you've given "
-                    <> pp (fromIntegral @_ @Int $ natVal arity) <> "."
+                    <> pp (fromIntegral @_ @Int $ natVal arity) <> " arguments."
               Nothing -> pure E.Logical
 
           pure $ E.Literal
