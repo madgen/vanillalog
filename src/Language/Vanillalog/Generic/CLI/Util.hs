@@ -34,7 +34,7 @@ display :: Pretty (hop 'Nullary) => Pretty (hop 'Unary) => Pretty (hop 'Binary)
         => Pretty (bop 'Nullary) => Pretty (bop 'Unary) => Pretty (bop 'Binary)
         => HasPrecedence hop => HasPrecedence bop
         => AG.Program decl hop bop -> R.Solution 'E.ABase -> IO ()
-display program sol = do
+display program sol =
   forM_ (R.toList sol) $ \(R.Relation pred tuples) -> do
     -- Generated query heads contain the span of the overall query
     let querySpan = span pred
@@ -58,6 +58,6 @@ findQuery pr s = find ((== s) . span) (AG.queries pr)
 displayTuples :: T.Tuples a -> Doc
 displayTuples tuples = nest 2 $
      "There are " <>  pretty nOfTuples <> " solutions." $$ ""
-  $+$ if nOfTuples == 0 then mempty else (vcat $ prettyC tuples)
+  $+$ if nOfTuples == 0 then mempty else vcat $ prettyC tuples
   where
   nOfTuples = T.size tuples
