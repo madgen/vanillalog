@@ -57,14 +57,14 @@ repl :: ReplOptions -> IO ()
 repl ReplOptions{..} = do
   putStrLn @Text "Interactive Vanillalog environment - REPL"
 
-  baseSolution <- computeBase
+  baseSolution <- maybe (pure mempty) computeBase _mFile
 
   HLine.runInputT HLine.defaultSettings (loop baseSolution)
   where
-  computeBase =  do
-    bs <- BS.fromStrict . encodeUtf8 <$> readFile _file
+  computeBase file = do
+    bs <- BS.fromStrict . encodeUtf8 <$> readFile file
     let stageEnv = S.defaultStageEnv
-          { S._file           = _file
+          { S._file           = file
           , S._input          = bs
           , S._keepPredicates = S.AllPreds
           }

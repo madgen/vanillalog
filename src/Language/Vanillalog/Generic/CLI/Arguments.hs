@@ -10,7 +10,7 @@ newtype RunOptions = RunOptions
   { _file :: FilePath }
 
 newtype ReplOptions = ReplOptions
-  { _file :: FilePath }
+  { _mFile :: Maybe FilePath }
 
 data PPOptions stage = PPOptions
   { _file  :: FilePath
@@ -35,7 +35,7 @@ runOptions :: Parser RunOptions
 runOptions = RunOptions <$> fileParser
 
 replOptions :: Parser ReplOptions
-replOptions = ReplOptions <$> fileParser
+replOptions = ReplOptions <$> optional fileParser
 
 data Command stage =
   Run RunOptions | Repl ReplOptions | PrettyPrint (PPOptions stage)

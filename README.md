@@ -26,8 +26,8 @@ the source is:
 vanillalog run -f <filepath>
 ```
 
-The REPL also evaluates a Datalog file, but it also provides a loop to write
-further queries on it. It's invocation is as follows:
+The `repl` command takes an optional path to Vanillalog program which it
+evaluates and make available for queries.
 
 ```
 vanillalog repl -f <filepath>
@@ -36,7 +36,8 @@ vanillalog repl -f <filepath>
 You can use `:q`, `:quit`, `:e`, `:exit`, or `Ctrl+D` to exit it.
 
 The REPL doesn't yet allow extending existing predicates or defining recursive
-queries.
+queries. For this reason omitting `-f` makes REPL useless unles you use [foreign
+predicates](#foreign-predicates).
 
 ## Syntax
 
