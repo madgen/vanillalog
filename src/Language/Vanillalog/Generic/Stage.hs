@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Language.Vanillalog.Generic.Stage
   ( Stage
   , StageEnv(..)
@@ -7,8 +9,9 @@ module Language.Vanillalog.Generic.Stage
   , runStage
   ) where
 
-import Protolude
+import Protolude hiding (decodeUtf8)
 
+import           Data.Text.Lazy.Encoding (decodeUtf8)
 import qualified Data.ByteString.Lazy.Char8 as BS
 
 import qualified Language.Exalog.Logger as Log
@@ -31,6 +34,8 @@ defaultStageEnv :: StageEnv
 defaultStageEnv = StageEnv "STDIN" "" SProgram OnlyQueryPreds []
 
 runStage :: StageEnv -> Stage a -> IO (Maybe a)
-runStage env = Log.runLoggerT . (`runReaderT` env)
+runStage env@StageEnv{..} = Log.runLoggerT loggerEnv . (`runReaderT` env)
+  where
+  loggerEnv = Log.LoggerEnv $ Just (toStrict . decodeUtf8 $ _input)
 
 type Stage a = ReaderT StageEnv Log.Logger a

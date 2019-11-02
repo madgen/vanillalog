@@ -47,7 +47,7 @@ display program sol = do
       Nothing -> pure ()
 
 findQueryM :: AG.Program decl hop bop -> SrcSpan -> IO (Maybe (AG.Query hop bop))
-findQueryM program querySpan = L.runLoggerT $
+findQueryM program querySpan = L.runLoggerT (L.LoggerEnv Nothing) $
   case findQuery program querySpan of
     Just query -> pure query
     Nothing    -> L.scream (Just querySpan) "This query cannot be found."
