@@ -43,8 +43,8 @@ data Command stage =
 -- | Overall option parser
 optsParser :: Parser (PPOptions stage) -> [ Char ] -> ParserInfo (Command stage)
 optsParser ppOptions headerStr = info (hsubparser
-  ( command "run"  (info (Run <$> runOptions) (progDesc "Run Datalog"))
- <> command "repl" (info (Repl <$> replOptions) (progDesc "REPL"))
+  ( command "run"  (info (Run <$> runOptions)        (progDesc "Run a Datalog program"))
+ <> command "repl" (info (Repl <$> replOptions)      (progDesc "Read-eval-print loop"))
  <> command "pp"   (info (PrettyPrint <$> ppOptions) (progDesc "Pretty print"))
   ) <**> helper) generalInfo
   where
