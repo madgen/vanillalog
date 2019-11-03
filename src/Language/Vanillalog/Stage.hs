@@ -41,15 +41,15 @@ import           Language.Vanillalog.Transformation.Normaliser (normalise)
 lex :: Stage [ L.Lexeme (Lexer.Token Text) ]
 lex = do
   env <- ask
-  lift $ Lexer.lex (_file env) (_input env)
+  lift $ Lexer.lex (_inputSource env) (_input env)
 
 parse :: Stage Program
 parse = do
   env <- ask
   case _parserScope env of
-    SProgram  -> lift $ Parser.programParser (_file env) (_input env)
+    SProgram  -> lift $ Parser.programParser (_inputSource env) (_input env)
     SSentence -> do
-      query <- lift $ Parser.replParser (_file env) (_input env)
+      query <- lift $ Parser.replParser (_inputSource env) (_input env)
       pure $ G.Program (span query) [ G.StSentence (G.SQuery query) ]
 
 foreignEmbedded :: Stage Program

@@ -9,7 +9,7 @@ import           Data.Text.Lazy.Encoding (decodeUtf8)
 import qualified Data.ByteString.Lazy.Char8 as BS
 
 import qualified Language.Exalog.Logger as Log
-import           Language.Exalog.SrcLoc hiding (_file)
+import           Language.Exalog.SrcLoc
 
 import qualified Language.Vanillalog.Generic.Parser.Lexeme as L
 
@@ -85,28 +85,28 @@ basic = useInput . const
 
 useInput :: (BS.ByteString -> Token str) -> AlexAction (L.Lexeme (Token str))
 useInput f (aPos,_,inp,_) len = do
-  file <- getFile
-  return $ L.Lexeme (alexToSpan aPos file len) (f $ BS.take len inp)
+  inpSrc <- getInputSource
+  return $ L.Lexeme (alexToSpan aPos inpSrc len) (f $ BS.take len inp)
 
 -- Assumes all tokens are on the same line
-alexToSpan :: AlexPosn -> FilePath -> Int64 -> SrcSpan
-alexToSpan (AlexPn _ line col) file len =
-  SrcSpan (SrcLoc file line col)
-          (SrcLoc file line (col + (fromIntegral len) - 1))
+alexToSpan :: AlexPosn -> InputSource -> Int64 -> SrcSpan
+alexToSpan (AlexPn _ line col) inpSrc len =
+  Span inpSrc (SrcLoc line col)
+              (SrcLoc line (col + (fromIntegral len) - 1))
 
 eof :: L.Lexeme (Token str)
-eof = L.Lexeme dummySpan TEOF
+eof = L.Lexeme NoSpan TEOF
 
 alexEOF :: Alex (L.Lexeme (Token str))
 alexEOF = return eof
 
 data AlexUserState = AlexUserState
-  { _file :: FilePath
+  { _inputSource :: InputSource
   , _startCodeStack :: [ Int ]
   }
 
 alexInitUserState :: AlexUserState
-alexInitUserState = AlexUserState {_file = "", _startCodeStack = []}
+alexInitUserState = AlexUserState {_inputSource = None, _startCodeStack = []}
 
 getUserState :: Alex AlexUserState
 getUserState = Alex $ \s -> Right (s, alex_ust $ s)
@@ -118,11 +118,11 @@ modifyUserState f =
 setUserState :: AlexUserState -> Alex ()
 setUserState = modifyUserState . const
 
-getFile :: Alex FilePath
-getFile = _file <$> getUserState
+getInputSource :: Alex InputSource
+getInputSource = _inputSource <$> getUserState
 
-setFile :: FilePath -> Alex ()
-setFile file = modifyUserState (\s -> s {_file = file})
+setInputSource :: InputSource -> Alex ()
+setInputSource inpSrc = modifyUserState (\s -> s {_inputSource = inpSrc})
 
 pushStartCode :: Int -> Alex ()
 pushStartCode startCode =
@@ -160,13 +160,13 @@ enterStartCodeAnd startCode action inp len =
 exitStartCodeAnd :: AlexAction a -> AlexAction a
 exitStartCodeAnd action inp len = exitStartCode' *> action inp len
 
-lex :: FilePath -> BS.ByteString -> Log.Logger [ L.Lexeme (Token Text) ]
-lex file source =
+lex :: InputSource -> BS.ByteString -> Log.Logger [ L.Lexeme (Token Text) ]
+lex inpSrc source =
   case result of
     Right lexemes -> pure $ fmap (fmap (toStrict . decodeUtf8)) <$> lexemes
     Left msg      -> Log.scold Nothing (fromString msg)
   where
-  result = runAlex source (setFile file >> lexM)
+  result = runAlex source (setInputSource inpSrc >> lexM)
 
   lexM = do
     tok <- alexMonadScan

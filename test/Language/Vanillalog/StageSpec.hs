@@ -11,6 +11,7 @@ import Test.Hspec
 
 import qualified Language.Exalog.Core as E
 import qualified Language.Exalog.Relation as R
+import qualified Language.Exalog.SrcLoc as Src
 
 import qualified Language.Vanillalog.Stage as S
 
@@ -20,7 +21,7 @@ readSrc filePath = BS.fromStrict . encodeUtf8 <$> readFile filePath
 runSrc :: FilePath -> IO (Maybe (R.Solution 'E.ABase))
 runSrc srcPath = do
   bs <- readSrc srcPath
-  let stageEnv = S.defaultStageEnv { S._file  = srcPath, S._input = bs }
+  let stageEnv = S.defaultStageEnv { S._inputSource = Src.File srcPath, S._input = bs }
   S.runStage stageEnv (S.solved mempty)
 
 testSolving :: FilePath -> SpecWith ()

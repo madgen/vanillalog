@@ -16,6 +16,7 @@ import Options.Applicative hiding (command, header)
 
 import qualified Language.Exalog.Core as E
 import           Language.Exalog.Pretty ()
+import qualified Language.Exalog.SrcLoc as Src
 import qualified Language.Exalog.Relation as R
 
 import           Language.Vanillalog.Generic.Pretty (pp)
@@ -47,7 +48,7 @@ run :: RunOptions -> IO ()
 run RunOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile _file
 
-  let stageEnv =  S.defaultStageEnv {S._file = _file, S._input =  bs}
+  let stageEnv = S.defaultStageEnv {S._inputSource = Src.File _file, S._input =  bs}
   ast <- succeedOrDie stageEnv S.parse
   sol <- succeedOrDie stageEnv (S.solved mempty)
 
@@ -64,7 +65,7 @@ repl ReplOptions{..} = do
   computeBase file = do
     bs <- BS.fromStrict . encodeUtf8 <$> readFile file
     let stageEnv = S.defaultStageEnv
-          { S._file           = file
+          { S._inputSource    = Src.File file
           , S._input          = bs
           , S._keepPredicates = S.AllPreds
           }
@@ -104,7 +105,7 @@ repl ReplOptions{..} = do
 prettyPrint :: PPOptions Stage -> IO ()
 prettyPrint PPOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile _file
-  let stageEnv = S.StageEnv _file bs S.SProgram S.AllPreds []
+  let stageEnv = S.StageEnv (Src.File _file) bs S.SProgram S.AllPreds []
   case _stage of
     VanillaLex        -> print         =<< succeedOrDie stageEnv S.lex
     VanillaParse      -> putStrLn . pp =<< succeedOrDie stageEnv S.parse

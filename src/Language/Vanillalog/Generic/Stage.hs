@@ -14,6 +14,7 @@ import Protolude hiding (decodeUtf8)
 import           Data.Text.Lazy.Encoding (decodeUtf8)
 import qualified Data.ByteString.Lazy.Char8 as BS
 
+import           Language.Exalog.SrcLoc (InputSource(..))
 import qualified Language.Exalog.Logger as Log
 
 data ParserScope = SProgram | SSentence
@@ -23,7 +24,7 @@ data KeepPredicates = OnlyQueryPreds | AllPreds
 type ReservedNames = [ Text ]
 
 data StageEnv = StageEnv
-  { _file           :: FilePath
+  { _inputSource    :: InputSource
   , _input          :: BS.ByteString
   , _parserScope    :: ParserScope
   , _keepPredicates :: KeepPredicates
@@ -31,7 +32,7 @@ data StageEnv = StageEnv
   }
 
 defaultStageEnv :: StageEnv
-defaultStageEnv = StageEnv "STDIN" "" SProgram OnlyQueryPreds []
+defaultStageEnv = StageEnv None "" SProgram OnlyQueryPreds []
 
 runStage :: StageEnv -> Stage a -> IO (Maybe a)
 runStage env@StageEnv{..} = Log.runLoggerT loggerEnv . (`runReaderT` env)
