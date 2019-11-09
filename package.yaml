@@ -75,6 +75,7 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - hspec >= 2.7 && < 2.8
+    - directory >= 1.3 && < 1.4
     - exalog-engine
     - vanillalog
     build-tools:

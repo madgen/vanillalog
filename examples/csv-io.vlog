@@ -1,0 +1,5 @@
+p("1").
+p("2").
+p("3").
+
+?- p(X), p(Y), read_csv1("examples/in/destination.csv",Dest), append_csv2(Dest,X,Y).

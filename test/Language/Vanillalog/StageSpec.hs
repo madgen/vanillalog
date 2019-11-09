@@ -1,4 +1,6 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -Wno-unused-matches -Wno-name-shadowing #-}
 
 module Language.Vanillalog.StageSpec (spec) where
@@ -6,6 +8,12 @@ module Language.Vanillalog.StageSpec (spec) where
 import Protolude
 
 import qualified Data.ByteString.Lazy.Char8 as BS
+import qualified Data.Csv as CSV
+import qualified Data.Vector as V
+import qualified Data.Text as T
+
+import System.IO (openTempFile, hClose)
+import System.Directory (removeFile)
 
 import Test.Hspec
 
@@ -47,3 +55,22 @@ spec =
 
     describe "complement graph" $
       testSolving "examples/complement-graph.vlog"
+
+    describe "IO" $ do
+      csvContents <- runIO $ do
+        (outputPath, outputHandle) <- openTempFile "examples" "output.csv"
+        hClose outputHandle
+
+        let destinationPath = "examples/in/destination.csv"
+
+        BS.writeFile destinationPath $ CSV.encode [ CSV.Only (T.pack outputPath) ]
+        _ <- runSrc "examples/csv-io.vlog"
+        removeFile destinationPath
+
+        output <- BS.readFile outputPath
+        removeFile outputPath
+
+        pure $ CSV.decode @(Text,Text) CSV.NoHeader output
+
+      it "writes CSV file" $
+        csvContents `shouldBe` Right (V.fromList [ (i,j) | i <- ["1","2","3"], j <- ["1","2","3"] ])
