@@ -26,8 +26,8 @@ foreignTable = M.fromList
   , ("unify_text",                  E.SFF F.unifyText)
   , ("unify_bool",                  E.SFF F.unifyBool)
   -- IO
-  , ("csv1",                        E.SFF F.csv1)
-  , ("csv2",                        E.SFF F.csv2)
-  , ("csv3",                        E.SFF F.csv3)
-  , ("csv4",                        E.SFF F.csv4)
+  , ("read_csv1",                   E.SFF F.read_csv1)
+  , ("read_csv2",                   E.SFF F.read_csv2)
+  , ("read_csv3",                   E.SFF F.read_csv3)
+  , ("read_csv4",                   E.SFF F.read_csv4)
   ]

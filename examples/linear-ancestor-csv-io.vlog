@@ -1,4 +1,4 @@
-advisor(X,Y) :- csv2("examples/in/advisor.csv",X,Y).
+advisor(X,Y) :- read_csv2("examples/in/advisor.csv",X,Y).
 
 ancestor(X,Y) :- advisor(X,Y).
 ancestor(X,Z) :- advisor(X,Y), ancestor(Y,Z).

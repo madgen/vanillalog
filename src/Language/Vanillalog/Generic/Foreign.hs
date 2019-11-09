@@ -18,10 +18,10 @@ module Language.Vanillalog.Generic.Foreign
   , unifyText
   , unifyBool
     -- * IO
-  , csv1
-  , csv2
-  , csv3
-  , csv4
+  , read_csv1
+  , read_csv2
+  , read_csv3
+  , read_csv4
   ) where
 
 import Protolude hiding (subtract)
@@ -63,17 +63,17 @@ unifyText = liftPredicate ((==) :: Text -> Text -> Bool)
 unifyBool :: ForeignFunc 2
 unifyBool = liftPredicate ((==) :: Bool -> Bool -> Bool)
 
-csv1 :: ForeignFunc 2
-csv1 = liftFunctionME (fmap (CSV.fromOnly <$>) <$> srcToResults @(CSV.Only Text))
+read_csv1 :: ForeignFunc 2
+read_csv1 = liftFunctionME (fmap (CSV.fromOnly <$>) <$> srcToResults @(CSV.Only Text))
 
-csv2 :: ForeignFunc 3
-csv2 = liftFunctionME (srcToResults @(Text,Text))
+read_csv2 :: ForeignFunc 3
+read_csv2 = liftFunctionME (srcToResults @(Text,Text))
 
-csv3 :: ForeignFunc 4
-csv3 = liftFunctionME (srcToResults @(Text,Text,Text))
+read_csv3 :: ForeignFunc 4
+read_csv3 = liftFunctionME (srcToResults @(Text,Text,Text))
 
-csv4 :: ForeignFunc 5
-csv4 = liftFunctionME (srcToResults @(Text,Text,Text,Text))
+read_csv4 :: ForeignFunc 5
+read_csv4 = liftFunctionME (srcToResults @(Text,Text,Text,Text))
 
 srcToResults :: forall a. CSV.FromRecord a => Text -> Foreign [ a ]
 srcToResults filePath = do

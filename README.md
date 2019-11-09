@@ -118,10 +118,10 @@ There are a number of foreign predicates included for your convenience.
 
 |Predicate name|Type|Mode|Description|
 |--------------|----|----|-----------|
-|`csv1`| `Text x Text`|`+?`|Reads a CSV file, from the path in the first parameter and places each row in the second parameter.|
-|`csv2`| `Text x Text x Text`|`+??`|Take a guess.|
-|`csv3`| `Text x Text x Text x Text`|`+???`|Take a guess.|
-|`csv4`| `Text x Text x Text x Text x Text`|`+????`|Take a guess.|
+|`read_csv1`| `Text x Text`|`+?`|Reads a CSV file, from the path in the first parameter and places each row in the second parameter.|
+|`read_csv2`| `Text x Text x Text`|`+??`|Take a guess.|
+|`read_csv3`| `Text x Text x Text x Text`|`+???`|Take a guess.|
+|`read_csv4`| `Text x Text x Text x Text x Text`|`+????`|Take a guess.|
 
 ## Semantics
 
