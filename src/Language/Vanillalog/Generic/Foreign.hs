@@ -18,14 +18,14 @@ module Language.Vanillalog.Generic.Foreign
   , unifyText
   , unifyBool
     -- * IO
-  , read_csv1
-  , read_csv2
-  , read_csv3
-  , read_csv4
-  , append_csv1
-  , append_csv2
-  , append_csv3
-  , append_csv4
+  , readCSV1
+  , readCSV2
+  , readCSV3
+  , readCSV4
+  , appendCSV1
+  , appendCSV2
+  , appendCSV3
+  , appendCSV4
   ) where
 
 import Protolude hiding (subtract)
@@ -68,17 +68,17 @@ unifyText = liftPredicate ((==) :: Text -> Text -> Bool)
 unifyBool :: ForeignFunc 2
 unifyBool = liftPredicate ((==) :: Bool -> Bool -> Bool)
 
-read_csv1 :: ForeignFunc 2
-read_csv1 = liftFunctionME (fmap (CSV.fromOnly <$>) <$> srcToResults @(CSV.Only Text))
+readCSV1 :: ForeignFunc 2
+readCSV1 = liftFunctionME (fmap (CSV.fromOnly <$>) <$> srcToResults @(CSV.Only Text))
 
-read_csv2 :: ForeignFunc 3
-read_csv2 = liftFunctionME (srcToResults @(Text,Text))
+readCSV2 :: ForeignFunc 3
+readCSV2 = liftFunctionME (srcToResults @(Text,Text))
 
-read_csv3 :: ForeignFunc 4
-read_csv3 = liftFunctionME (srcToResults @(Text,Text,Text))
+readCSV3 :: ForeignFunc 4
+readCSV3 = liftFunctionME (srcToResults @(Text,Text,Text))
 
-read_csv4 :: ForeignFunc 5
-read_csv4 = liftFunctionME (srcToResults @(Text,Text,Text,Text))
+readCSV4 :: ForeignFunc 5
+readCSV4 = liftFunctionME (srcToResults @(Text,Text,Text,Text))
 
 srcToResults :: forall a. CSV.FromRecord a => Text -> Foreign [ a ]
 srcToResults filePath = do
@@ -87,26 +87,26 @@ srcToResults filePath = do
   let eCSV = CSV.decode CSV.NoHeader csvFileBS
   V.toList <$> withExceptT T.pack (except eCSV)
 
-append_csv1 :: ForeignFunc 2
-append_csv1 = liftPredicateME go
+appendCSV1 :: ForeignFunc 2
+appendCSV1 = liftPredicateME go
   where
   go :: Text -> Text -> Foreign Bool
   go src field = appendToSrc src (CSV.Only field)
 
-append_csv2 :: ForeignFunc 3
-append_csv2 = liftPredicateME go
+appendCSV2 :: ForeignFunc 3
+appendCSV2 = liftPredicateME go
   where
   go :: Text -> Text -> Text -> Foreign Bool
   go src f1 f2 = appendToSrc src (f1,f2)
 
-append_csv3 :: ForeignFunc 4
-append_csv3 = liftPredicateME go
+appendCSV3 :: ForeignFunc 4
+appendCSV3 = liftPredicateME go
   where
   go :: Text -> Text -> Text -> Text -> Foreign Bool
   go src f1 f2 f3 = appendToSrc src (f1,f2,f3)
 
-append_csv4 :: ForeignFunc 5
-append_csv4 = liftPredicateME go
+appendCSV4 :: ForeignFunc 5
+appendCSV4 = liftPredicateME go
   where
   go :: Text -> Text -> Text -> Text -> Text -> Foreign Bool
   go src f1 f2 f3 f4 = appendToSrc src (f1,f2,f3,f4)
