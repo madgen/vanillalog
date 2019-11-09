@@ -80,5 +80,5 @@ separateTopLevelDisjunctions G.Program{..} =
         SDisj s sub1 sub2 ->
           G.SQuery <$> [ G.Query s head sub1, G.Query s head sub2 ]
         _                 -> [ sentence ]
-    | otherwise = L.scream (Just _span)
+    | otherwise = L.scream _span
       "There should be no unnamed queries at this point."

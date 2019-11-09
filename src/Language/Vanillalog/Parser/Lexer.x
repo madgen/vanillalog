@@ -164,7 +164,7 @@ lex :: InputSource -> BS.ByteString -> Log.Logger [ L.Lexeme (Token Text) ]
 lex inpSrc source =
   case result of
     Right lexemes -> pure $ fmap (fmap (toStrict . decodeUtf8)) <$> lexemes
-    Left msg      -> Log.scold Nothing (fromString msg)
+    Left msg      -> Log.scold NoSpan (fromString msg)
   where
   result = runAlex source (setInputSource inpSrc >> lexM)
 

@@ -32,7 +32,7 @@ import Protolude
 
 import qualified Data.List.NonEmpty as NE
 
-import           Language.Exalog.SrcLoc (SrcSpan)
+import           Language.Exalog.SrcLoc (SrcSpan(NoSpan))
 import qualified Language.Exalog.Core as E
 import qualified Language.Exalog.Logger as L
 
@@ -110,11 +110,11 @@ instance ClosureCompilable Op where
   cCompile (CUnary Negation rec)
     | (SAtom{}, core NE.:| []) <- rec =
       pure $ core { E._polarity = E.Negative } NE.:| []
-    | otherwise = L.scream Nothing
+    | otherwise = L.scream NoSpan
       "Negation over non-atoms should be eliminated at this point."
   cCompile (CBinary Conjunction (_,core1) (_,core2)) = pure $ append core1 core2
     where
     append :: NE.NonEmpty a -> NE.NonEmpty a -> NE.NonEmpty a
     append (a NE.:| as) (a' NE.:| as') = a NE.:| as ++ a' : as'
   cCompile (CBinary Disjunction _ _) =
-    L.scream Nothing "Disjunctions should be eliminated at this point."
+    L.scream NoSpan "Disjunctions should be eliminated at this point."

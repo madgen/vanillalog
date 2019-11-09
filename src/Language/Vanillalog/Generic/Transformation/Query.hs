@@ -38,5 +38,5 @@ nameQueries edbReserved pr =
         SAtom _span $ AtomicFormula _span name Nothing (variables _body)
 
   go s@SQuery{..} =
-    lift $ L.scream (Just . span $ s) "Query has already been named."
+    lift $ L.scream (span s) "Query has already been named."
   go s = pure s

@@ -37,7 +37,7 @@ embedForeign foreignTable = transformM go
                      . AtomicFormula term -> L.Logger (AtomicFormula term)
   checkForeignClash atom@AtomicFormula{..} =
     case _predSym `M.lookup` foreignTable of
-      Just _  -> L.scold (Just _span)
+      Just _  -> L.scold _span
         "The predicate symbol clashes with that of a foreign predicate."
       Nothing -> pure atom
 

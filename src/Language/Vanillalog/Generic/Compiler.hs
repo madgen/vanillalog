@@ -78,7 +78,7 @@ instance Compilable (Fact hop) where
                 Just vec -> do
                   symVec <- traverse castToSym vec
                   pure $ T.fromList [ map compile symVec ]
-                Nothing -> L.scream (Just _span)
+                Nothing -> L.scream _span
                   "length of terms is not the length of terms."
             pure $ R.Relation
               E.Predicate
@@ -88,12 +88,12 @@ instance Compilable (Fact hop) where
                 , _nature     = E.Logical
                 }
               tuples
-    _ -> L.scream (Just _span) "The head is not ready for compilation."
+    _ -> L.scream _span "The head is not ready for compilation."
     where
     castToSym :: Term -> L.Logger Sym
-    castToSym TVar{_var = Var{..}} = L.scold (Just _span)
+    castToSym TVar{_var = Var{..}} = L.scold _span
       "Facts cannot have variables. Range restriction is violated."
-    castToSym TWild{}              = L.scold (Just _span)
+    castToSym TWild{}              = L.scold _span
       "Facts cannot have wildcards."
     castToSym TSym{..}             = pure _sym
 
@@ -111,11 +111,11 @@ instance Compilable (Clause hop bop) => Compilable (Query hop bop) where
                      , _atom = TVar <$> _atom sub
                      }
       ,..} :: Clause hop bop)
-    Nothing -> L.scream (Just _span) "Unnamed query found during compilation."
+    Nothing -> L.scream _span "Unnamed query found during compilation."
 
 headCompile :: Subgoal op Term -> L.Logger (E.Literal 'E.ABase)
 headCompile SAtom{..} = compile _atom
-headCompile s = L.scream (Just $ span s) "Head is not ready for compilation."
+headCompile s = L.scream (span s) "Head is not ready for compilation."
 
 bodyCompile :: forall op. ClosureCompilable op
             => Subgoal op Term -> L.Logger (E.Body 'E.ABase)
@@ -128,7 +128,7 @@ bodyCompile = para alg
   alg (SBinOpF _ op (ch1,m1) (ch2,m2)) =
     cCompile =<< liftA2 (CBinary op) ((ch1,) <$> m1) ((ch2,) <$> m2)
   alg (SNullOpF s _)                   =
-    L.scream (Just s) "Nullary operators cannot be compiled."
+    L.scream s "Nullary operators cannot be compiled."
 
 data Closure op =
     CUnary  (op 'Unary)  (Subgoal op Term, E.Body 'E.ABase)
@@ -147,7 +147,7 @@ instance Compilable (AtomicFormula Term) where
           terms <-
             case V.fromListN @n _terms of
               Just vec -> pure $ fmap compile vec
-              Nothing -> L.scream (Just _span)
+              Nothing -> L.scream _span
                 "Length of terms is not the length of terms."
 
           nature <-
@@ -155,7 +155,7 @@ instance Compilable (AtomicFormula Term) where
               Just (E.SFF (foreignFunc :: E.ForeignFunc m)) ->
                 case Proxy @n `sameNat` Proxy @m of
                   Just Refl -> pure $ E.Extralogical foreignFunc
-                  Nothing -> L.scold (Just _span) $
+                  Nothing -> L.scold _span $
                        "The foreign function has arity "
                     <> pp (fromIntegral @_ @Int $ natVal (Proxy @m))
                     <> ", but you've given "
