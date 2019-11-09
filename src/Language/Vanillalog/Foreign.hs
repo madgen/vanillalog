@@ -30,4 +30,8 @@ foreignTable = M.fromList
   , ("read_csv2",                   E.SFF F.read_csv2)
   , ("read_csv3",                   E.SFF F.read_csv3)
   , ("read_csv4",                   E.SFF F.read_csv4)
+  , ("append_csv1",                 E.SFF F.append_csv1)
+  , ("append_csv2",                 E.SFF F.append_csv2)
+  , ("append_csv3",                 E.SFF F.append_csv3)
+  , ("append_csv4",                 E.SFF F.append_csv4)
   ]

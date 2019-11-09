@@ -22,6 +22,10 @@ module Language.Vanillalog.Generic.Foreign
   , read_csv2
   , read_csv3
   , read_csv4
+  , append_csv1
+  , append_csv2
+  , append_csv3
+  , append_csv4
   ) where
 
 import Protolude hiding (subtract)
@@ -30,6 +34,7 @@ import Control.Monad.Trans.Except (except, withExceptT)
 
 import qualified Data.Csv as CSV
 import qualified Data.Text as T
+import qualified Data.Text.IO as T
 import qualified Data.Text.Lazy.Encoding as LT
 import qualified Data.Vector as V
 
@@ -81,3 +86,33 @@ srcToResults filePath = do
   let csvFileBS = LT.encodeUtf8 $ fromStrict csvFileT
   let eCSV = CSV.decode CSV.NoHeader csvFileBS
   V.toList <$> withExceptT T.pack (except eCSV)
+
+append_csv1 :: ForeignFunc 2
+append_csv1 = liftPredicateME go
+  where
+  go :: Text -> Text -> Foreign Bool
+  go src field = appendToSrc src (CSV.Only field)
+
+append_csv2 :: ForeignFunc 3
+append_csv2 = liftPredicateME go
+  where
+  go :: Text -> Text -> Text -> Foreign Bool
+  go src f1 f2 = appendToSrc src (f1,f2)
+
+append_csv3 :: ForeignFunc 4
+append_csv3 = liftPredicateME go
+  where
+  go :: Text -> Text -> Text -> Text -> Foreign Bool
+  go src f1 f2 f3 = appendToSrc src (f1,f2,f3)
+
+append_csv4 :: ForeignFunc 5
+append_csv4 = liftPredicateME go
+  where
+  go :: Text -> Text -> Text -> Text -> Text -> Foreign Bool
+  go src f1 f2 f3 f4 = appendToSrc src (f1,f2,f3,f4)
+
+appendToSrc :: CSV.ToRecord f => Text -> f -> Foreign Bool
+appendToSrc src record = do
+  let toAppend = toStrict $ LT.decodeUtf8 $ CSV.encode [ record ]
+  lift $ T.appendFile (T.unpack src) toAppend
+  pure True
