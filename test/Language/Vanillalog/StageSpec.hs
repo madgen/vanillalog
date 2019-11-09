@@ -42,7 +42,6 @@ spec =
       it "produces the same result for IO and pure versions" $
         mSol' `shouldBe` mSol
 
-
     describe "non-linear ancestor" $
       testSolving "examples/non-linear-ancestor.vlog"
 
