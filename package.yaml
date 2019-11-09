@@ -9,6 +9,7 @@ copyright:           "2018 Mistral Contrastin"
 extra-source-files:
 - README.md
 - ChangeLog.md
+- examples/**
 
 # Metadata used when publishing your package
 # synopsis:            Short description of your package
