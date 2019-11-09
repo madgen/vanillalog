@@ -122,6 +122,10 @@ There are a number of foreign predicates included for your convenience.
 |`read_csv2`| `Text x Text x Text`|`+??`|Take a guess.|
 |`read_csv3`| `Text x Text x Text x Text`|`+???`|Take a guess.|
 |`read_csv4`| `Text x Text x Text x Text x Text`|`+????`|Take a guess.|
+|`append_csv1`| `Text x Text`|`++`|Appends to the CSV file the path of which stored in the first parameter and the column in the second parameter.|
+|`append_csv2`| `Text x Text x Text`|`+++`|Take a guess.|
+|`append_csv3`| `Text x Text x Text x Text`|`++++`|Take a guess.|
+|`append_csv4`| `Text x Text x Text x Text x Text`|`+++++`|Take a guess.|
 
 ## Semantics
 
