@@ -34,8 +34,14 @@ testSolving srcPath = do
 spec :: Spec
 spec =
   describe "Integration tests for compilation stages" $ do
-    describe "linear ancestor" $
+    describe "linear ancestor" $ do
       testSolving "examples/linear-ancestor.vlog"
+
+      mSol  <- runIO $ runSrc "examples/linear-ancestor.vlog"
+      mSol' <- runIO $ runSrc "examples/linear-ancestor-csv-io.vlog"
+      it "produces the same result for IO and pure versions" $
+        mSol' `shouldBe` mSol
+
 
     describe "non-linear ancestor" $
       testSolving "examples/non-linear-ancestor.vlog"
