@@ -22,7 +22,7 @@ ancestorPr :: Datalog
 ancestorPr =
   let adviser  = mkPredicate2 "adviser"
       ancestor = mkPredicate2 "ancestor"
-      true     = mkPredicate0 "ancestor"
+      true     = mkPredicate0 "true"
       (x,y,t) = (var "X", var "Y", var "T")
       descendant = var "Descendant"
   in Fact|> true.
