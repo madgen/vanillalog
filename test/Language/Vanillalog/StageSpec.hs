@@ -29,7 +29,8 @@ readSrc filePath = BS.fromStrict . encodeUtf8 <$> readFile filePath
 runSrc :: FilePath -> IO (Maybe (R.Solution 'E.ABase))
 runSrc srcPath = do
   bs <- readSrc srcPath
-  let stageEnv = S.defaultStageEnv { S._inputSource = Src.File srcPath, S._input = bs }
+  let stageEnv = S.defaultStageEnv
+        { S._input = S.Textual (Src.File srcPath) bs S.SProgram }
   S.runStage stageEnv (S.solved mempty)
 
 testSolving :: FilePath -> SpecWith ()

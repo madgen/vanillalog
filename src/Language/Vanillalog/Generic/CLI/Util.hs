@@ -27,7 +27,7 @@ import qualified Language.Vanillalog.Generic.AST as AG
 import qualified Language.Vanillalog.Generic.Stage as S
 import           Language.Vanillalog.Generic.Pretty (HasPrecedence)
 
-succeedOrDie :: S.StageEnv -> S.Stage a -> IO a
+succeedOrDie :: S.StageEnv decl hop bop -> S.Stage decl hop bop a -> IO a
 succeedOrDie env processor = maybe exitFailure pure =<< S.runStage env processor
 
 display :: Pretty (hop 'Nullary) => Pretty (hop 'Unary) => Pretty (hop 'Binary)

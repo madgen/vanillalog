@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Language.Vanillalog.Stage
@@ -21,10 +22,11 @@ import qualified Language.Exalog.Core as E
 import qualified Language.Exalog.Relation as R
 import           Language.Exalog.Renamer (rename)
 import qualified Language.Exalog.Solver as Solver
-import           Language.Exalog.SrcLoc (span)
+import           Language.Exalog.SrcLoc (span, SrcSpan(NoSpan))
 import           Language.Exalog.RangeRestriction (fixRangeRestriction)
 import           Language.Exalog.WellModing (fixModing)
 import           Language.Exalog.Stratification (stratify)
+import qualified Language.Exalog.Logger as Log
 
 import           Language.Vanillalog.AST
 import qualified Language.Vanillalog.Foreign as FFI
@@ -38,52 +40,68 @@ import           Language.Vanillalog.Generic.Transformation.Query (nameQueries)
 import qualified Language.Vanillalog.Generic.Transformation.EmbedForeign as FFI
 import           Language.Vanillalog.Transformation.Normaliser (normalise)
 
-lex :: Stage [ L.Lexeme (Lexer.Token Text) ]
+lex :: Stage Void (Const Void) Op [ L.Lexeme (Lexer.Token Text) ]
 lex = do
-  env <- ask
-  lift $ Lexer.lex (_inputSource env) (_input env)
+  inp <- _input <$> ask
 
-parse :: Stage Program
+  (inpSrc, src) <- case inp of
+    Textual{_inputSource, _source} -> pure (_inputSource, _source)
+    _ -> lift $ Log.scream NoSpan "Can't lex without textual input."
+
+  lift $ Lexer.lex inpSrc src
+
+parse :: Stage Void (Const Void) Op Program
 parse = do
-  env <- ask
-  case _parserScope env of
-    SProgram  -> lift $ Parser.programParser (_inputSource env) (_input env)
+  inp <- _input <$> ask
+
+  (inpSrc, src) <- case inp of
+    Textual{_inputSource, _source} -> pure (_inputSource, _source)
+    _ -> lift $ Log.scream NoSpan "Can't parse without textual input."
+
+  case _parserScope inp of
+    SProgram  -> lift $ Parser.programParser inpSrc src
     SSentence -> do
-      query <- lift $ Parser.replParser (_inputSource env) (_input env)
+      query <- lift $ Parser.replParser inpSrc src
       pure $ G.Program (span query) [ G.StSentence (G.SQuery query) ]
 
-foreignEmbedded :: Stage Program
-foreignEmbedded = parse >>= lift . FFI.embedForeign FFI.foreignTable
+foreignEmbedded :: Stage Void (Const Void) Op Program
+foreignEmbedded = do
+  inp <- _input <$> ask
+  ast <- case inp of
+    Textual{} -> parse
+    AST ast   -> pure ast
 
-namedQueries :: Stage Program
+  lift $ FFI.embedForeign FFI.foreignTable ast
+
+namedQueries :: Stage Void (Const Void) Op Program
 namedQueries = do
   ast <- foreignEmbedded
   reserved <- _reservedNames <$> ask
   lift $ nameQueries reserved ast
 
-normalised :: Stage Program
+normalised :: Stage Void (Const Void) Op Program
 normalised = namedQueries >>= lift . normalise
 
-compiled :: Stage (E.Program 'E.ABase, R.Solution 'E.ABase)
+compiled :: Stage Void (Const Void) Op (E.Program 'E.ABase, R.Solution 'E.ABase)
 compiled = normalised >>= lift . compile
 
-rangeRestrictionRepaired :: Stage (E.Program 'E.ABase, R.Solution 'E.ABase)
+rangeRestrictionRepaired :: Stage Void (Const Void) Op (E.Program 'E.ABase, R.Solution 'E.ABase)
 rangeRestrictionRepaired = compiled
                        >>= lift . rename
                        >>= lift . fixRangeRestriction
 
-wellModed :: Stage (E.Program 'E.ABase, R.Solution 'E.ABase)
+wellModed :: Stage Void (Const Void) Op (E.Program 'E.ABase, R.Solution 'E.ABase)
 wellModed = rangeRestrictionRepaired
         >>= lift . rename
         >>= lift . fixModing
 
-stratified :: Stage (E.Program 'E.ABase, R.Solution 'E.ABase)
+stratified :: Stage Void (Const Void) Op (E.Program 'E.ABase, R.Solution 'E.ABase)
 stratified = do
   (pr, sol) <- wellModed
   pr' <- lift $ stratify $ E.decorate pr
   pure (pr', sol)
 
-solved :: R.Solution 'E.ABase -> Stage (R.Solution 'E.ABase)
+solved :: R.Solution 'E.ABase -> Stage Void (Const Void) Op (R.Solution 'E.ABase)
 solved baseEDB = do
   (program, initEDB) <- stratified
   keepPredicates <- _keepPredicates <$> ask
