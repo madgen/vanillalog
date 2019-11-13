@@ -1,4 +1,13 @@
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FunctionalDependencies #-}
 
 module Language.Vanillalog.Generic.DSL
   ( GenericDatalog
@@ -15,10 +24,9 @@ module Language.Vanillalog.Generic.DSL
   , int
     -- * Sentence constructor
   , (|-)
-  , (?-)
-  , (!-)
+  , (|>)
+  , StatementKind(..)
   , (.)
-  , (-)
   , voila
   ) where
 
@@ -30,7 +38,7 @@ import Data.String (IsString(..))
 import Language.Exalog.SrcLoc
 import Language.Exalog.Core (PredicateSymbol)
 
-import Language.Vanillalog.Generic.AST
+import Language.Vanillalog.Generic.AST as GA
 
 atom :: PredicateSymbol -> [ Term ] -> Subgoal op Term
 atom predSym terms = SAtom NoSpan $ AtomicFormula
@@ -76,19 +84,26 @@ infixr 0 .
 (.) :: GenericDatalog decl hop bop -> GenericDatalog decl hop bop -> GenericDatalog decl hop bop
 d1 . d2 = d1 P.. d2
 
-infixr 1 -
-(-) :: (a -> GenericDatalog decl hop bop) -> a -> GenericDatalog decl hop bop
-f - a = f a
-
-infixr 2 |-
+infix 1 |-
 (|-) :: Subgoal hop Term -> Subgoal bop Term -> GenericDatalog decl hop bop
 head |- body = ((StSentence $ SClause $ Clause NoSpan head body) :)
 
-(?-) :: Subgoal bop Term -> GenericDatalog decl hop bop
-(?-) body = ((StSentence $ SQuery $ Query NoSpan Nothing body) :)
+data SKind = Q | F
+data StatementKind :: SKind -> Type where
+  Query :: StatementKind 'Q
+  Fact  :: StatementKind 'F
 
-(!-) :: Subgoal hop Term -> GenericDatalog decl hop bop
-(!-) head = ((StSentence $ SFact $ Fact NoSpan head) :)
+infix 1 |>
+class Statementable typ op hop bop | typ hop bop -> op where
+  (|>) :: StatementKind typ -> Subgoal op Term -> GenericDatalog decl hop bop
+
+instance Statementable 'Q op hop op where
+  Language.Vanillalog.Generic.DSL.Query |> body =
+    ((StSentence $ SQuery $ GA.Query NoSpan Nothing body) :)
+
+instance Statementable 'F op op bop where
+  Language.Vanillalog.Generic.DSL.Fact |> head =
+    ((StSentence $ SFact $ GA.Fact NoSpan head) :)
 
 voila :: GenericDatalog decl hop bop
 voila = const []

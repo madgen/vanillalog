@@ -24,15 +24,15 @@ ancestorPr =
       ancestor = mkPredicate2 "ancestor"
       (x,y,t) = (var "X", var "Y", var "T")
       descendant = var "Descendant"
-  in (!-)- adviser "Alonzo Church" "Alan Turing".
-     (!-)- adviser "Alonzo Church" "Raymond Smullyan".
-     (!-)- adviser "Alonzo Church" "Stephen Kleene".
-     (!-)- adviser "Oswald Veblen" "Alonzo Church".
+  in Fact|> adviser "Alonzo Church" "Alan Turing".
+     Fact|> adviser "Alonzo Church" "Raymond Smullyan".
+     Fact|> adviser "Alonzo Church" "Stephen Kleene".
+     Fact|> adviser "Oswald Veblen" "Alonzo Church".
 
      ancestor x y |- adviser x y.
      ancestor x y |- adviser x t /\ ancestor t y.
 
-     (?-)- ancestor "Oswald Veblen" descendant.
+     Query|> ancestor "Oswald Veblen" descendant.
      voila
 
 expectedAncestors :: R.Solution 'E.ABase
