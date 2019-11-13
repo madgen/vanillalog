@@ -12,6 +12,7 @@
 module Language.Vanillalog.Generic.DSL
   ( GenericDatalog
     -- * Predicate maker
+  , mkPredicate0
   , mkPredicate1
   , mkPredicate2
   , mkPredicate3
@@ -47,6 +48,9 @@ atom predSym terms = SAtom NoSpan $ AtomicFormula
   , _nature = Nothing
   , _terms = terms
   }
+
+mkPredicate0 :: PredicateSymbol -> Subgoal op Term
+mkPredicate0 predSym = atom predSym [ ]
 
 mkPredicate1 :: PredicateSymbol -> Term -> Subgoal op Term
 mkPredicate1 predSym t = atom predSym [ t ]
