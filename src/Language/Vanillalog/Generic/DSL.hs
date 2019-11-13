@@ -55,20 +55,20 @@ mkPredicate0 predSym = atom predSym [ ]
 mkPredicate1 :: PredicateSymbol -> Term -> Subgoal op Term
 mkPredicate1 predSym t = atom predSym [ t ]
 
-mkPredicate2 :: PredicateSymbol -> Term -> Term -> Subgoal op Term
-mkPredicate2 predSym t1 t2 = atom predSym [ t1, t2 ]
+mkPredicate2 :: PredicateSymbol -> (Term,Term) -> Subgoal op Term
+mkPredicate2 predSym (t1,t2) = atom predSym [ t1, t2 ]
 
-mkPredicate3 :: PredicateSymbol -> Term -> Term -> Term -> Subgoal op Term
-mkPredicate3 predSym t1 t2 t3 = atom predSym [ t1, t2, t3 ]
+mkPredicate3 :: PredicateSymbol -> (Term,Term,Term) -> Subgoal op Term
+mkPredicate3 predSym (t1,t2,t3) = atom predSym [ t1, t2, t3 ]
 
-mkPredicate4 :: PredicateSymbol -> Term -> Term -> Term -> Term -> Subgoal op Term
-mkPredicate4 predSym t1 t2 t3 t4 = atom predSym [ t1, t2, t3, t4 ]
+mkPredicate4 :: PredicateSymbol -> (Term,Term,Term,Term) -> Subgoal op Term
+mkPredicate4 predSym (t1,t2,t3,t4) = atom predSym [ t1, t2, t3, t4 ]
 
-mkPredicate5 :: PredicateSymbol -> Term -> Term -> Term -> Term -> Term -> Subgoal op Term
-mkPredicate5 predSym t1 t2 t3 t4 t5 = atom predSym [ t1, t2, t3, t4, t5 ]
+mkPredicate5 :: PredicateSymbol -> (Term,Term,Term,Term,Term) -> Subgoal op Term
+mkPredicate5 predSym (t1,t2,t3,t4,t5) = atom predSym [ t1, t2, t3, t4, t5 ]
 
-mkPredicate6 :: PredicateSymbol -> Term -> Term -> Term -> Term -> Term -> Term -> Subgoal op Term
-mkPredicate6 predSym t1 t2 t3 t4 t5 t6 = atom predSym [ t1, t2, t3, t4, t5, t6 ]
+mkPredicate6 :: PredicateSymbol -> (Term,Term,Term,Term,Term,Term) -> Subgoal op Term
+mkPredicate6 predSym (t1,t2,t3,t4,t5,t6) = atom predSym [ t1, t2, t3, t4, t5, t6 ]
 
 var :: Text -> Term
 var name = TVar $ Var NoSpan name

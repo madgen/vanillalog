@@ -22,20 +22,17 @@ ancestorPr :: Datalog
 ancestorPr =
   let adviser  = mkPredicate2 "adviser"
       ancestor = mkPredicate2 "ancestor"
-      true     = mkPredicate0 "true"
       (x,y,t) = (var "X", var "Y", var "T")
       descendant = var "Descendant"
-  in Fact|> true.
+  in Fact|> adviser("Alonzo Church","Alan Turing").
+     Fact|> adviser("Alonzo Church","Raymond Smullyan").
+     Fact|> adviser("Alonzo Church","Stephen Kleene").
+     Fact|> adviser("Oswald Veblen","Alonzo Church").
 
-     adviser "Alonzo Church" "Alan Turing"      |- true.
-     adviser "Alonzo Church" "Raymond Smullyan" |- true.
-     adviser "Alonzo Church" "Stephen Kleene"   |- true.
-     adviser "Oswald Veblen" "Alonzo Church"    |- true.
+     ancestor(x,y) |- adviser(x,y).
+     ancestor(x,y) |- adviser(x,t) /\ ancestor(t,y).
 
-     ancestor x y |- adviser x y.
-     ancestor x y |- adviser x t /\ ancestor t y.
-
-     Query|> ancestor "Oswald Veblen" descendant.
+     Query|> ancestor("Oswald Veblen",descendant).
      voila
 
 expectedAncestors :: R.Solution 'E.ABase
