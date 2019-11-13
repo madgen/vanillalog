@@ -3,7 +3,7 @@
 module Language.Vanillalog.DSLSpec where
 
 import qualified Protolude as P
-import           Protolude hiding ((.))
+import           Protolude hiding ((.),(-))
 
 import qualified Data.Vector.Sized as V
 import           Data.Maybe (fromJust)
@@ -24,15 +24,15 @@ ancestorPr =
       ancestor = mkPredicate2 "ancestor"
       (x,y,t) = (var "X", var "Y", var "T")
       descendant = var "Descendant"
-  in ((!-) $ adviser "Alonzo Church" "Alan Turing").
-     ((!-) $ adviser "Alonzo Church" "Raymond Smullyan").
-     ((!-) $ adviser "Alonzo Church" "Stephen Kleene").
-     ((!-) $ adviser "Oswald Veblen" "Alonzo Church").
+  in (!-)- adviser "Alonzo Church" "Alan Turing".
+     (!-)- adviser "Alonzo Church" "Raymond Smullyan".
+     (!-)- adviser "Alonzo Church" "Stephen Kleene".
+     (!-)- adviser "Oswald Veblen" "Alonzo Church".
 
      ancestor x y |- adviser x y.
      ancestor x y |- adviser x t /\ ancestor t y.
 
-     ((?-) $ ancestor "Oswald Veblen" descendant).
+     (?-)- ancestor "Oswald Veblen" descendant.
      voila
 
 expectedAncestors :: R.Solution 'E.ABase

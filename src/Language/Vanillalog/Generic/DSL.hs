@@ -18,11 +18,12 @@ module Language.Vanillalog.Generic.DSL
   , (?-)
   , (!-)
   , (.)
+  , (-)
   , voila
   ) where
 
 import qualified Protolude as P
-import           Protolude hiding (head, (.))
+import           Protolude hiding (head, (.), (-))
 
 import Data.String (IsString(..))
 
@@ -71,19 +72,21 @@ instance IsString Term where
 
 type GenericDatalog decl hop bop = [ Statement decl hop bop ] -> [ Statement decl hop bop ]
 
-infixr 1 .
+infixr 0 .
 (.) :: GenericDatalog decl hop bop -> GenericDatalog decl hop bop -> GenericDatalog decl hop bop
 d1 . d2 = d1 P.. d2
+
+infixr 1 -
+(-) :: (a -> GenericDatalog decl hop bop) -> a -> GenericDatalog decl hop bop
+f - a = f a
 
 infixr 2 |-
 (|-) :: Subgoal hop Term -> Subgoal bop Term -> GenericDatalog decl hop bop
 head |- body = ((StSentence $ SClause $ Clause NoSpan head body) :)
 
-infixr 2 ?-
 (?-) :: Subgoal bop Term -> GenericDatalog decl hop bop
 (?-) body = ((StSentence $ SQuery $ Query NoSpan Nothing body) :)
 
-infixr 2 !-
 (!-) :: Subgoal hop Term -> GenericDatalog decl hop bop
 (!-) head = ((StSentence $ SFact $ Fact NoSpan head) :)
 
