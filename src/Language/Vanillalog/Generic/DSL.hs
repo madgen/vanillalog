@@ -110,4 +110,4 @@ instance Statementable 'F op op bop where
     ((StSentence $ SFact $ GA.Fact NoSpan head) :)
 
 voila :: GenericDatalog decl hop bop
-voila = const []
+voila x = x
