@@ -21,6 +21,8 @@ import Protolude hiding (sym)
 
 import Data.List (nub)
 
+import Data.String (IsString(fromString))
+
 import Data.Functor.Foldable
 import Data.Functor.Foldable.TH (makeBaseFunctor)
 
@@ -105,6 +107,56 @@ data Sym =
     SymInt  { _span :: SrcSpan, _int  :: Int  }
   | SymText { _span :: SrcSpan, _text :: Text }
   | SymBool { _span :: SrcSpan, _bool :: Bool }
+
+--------------------------------------------------------------------------------
+-- Literal lifting
+--------------------------------------------------------------------------------
+
+instance IsString Term where
+  fromString str = TSym $ fromString str
+
+instance IsString Sym where
+  fromString str = SymText NoSpan (fromString str)
+
+instance Num Term where
+  fromInteger int = TSym $ fromInteger int
+
+  TSym sym1 + TSym sym2 = TSym (sym1 + sym2)
+  _ + _ = panic "Can't add non-literals."
+
+  TSym sym1 * TSym sym2 = TSym (sym1 * sym2)
+  _ * _ = panic "Can't multiply non-literals."
+
+  signum (TSym sym) = TSym (signum sym)
+  signum _ = panic "Don't know the sign of a non-literal."
+
+  abs (TSym sym) = TSym (abs sym)
+  abs _ = panic "Don't know the absolute value of a non-literal."
+
+  negate (TSym sym) = TSym (negate sym)
+  negate _ = panic "Can't negate a non-literals."
+
+instance Num Sym where
+  fromInteger int = SymInt NoSpan (fromInteger int)
+
+  SymInt s1 sym1 + SymInt s2 sym2
+    | s1 == NoSpan && s2 == NoSpan = SymInt NoSpan (sym1 + sym2)
+    | otherwise = panic "Can't add integers with spans."
+  _ + _ = panic "Can't add to a non-integer type."
+
+  SymInt s1 sym1 * SymInt s2 sym2
+    | s1 == NoSpan && s2 == NoSpan = SymInt NoSpan (sym1 * sym2)
+    | otherwise = panic "Can't multiply integers with spans."
+  _ * _ = panic "Can't multiply a non-integer type."
+
+  signum (SymInt s int) = SymInt s (signum int)
+  signum _ = panic "Don't know the sign of a non-integer types."
+
+  abs (SymInt s int) = SymInt s (abs int)
+  abs _ = panic "Don't know the absolute value of a non-integer types."
+
+  negate (SymInt s int) = SymInt s (negate int)
+  negate _ = panic "Can't negate non-integer types"
 
 --------------------------------------------------------------------------------
 -- Eq & Ord instances

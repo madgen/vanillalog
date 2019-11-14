@@ -34,8 +34,6 @@ module Language.Vanillalog.Generic.DSL
 import qualified Protolude as P
 import           Protolude hiding (head, (.), (-))
 
-import Data.String (IsString(..))
-
 import Language.Exalog.SrcLoc
 import Language.Exalog.Core (PredicateSymbol)
 
@@ -78,9 +76,6 @@ text literal = TSym $ SymText NoSpan literal
 
 int :: Int -> Term
 int literal = TSym $ SymInt NoSpan literal
-
-instance IsString Term where
-  fromString str = TSym $ SymText NoSpan (fromString str)
 
 type GenericDatalog decl hop bop = [ Statement decl hop bop ] -> [ Statement decl hop bop ]
 
