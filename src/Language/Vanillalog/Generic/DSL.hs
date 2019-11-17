@@ -10,7 +10,8 @@
 {-# LANGUAGE FunctionalDependencies #-}
 
 module Language.Vanillalog.Generic.DSL
-  ( GenericDatalog
+  ( GenericDatalogT
+  , genDatalogT
     -- * Predicate maker
   , mkPredicate0
   , mkPredicate1
@@ -27,12 +28,9 @@ module Language.Vanillalog.Generic.DSL
   , (|-)
   , (|>)
   , StatementKind(..)
-  , (.)
-  , voila
   ) where
 
-import qualified Protolude as P
-import           Protolude hiding (head, (.), (-))
+import Protolude hiding (head)
 
 import Language.Exalog.SrcLoc
 import Language.Exalog.Core (PredicateSymbol)
@@ -77,15 +75,16 @@ text literal = TSym $ SymText NoSpan literal
 int :: Int -> Term
 int literal = TSym $ SymInt NoSpan literal
 
-type GenericDatalog decl hop bop = [ Statement decl hop bop ] -> [ Statement decl hop bop ]
+type GenericDatalogT decl hop bop m = StateT [ Statement decl hop bop ] m ()
 
-infixr 0 .
-(.) :: GenericDatalog decl hop bop -> GenericDatalog decl hop bop -> GenericDatalog decl hop bop
-d1 . d2 = d1 P.. d2
+genDatalogT :: Monad m
+            => GenericDatalogT decl hop bop m -> m (Program decl hop bop)
+genDatalogT = (Program NoSpan <$>) . (`execStateT` [])
 
 infix 1 |-
-(|-) :: Subgoal hop Term -> Subgoal bop Term -> GenericDatalog decl hop bop
-head |- body = ((StSentence $ SClause $ Clause NoSpan head body) :)
+(|-) :: Monad m
+     => Subgoal hop Term -> Subgoal bop Term -> GenericDatalogT decl hop bop m
+head |- body = modify ((StSentence $ SClause $ Clause NoSpan head body) :)
 
 data SKind = Q | F
 data StatementKind :: SKind -> Type where
@@ -94,15 +93,13 @@ data StatementKind :: SKind -> Type where
 
 infix 1 |>
 class Statementable typ op hop bop | typ hop bop -> op where
-  (|>) :: StatementKind typ -> Subgoal op Term -> GenericDatalog decl hop bop
+  (|>) :: Monad m
+       => StatementKind typ -> Subgoal op Term -> GenericDatalogT decl hop bop m
 
 instance Statementable 'Q op hop op where
-  Language.Vanillalog.Generic.DSL.Query |> body =
+  Language.Vanillalog.Generic.DSL.Query |> body = modify
     ((StSentence $ SQuery $ GA.Query NoSpan Nothing body) :)
 
 instance Statementable 'F op op bop where
-  Language.Vanillalog.Generic.DSL.Fact |> head =
+  Language.Vanillalog.Generic.DSL.Fact |> head = modify
     ((StSentence $ SFact $ GA.Fact NoSpan head) :)
-
-voila :: GenericDatalog decl hop bop
-voila x = x

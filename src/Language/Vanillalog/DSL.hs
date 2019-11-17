@@ -9,25 +9,24 @@ module Language.Vanillalog.DSL
   , module GDSL
   ) where
 
-import Protolude hiding ((.))
+import Protolude
 
-import Language.Exalog.SrcLoc (SrcSpan(NoSpan))
-import qualified Language.Exalog.Relation as R
 import qualified Language.Exalog.Core as E
+import qualified Language.Exalog.Logger as Log
+import qualified Language.Exalog.Relation as R
+import           Language.Exalog.SrcLoc (SrcSpan(NoSpan))
 
 import           Language.Vanillalog.Stage (solved)
 import qualified Language.Vanillalog.Generic.Stage as S
 import           Language.Vanillalog.AST
-import qualified Language.Vanillalog.Generic.AST as AG
 import           Language.Vanillalog.Generic.DSL as GDSL
 
-type Datalog = GenericDatalog Void (Const Void) Op
+type Datalog = GenericDatalogT Void (Const Void) Op (S.StageT Void (Const Void) Op Log.Logger)
 
-runDatalog :: GenericDatalog Void (Const Void) Op -> IO (Maybe (R.Solution 'E.ABase))
-runDatalog statements = S.runStage dslStageEnv (solved mempty)
-  where
-  program = AG.Program NoSpan (statements [])
-  dslStageEnv = (S.defaultStageEnv {S._input = S.AST program})
+runDatalog :: Datalog -> IO (Maybe (R.Solution 'E.ABase))
+runDatalog datalog = S.runStage S.defaultStageEnv $ do
+  program <- genDatalogT datalog
+  local (\s -> s {S._input = S.AST program }) (solved mempty)
 
 infixl 3 /\
 (/\) :: Subgoal Op Term -> Subgoal Op Term -> Subgoal Op Term

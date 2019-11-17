@@ -1,8 +1,10 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE GeneralisedNewtypeDeriving #-}
 
 module Language.Vanillalog.Generic.Stage
   ( Stage
+  , StageT
   , StageEnv(..)
   , Input(..)
   , ParserScope(..)
@@ -12,6 +14,8 @@ module Language.Vanillalog.Generic.Stage
   ) where
 
 import Protolude hiding (decodeUtf8)
+
+import           Control.Monad.Trans.Class (MonadTrans)
 
 import           Data.Text.Lazy.Encoding (decodeUtf8)
 import qualified Data.ByteString.Lazy.Char8 as BS
@@ -47,11 +51,15 @@ defaultStageEnv :: StageEnv decl hop bop
 defaultStageEnv = StageEnv (Textual None "" SProgram) OnlyQueryPreds []
 
 runStage :: StageEnv decl hop bop -> Stage decl hop bop a -> IO (Maybe a)
-runStage env@StageEnv{..} = Log.runLoggerT loggerEnv . (`runReaderT` env)
+runStage env@StageEnv{..} = Log.runLoggerT loggerEnv . (`runReaderT` env) . _unStageT
   where
   loggerEnv = Log.LoggerEnv $
     case _input of
       Textual{_source} -> Just (toStrict . decodeUtf8 $ _source)
       AST{}            -> Nothing
 
-type Stage decl hop bop a = ReaderT (StageEnv decl hop bop) Log.Logger a
+newtype StageT decl hop bop m a =
+  StageT { _unStageT :: ReaderT (StageEnv decl hop bop) m a }
+  deriving (Functor, Applicative, Monad, MonadReader (StageEnv decl hop bop), MonadTrans)
+
+type Stage decl hop bop a = StageT decl hop bop Log.Logger a

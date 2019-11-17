@@ -2,8 +2,7 @@
 
 module Language.Vanillalog.DSLSpec where
 
-import qualified Protolude as P
-import           Protolude hiding ((.),(-))
+import Protolude
 
 import qualified Data.Vector.Sized as V
 import           Data.Maybe (fromJust)
@@ -19,41 +18,39 @@ import qualified Language.Exalog.Tuples as T
 import Language.Vanillalog.DSL
 
 ancestorPr :: Datalog
-ancestorPr =
+ancestorPr = do
   let adviser  = mkPredicate2 "adviser"
-      ancestor = mkPredicate2 "ancestor"
-      (x,y,t) = (var "X", var "Y", var "T")
-      descendant = var "Descendant"
-  in Fact|> adviser("Alonzo Church","Alan Turing").
-     Fact|> adviser("Alonzo Church","Raymond Smullyan").
-     Fact|> adviser("Alonzo Church","Stephen Kleene").
-     Fact|> adviser("Oswald Veblen","Alonzo Church").
+  let ancestor = mkPredicate2 "ancestor"
+  let (x,y,t) = (var "X", var "Y", var "T")
+  let descendant = var "Descendant"
 
-     ancestor(x,y) |- adviser(x,y).
-     ancestor(x,y) |- adviser(x,t) /\ ancestor(t,y).
+  Fact|> adviser("Alonzo Church","Alan Turing")
+  Fact|> adviser("Alonzo Church","Raymond Smullyan")
+  Fact|> adviser("Alonzo Church","Stephen Kleene")
+  Fact|> adviser("Oswald Veblen","Alonzo Church")
 
-     Query|> ancestor("Oswald Veblen",descendant).
-     voila
+  ancestor(x,y) |- adviser(x,y)
+  ancestor(x,y) |- adviser(x,t) /\ ancestor(t,y)
+
+  Query|> ancestor("Oswald Veblen",descendant)
 
 expectedAncestors :: R.Solution 'E.ABase
 expectedAncestors = R.fromList
-                P.. (:[])
-                P.. R.Relation ancestorPred
-                P.. T.fromList
-                $ tuples
+                  . (:[])
+                  . R.Relation ancestorPred
+                  . T.fromList
+                  $ tuples
   where
   ancestorPred :: E.Predicate 1 'E.ABase
   ancestorPred = E.Predicate (E.PredABase Src.NoSpan) "ancestor" sing E.Logical
 
   tuples :: [ V.Vector 1 E.Sym ]
-  tuples = fmap E.SymText
-       P.. fromJust
-       P.. V.fromList <$>
+  tuples = fmap E.SymText . fromJust . V.fromList <$>
     [ [ "Alan Turing" ], [ "Raymond Smullyan" ], [ "Stephen Kleene" ], [ "Alonzo Church" ] ]
 
 spec :: Spec
 spec =
-  describe "DSL" $ do
+  describe "DSL" $
     it "runs ancestor program" $ do
       output <- runDatalog ancestorPr
       output `shouldBe` Just expectedAncestors
