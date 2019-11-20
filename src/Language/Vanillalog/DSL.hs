@@ -26,7 +26,7 @@ type Datalog = GenericDatalogT Void (Const Void) Op (S.StageT Void (Const Void) 
 runDatalog :: Datalog -> IO (Maybe (KB.Set 'E.ABase))
 runDatalog datalog = S.runStage S.defaultStageEnv $ do
   program <- genDatalogT datalog
-  local (\s -> s {S._input = S.AST program }) (solved mempty)
+  fst <$> local (\s -> s {S._input = S.AST program }) (solved mempty)
 
 infixl 3 /\
 (/\) :: Subgoal Op Term -> Subgoal Op Term -> Subgoal Op Term

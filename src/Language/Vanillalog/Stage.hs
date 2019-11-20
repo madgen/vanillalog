@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -101,14 +102,14 @@ stratified = do
   pr' <- lift $ stratify $ E.decorate pr
   pure (pr', sol)
 
-solved :: KB.Set 'E.ABase -> Stage Void (Const Void) Op (KB.Set 'E.ABase)
+solved :: KB.Set 'E.ABase -> Stage Void (Const Void) Op (KB.Set 'E.ABase, [ E.PredicateBox 'E.ABase ])
 solved baseEDB = do
   (program, initEDB) <- stratified
   keepPredicates <- _keepPredicates <$> ask
   let edb = baseEDB <> initEDB
   lift $ case keepPredicates of
-    OnlyQueryPreds -> Solver.solve program edb
-    AllPreds       -> Solver.solve (mkEveryPredQueriable program) edb
+    OnlyQueryPreds -> (,E._queries   program) <$> Solver.solve program edb
+    AllPreds       -> (,E.predicates program) <$> Solver.solve (mkEveryPredQueriable program) edb
   where
   mkEveryPredQueriable :: E.Program 'E.ABase -> E.Program 'E.ABase
   mkEveryPredQueriable pr@E.Program{..} =

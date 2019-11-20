@@ -12,7 +12,7 @@ import System.Exit (exitFailure)
 
 import Text.PrettyPrint hiding ((<>))
 
-import           Data.List (nub, sort)
+import           Data.List (nub, sort, (\\))
 import           Data.Text (pack)
 
 import qualified Language.Exalog.Core as E
@@ -35,8 +35,11 @@ succeedOrDie env processor = maybe exitFailure pure =<< S.runStage env processor
 display :: Pretty (hop 'Nullary) => Pretty (hop 'Unary) => Pretty (hop 'Binary)
         => Pretty (bop 'Nullary) => Pretty (bop 'Unary) => Pretty (bop 'Binary)
         => HasPrecedence hop => HasPrecedence bop
-        => AG.Program decl hop bop -> KB.Set 'E.ABase -> IO ()
-display program kb =
+        => AG.Program decl hop bop
+        -> [ E.PredicateBox 'E.ABase ]
+        -> KB.Set 'E.ABase
+        -> IO ()
+display program queries kb = do
   forM_ kbs $ \kb' ->
     case kb' of
       [] -> panic "Empty knowledge base"
@@ -50,6 +53,16 @@ display program kb =
             putStrLn $ pp query
             putStrLn $ pack . render . displayTuples $ kb'
           Nothing -> pure ()
+
+  forM_ emptyPreds $ \(E.PredicateBox pred) -> do
+    let querySpan = span pred
+    mQuery <- findQueryM program querySpan
+
+    case mQuery of
+      Just query -> do
+        putStrLn $ pp query
+        putStrLn $ pack . render . displayTuples $ []
+      Nothing -> pure ()
   where
   kbs = groupBy
           (\(KB.Knowledge pred _) (KB.Knowledge pred' _)
@@ -57,6 +70,11 @@ display program kb =
       . nub
       . sort
       $ KB.toList kb
+
+  emptyPreds =
+    queries
+    \\
+    (nub . sort . KB.map (\(KB.Knowledge pred _) -> E.PredicateBox pred) $ kb)
 
 findQueryM :: AG.Program decl hop bop -> SrcSpan -> IO (Maybe (AG.Query hop bop))
 findQueryM program querySpan = L.runLoggerT (L.LoggerEnv Nothing) $

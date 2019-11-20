@@ -53,15 +53,15 @@ run RunOptions{..} = do
   let stageEnv = S.defaultStageEnv
         {S._input = S.Textual (Src.File _file) bs S.SProgram}
   ast <- succeedOrDie stageEnv S.parse
-  sol <- succeedOrDie stageEnv (S.solved mempty)
+  (sol,queryPreds) <- succeedOrDie stageEnv (S.solved mempty)
 
-  display ast sol
+  display ast queryPreds sol
 
 repl :: ReplOptions -> IO ()
 repl ReplOptions{..} = do
   putStrLn @Text "Interactive Vanillalog environment - REPL"
 
-  baseSolution <- maybe (pure mempty) computeBase _mFile
+  (baseSolution,_) <- maybe (pure mempty) computeBase _mFile
 
   HLine.runInputT HLine.defaultSettings (loop baseSolution)
   where
@@ -83,7 +83,7 @@ repl ReplOptions{..} = do
           mSolution <- lift $
             S.runStage (mkReplEnv baseSol $ prefix <> input) (S.solved baseSol)
           HLine.outputStrLn $ case mSolution of
-            Just solution -> render $ displayTuples (KB.toList solution)
+            Just (solution,_) -> render $ displayTuples (KB.toList solution)
             Nothing  -> "Ill-formed query. Try again."
           loop baseSol
 
