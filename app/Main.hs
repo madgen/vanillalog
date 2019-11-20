@@ -4,7 +4,7 @@
 
 module Main where
 
-import Protolude
+import Protolude hiding (pred)
 
 import qualified Data.ByteString.Lazy.Char8 as BS
 
