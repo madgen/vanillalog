@@ -11,9 +11,10 @@ import           Data.Singletons (sing)
 import Test.Hspec
 
 import qualified Language.Exalog.Core as E
-import qualified Language.Exalog.Relation as R
+import qualified Language.Exalog.KnowledgeBase.Class as KB
+import qualified Language.Exalog.KnowledgeBase.Knowledge as KB
+import qualified Language.Exalog.KnowledgeBase.Set as KB
 import qualified Language.Exalog.SrcLoc as Src
-import qualified Language.Exalog.Tuples as T
 
 import Language.Vanillalog.DSL
 
@@ -34,15 +35,13 @@ ancestorPr = do
 
   Query|> ancestor("Oswald Veblen",descendant)
 
-expectedAncestors :: R.Solution 'E.ABase
-expectedAncestors = R.fromList
-                  . (:[])
-                  . R.Relation ancestorPred
-                  . T.fromList
-                  $ tuples
+expectedAncestors :: KB.Set 'E.ABase
+expectedAncestors = KB.fromList
+                  $ KB.Knowledge ancestorPred
+                <$> tuples
   where
   ancestorPred :: E.Predicate 1 'E.ABase
-  ancestorPred = E.Predicate (E.PredABase Src.NoSpan) "ancestor" sing E.Logical
+  ancestorPred = E.Predicate (E.PredABase Src.NoSpan) "query_0" sing E.Logical
 
   tuples :: [ V.Vector 1 E.Sym ]
   tuples = fmap E.SymText . fromJust . V.fromList <$>

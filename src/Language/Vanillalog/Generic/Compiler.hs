@@ -28,8 +28,9 @@ import qualified Data.Vector.Sized as V
 
 import qualified Language.Exalog.Core as E
 import qualified Language.Exalog.Logger as L
-import qualified Language.Exalog.Tuples as T
-import qualified Language.Exalog.Relation as R
+import qualified Language.Exalog.KnowledgeBase.Class as KB
+import qualified Language.Exalog.KnowledgeBase.Knowledge as KB
+import qualified Language.Exalog.KnowledgeBase.Set as KB
 import           Language.Exalog.SrcLoc (span)
 import           Language.Exalog.Pretty (pp)
 
@@ -44,7 +45,7 @@ instance ( Compilable (Clause hop bop)
          , Compilable (Fact hop)
          ) => Compilable (Program Void hop bop) where
   type Output (Program Void hop bop) =
-    L.Logger (E.Program 'E.ABase, R.Solution 'E.ABase)
+    L.Logger (E.Program 'E.ABase, KB.Set 'E.ABase)
 
   compile Program{..} = do
     edb             <- traverse compile facts'
@@ -56,7 +57,7 @@ instance ( Compilable (Clause hop bop)
           , _strata     = [ E.Stratum $ compiledClauses ++ compiledQueries ]
           , _queries    = queryPreds compiledQueries
           }
-      , R.fromList edb
+      , KB.fromList edb
       )
 
     where
@@ -67,27 +68,27 @@ instance ( Compilable (Clause hop bop)
     queryPreds = map (E.predicateBox . E._head)
 
 instance Compilable (Fact hop) where
-  type Output (Fact hop) = L.Logger (R.Relation 'E.ABase)
+  type Output (Fact hop) = L.Logger (KB.Knowledge 'E.ABase)
   compile Fact{_head = sub,..} = case sub of
     SAtom{_atom = AtomicFormula{..}} ->
       withSomeSing (fromInteger . toInteger . length $ _terms) $
         \(arity :: SNat n) ->
           withKnownNat arity $ do
-            tuples <-
+            tuple <-
               case V.fromListN @n _terms of
                 Just vec -> do
                   symVec <- traverse castToSym vec
-                  pure $ T.fromList [ map compile symVec ]
+                  pure $ map compile symVec
                 Nothing -> L.scream _span
                   "length of terms is not the length of terms."
-            pure $ R.Relation
+            pure $ KB.Knowledge
               E.Predicate
                 { _annotation = E.PredABase _span
                 , _predSym    = _predSym
                 , _arity      = arity
                 , _nature     = E.Logical
                 }
-              tuples
+              tuple
     _ -> L.scream _span "The head is not ready for compilation."
     where
     castToSym :: Term -> L.Logger Sym

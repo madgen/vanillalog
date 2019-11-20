@@ -13,7 +13,7 @@ import Protolude
 
 import qualified Language.Exalog.Core as E
 import qualified Language.Exalog.Logger as Log
-import qualified Language.Exalog.Relation as R
+import qualified Language.Exalog.KnowledgeBase.Set as KB
 import           Language.Exalog.SrcLoc (SrcSpan(NoSpan))
 
 import           Language.Vanillalog.Stage (solved)
@@ -23,7 +23,7 @@ import           Language.Vanillalog.Generic.DSL as GDSL
 
 type Datalog = GenericDatalogT Void (Const Void) Op (S.StageT Void (Const Void) Op Log.Logger)
 
-runDatalog :: Datalog -> IO (Maybe (R.Solution 'E.ABase))
+runDatalog :: Datalog -> IO (Maybe (KB.Set 'E.ABase))
 runDatalog datalog = S.runStage S.defaultStageEnv $ do
   program <- genDatalogT datalog
   local (\s -> s {S._input = S.AST program }) (solved mempty)

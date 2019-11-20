@@ -18,7 +18,7 @@ import System.Directory (removeFile)
 import Test.Hspec
 
 import qualified Language.Exalog.Core as E
-import qualified Language.Exalog.Relation as R
+import qualified Language.Exalog.KnowledgeBase.Set as KB
 import qualified Language.Exalog.SrcLoc as Src
 
 import qualified Language.Vanillalog.Stage as S
@@ -26,7 +26,7 @@ import qualified Language.Vanillalog.Stage as S
 readSrc :: FilePath -> IO BS.ByteString
 readSrc filePath = BS.fromStrict . encodeUtf8 <$> readFile filePath
 
-runSrc :: FilePath -> IO (Maybe (R.Solution 'E.ABase))
+runSrc :: FilePath -> IO (Maybe (KB.Set 'E.ABase))
 runSrc srcPath = do
   bs <- readSrc srcPath
   let stageEnv = S.defaultStageEnv

@@ -19,8 +19,8 @@ module Language.Vanillalog.Stage
 import Protolude
 
 import qualified Language.Exalog.Core as E
-import qualified Language.Exalog.Relation as R
 import           Language.Exalog.Renamer (rename)
+import qualified Language.Exalog.KnowledgeBase.Set as KB
 import qualified Language.Exalog.Solver as Solver
 import           Language.Exalog.SrcLoc (span, SrcSpan(NoSpan))
 import           Language.Exalog.RangeRestriction (fixRangeRestriction)
@@ -82,26 +82,26 @@ namedQueries = do
 normalised :: Stage Void (Const Void) Op Program
 normalised = namedQueries >>= lift . normalise
 
-compiled :: Stage Void (Const Void) Op (E.Program 'E.ABase, R.Solution 'E.ABase)
+compiled :: Stage Void (Const Void) Op (E.Program 'E.ABase, KB.Set 'E.ABase)
 compiled = normalised >>= lift . compile
 
-rangeRestrictionRepaired :: Stage Void (Const Void) Op (E.Program 'E.ABase, R.Solution 'E.ABase)
+rangeRestrictionRepaired :: Stage Void (Const Void) Op (E.Program 'E.ABase, KB.Set 'E.ABase)
 rangeRestrictionRepaired = compiled
                        >>= lift . rename
                        >>= lift . fixRangeRestriction
 
-wellModed :: Stage Void (Const Void) Op (E.Program 'E.ABase, R.Solution 'E.ABase)
+wellModed :: Stage Void (Const Void) Op (E.Program 'E.ABase, KB.Set 'E.ABase)
 wellModed = rangeRestrictionRepaired
         >>= lift . rename
         >>= lift . fixModing
 
-stratified :: Stage Void (Const Void) Op (E.Program 'E.ABase, R.Solution 'E.ABase)
+stratified :: Stage Void (Const Void) Op (E.Program 'E.ABase, KB.Set 'E.ABase)
 stratified = do
   (pr, sol) <- wellModed
   pr' <- lift $ stratify $ E.decorate pr
   pure (pr', sol)
 
-solved :: R.Solution 'E.ABase -> Stage Void (Const Void) Op (R.Solution 'E.ABase)
+solved :: KB.Set 'E.ABase -> Stage Void (Const Void) Op (KB.Set 'E.ABase)
 solved baseEDB = do
   (program, initEDB) <- stratified
   keepPredicates <- _keepPredicates <$> ask

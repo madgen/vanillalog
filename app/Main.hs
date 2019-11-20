@@ -17,7 +17,9 @@ import Options.Applicative hiding (command, header)
 import qualified Language.Exalog.Core as E
 import           Language.Exalog.Pretty ()
 import qualified Language.Exalog.SrcLoc as Src
-import qualified Language.Exalog.Relation as R
+import qualified Language.Exalog.KnowledgeBase.Class as KB
+import qualified Language.Exalog.KnowledgeBase.Knowledge as KB
+import qualified Language.Exalog.KnowledgeBase.Set as KB
 
 import           Language.Vanillalog.Generic.Pretty (pp)
 import qualified Language.Vanillalog.Stage as S
@@ -81,16 +83,13 @@ repl ReplOptions{..} = do
           mSolution <- lift $
             S.runStage (mkReplEnv baseSol $ prefix <> input) (S.solved baseSol)
           HLine.outputStrLn $ case mSolution of
-            Just solution ->
-              case R.toList solution of
-                [ R.Relation _ tuples ] -> render $ displayTuples tuples
-                _ -> "Impossible! Solution doesn't have unique relation."
+            Just solution -> render $ displayTuples (KB.toList solution)
             Nothing  -> "Ill-formed query. Try again."
           loop baseSol
 
   prefix = "?- "
 
-  mkReplEnv :: R.Solution 'E.ABase -> [ Char ] -> S.StageEnv decl hop bop
+  mkReplEnv :: KB.Set 'E.ABase -> [ Char ] -> S.StageEnv decl hop bop
   mkReplEnv sol inp = S.defaultStageEnv
     { S._input          = S.Textual
         { S._source      = BS.pack inp
@@ -101,9 +100,9 @@ repl ReplOptions{..} = do
     , S._reservedNames  = reserved sol
     }
 
-  reserved :: R.Solution 'E.ABase -> [ Text ]
+  reserved :: KB.Set 'E.ABase -> [ Text ]
   reserved sol = ((\E.Predicate{_predSym = E.PredicateSymbol txt} -> txt) E.$$)
-             <$> R.predicates sol
+             <$> KB.map (\(KB.Knowledge pred _) -> E.PredicateBox pred) sol
 
 prettyPrint :: PPOptions Stage -> IO ()
 prettyPrint PPOptions{..} = do
