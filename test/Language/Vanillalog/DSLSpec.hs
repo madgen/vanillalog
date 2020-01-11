@@ -37,7 +37,7 @@ ancestorPr = do
 
 expectedAncestors :: KB.Set 'E.ABase
 expectedAncestors = KB.fromList
-                  $ KB.Knowledge ancestorPred
+                  $ KB.Knowledge E.KnowABase ancestorPred
                 <$> tuples
   where
   ancestorPred :: E.Predicate 1 'E.ABase

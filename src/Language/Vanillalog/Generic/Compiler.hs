@@ -81,7 +81,7 @@ instance Compilable (Fact hop) where
                   pure $ map compile symVec
                 Nothing -> L.scream _span
                   "length of terms is not the length of terms."
-            pure $ KB.Knowledge
+            pure $ KB.Knowledge E.KnowABase
               E.Predicate
                 { _annotation = E.PredABase _span
                 , _predSym    = _predSym

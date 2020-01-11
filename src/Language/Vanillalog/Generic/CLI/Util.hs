@@ -43,7 +43,7 @@ display program queries kb = do
   forM_ kbs $ \kb' ->
     case kb' of
       [] -> panic "Empty knowledge base"
-      (KB.Knowledge pred _ : _) -> do
+      (KB.Knowledge _ pred _ : _) -> do
         -- Generated query heads contain the span of the overall query
         let querySpan = span pred
         mQuery <- findQueryM program querySpan
@@ -64,8 +64,9 @@ display program queries kb = do
         putStrLn $ pack . render . displayTuples $ []
       Nothing -> pure ()
   where
+  kbs :: [ [ KB.Knowledge 'E.ABase ] ]
   kbs = groupBy
-          (\(KB.Knowledge pred _) (KB.Knowledge pred' _)
+          (\(KB.Knowledge _ pred _) (KB.Knowledge _ pred' _)
             -> E.PredicateBox pred == E.PredicateBox pred')
       . nub
       . sort
@@ -74,7 +75,7 @@ display program queries kb = do
   emptyPreds =
     queries
     \\
-    (nub . sort . KB.map (\(KB.Knowledge pred _) -> E.PredicateBox pred) $ kb)
+    (nub . sort . KB.map (\(KB.Knowledge _ pred _) -> E.PredicateBox pred) $ kb)
 
 findQueryM :: AG.Program decl hop bop -> SrcSpan -> IO (Maybe (AG.Query hop bop))
 findQueryM program querySpan = L.runLoggerT (L.LoggerEnv Nothing) $
@@ -91,4 +92,4 @@ displayTuples kb = nest 2 $
   $+$ if nOfTuples == 0 then mempty else vcat (map displayTuple kb)
   where
   nOfTuples = length kb
-  displayTuple (KB.Knowledge _ syms) = hcat . punctuate "," . prettyC $ syms
+  displayTuple (KB.Knowledge _ _ syms) = hcat . punctuate "," . prettyC $ syms

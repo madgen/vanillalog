@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeApplications #-}
 
@@ -102,7 +103,7 @@ repl ReplOptions{..} = do
 
   reserved :: KB.Set 'E.ABase -> [ Text ]
   reserved sol = ((\E.Predicate{_predSym = E.PredicateSymbol txt} -> txt) E.$$)
-             <$> KB.map (\(KB.Knowledge pred _) -> E.PredicateBox pred) sol
+             <$> KB.map (\KB.Knowledge{_predicate} -> E.PredicateBox _predicate) sol
 
 prettyPrint :: PPOptions Stage -> IO ()
 prettyPrint PPOptions{..} = do
