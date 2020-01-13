@@ -7,8 +7,9 @@ import Protolude
 import Options.Applicative
 
 data RunOptions = RunOptions
-  { _file       :: FilePath
-  , _provenance :: Bool
+  { _file              :: FilePath
+  , _provenance        :: Bool
+  , _keepAllPredicates :: Bool
   }
 
 newtype ReplOptions = ReplOptions
@@ -33,6 +34,12 @@ provenanceParser = switch
  <> help "Activate provenance tracking"
   )
 
+localityParser :: Parser Bool
+localityParser = switch
+  ( long "keep-all-predicates"
+ <> help "Retains results of all predicates"
+  )
+
 stageFlag' :: stage -> [ Char ] -> [ Char ] -> Parser stage
 stageFlag' stage longName helpMsg = flag' stage (long longName <> help helpMsg)
 
@@ -40,7 +47,7 @@ fromStageParser :: Parser stage -> Parser (PPOptions stage)
 fromStageParser stageParser = PPOptions <$> fileParser <*> stageParser
 
 runOptions :: Parser RunOptions
-runOptions = RunOptions <$> fileParser <*> provenanceParser
+runOptions = RunOptions <$> fileParser <*> provenanceParser <*> localityParser
 
 replOptions :: Parser ReplOptions
 replOptions = ReplOptions <$> optional fileParser

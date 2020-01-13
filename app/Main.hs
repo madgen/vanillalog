@@ -55,6 +55,10 @@ run RunOptions{..} = do
   let stageEnv = S.defaultStageEnv
         { S._input = S.Textual (Src.File _file) bs S.SProgram
         , S._provenance = _provenance
+        , S._locality =
+            if _keepAllPredicates
+              then S.Global
+              else S.Local
         }
   ast <- succeedOrDie stageEnv S.parse
   evalOutput <- succeedOrDie stageEnv (S.solved mempty)
@@ -75,7 +79,7 @@ repl ReplOptions{..} = do
     bs <- BS.fromStrict . encodeUtf8 <$> readFile file
     let stageEnv = S.defaultStageEnv
           { S._input = S.Textual (Src.File file) bs S.SProgram
-          , S._keepPredicates = S.AllPreds
+          , S._locality = S.Global
           }
     evalOutput <- succeedOrDie stageEnv (S.solved mempty)
 
@@ -104,13 +108,13 @@ repl ReplOptions{..} = do
 
   mkReplEnv :: KB.Set 'E.ABase -> [ Char ] -> S.StageEnv decl hop bop
   mkReplEnv sol inp = S.defaultStageEnv
-    { S._input          = S.Textual
+    { S._input = S.Textual
         { S._source      = BS.pack inp
         , S._inputSource = Src.None
         , S._parserScope = S.SSentence
         }
-    , S._keepPredicates = S.OnlyQueryPreds
-    , S._reservedNames  = reserved sol
+    , S._locality = S.Local
+    , S._reservedNames = reserved sol
     }
 
   reserved :: KB.Set 'E.ABase -> [ Text ]
@@ -121,7 +125,7 @@ prettyPrint :: PPOptions Stage -> IO ()
 prettyPrint PPOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile _file
   let stageEnv =
-        S.StageEnv (S.Textual (Src.File _file) bs S.SProgram) S.AllPreds [] False
+        S.StageEnv (S.Textual (Src.File _file) bs S.SProgram) S.Global [] False
   case _stage of
     VanillaLex        -> print         =<< succeedOrDie stageEnv S.lex
     VanillaParse      -> putStrLn . pp =<< succeedOrDie stageEnv S.parse

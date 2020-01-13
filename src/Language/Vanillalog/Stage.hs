@@ -136,7 +136,7 @@ solved baseEDB = do
       -> KB.Set ann
       -> Stage Void (Const Void) Op (KB.Set ann, [ E.PredicateBox ann ])
   run pr edb = do
-    keepPredicates <- _keepPredicates <$> ask
-    lift $ case keepPredicates of
-      OnlyQueryPreds -> (,E._queries   pr) <$> Solver.solve pr edb
-      AllPreds       -> (,E.predicates pr) <$> Solver.solve (mkEveryPredQueriable pr) edb
+    locality <- _locality <$> ask
+    lift $ case locality of
+      Local  -> (,E._queries   pr) <$> Solver.solve pr edb
+      Global -> (,E.predicates pr) <$> Solver.solve (mkEveryPredQueriable pr) edb

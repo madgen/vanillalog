@@ -8,7 +8,7 @@ module Language.Vanillalog.Generic.Stage
   , StageEnv(..)
   , Input(..)
   , ParserScope(..)
-  , KeepPredicates(..)
+  , Locality(..)
   , defaultStageEnv
   , runStage
   ) where
@@ -27,7 +27,7 @@ import qualified Language.Vanillalog.Generic.AST as AG
 
 data ParserScope = SProgram | SSentence
 
-data KeepPredicates = OnlyQueryPreds | AllPreds
+data Locality = Local | Global
 
 type ReservedNames = [ Text ]
 
@@ -42,14 +42,14 @@ data Input decl hop bop =
     }
 
 data StageEnv decl hop bop = StageEnv
-  { _input          :: Input decl hop bop
-  , _keepPredicates :: KeepPredicates
-  , _reservedNames  :: ReservedNames
-  , _provenance     :: Bool
+  { _input         :: Input decl hop bop
+  , _locality      :: Locality
+  , _reservedNames :: ReservedNames
+  , _provenance    :: Bool
   }
 
 defaultStageEnv :: StageEnv decl hop bop
-defaultStageEnv = StageEnv (Textual None "" SProgram) OnlyQueryPreds [] False
+defaultStageEnv = StageEnv (Textual None "" SProgram) Local [] False
 
 runStage :: StageEnv decl hop bop -> Stage decl hop bop a -> IO (Maybe a)
 runStage env@StageEnv{..} = Log.runLoggerT loggerEnv . (`runReaderT` env) . _unStageT
