@@ -16,7 +16,7 @@ import qualified Language.Exalog.Logger as Log
 import qualified Language.Exalog.KnowledgeBase.Set as KB
 import           Language.Exalog.SrcLoc (SrcSpan(NoSpan))
 
-import           Language.Vanillalog.Stage (solved)
+import           Language.Vanillalog.Stage (EvaluationOutput(..), solved)
 import qualified Language.Vanillalog.Generic.Stage as S
 import           Language.Vanillalog.AST
 import           Language.Vanillalog.Generic.DSL as GDSL
@@ -26,7 +26,11 @@ type Datalog = GenericDatalogT Void (Const Void) Op (S.StageT Void (Const Void) 
 runDatalog :: Datalog -> IO (Maybe (KB.Set 'E.ABase))
 runDatalog datalog = S.runStage S.defaultStageEnv $ do
   program <- genDatalogT datalog
-  fst <$> local (\s -> s {S._input = S.AST program }) (solved mempty)
+  output <- local (\s -> s {S._input = S.AST program}) $ solved mempty
+  case output of
+    Simple solution _ -> pure solution
+    Tracked{} -> lift $
+      Log.scream NoSpan "The DSL cannot be run in the provenance mode."
 
 infixl 3 /\
 (/\) :: Subgoal Op Term -> Subgoal Op Term -> Subgoal Op Term

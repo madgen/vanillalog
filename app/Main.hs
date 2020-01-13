@@ -21,6 +21,7 @@ import qualified Language.Exalog.SrcLoc as Src
 import qualified Language.Exalog.KnowledgeBase.Class as KB
 import qualified Language.Exalog.KnowledgeBase.Knowledge as KB
 import qualified Language.Exalog.KnowledgeBase.Set as KB
+import           Language.Exalog.Provenance ()
 
 import           Language.Vanillalog.Generic.Pretty (pp)
 import qualified Language.Vanillalog.Stage as S
@@ -52,17 +53,21 @@ run RunOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile _file
 
   let stageEnv = S.defaultStageEnv
-        {S._input = S.Textual (Src.File _file) bs S.SProgram}
+        { S._input = S.Textual (Src.File _file) bs S.SProgram
+        , S._provenance = _provenance
+        }
   ast <- succeedOrDie stageEnv S.parse
-  (sol,queryPreds) <- succeedOrDie stageEnv (S.solved mempty)
+  evalOutput <- succeedOrDie stageEnv (S.solved mempty)
 
-  display ast queryPreds sol
+  case evalOutput of
+    S.Simple  sol qPreds -> display ast qPreds sol
+    S.Tracked sol qPreds -> display ast (E.peel <$> qPreds) (E.peel sol)
 
 repl :: ReplOptions -> IO ()
 repl ReplOptions{..} = do
   putStrLn @Text "Interactive Vanillalog environment - REPL"
 
-  (baseSolution,_) <- maybe (pure mempty) computeBase _mFile
+  baseSolution <- maybe (pure mempty) computeBase _mFile
 
   HLine.runInputT HLine.defaultSettings (loop baseSolution)
   where
@@ -72,7 +77,11 @@ repl ReplOptions{..} = do
           { S._input = S.Textual (Src.File file) bs S.SProgram
           , S._keepPredicates = S.AllPreds
           }
-    succeedOrDie stageEnv (S.solved mempty)
+    evalOutput <- succeedOrDie stageEnv (S.solved mempty)
+
+    pure $ case evalOutput of
+      S.Simple  solution _ -> solution
+      S.Tracked solution _ -> E.peel solution
 
   loop baseSol = do
     mInput <- HLine.getInputLine prefix
@@ -81,10 +90,13 @@ repl ReplOptions{..} = do
       Just input
         | input `elem` [ ":e", ":exit", ":q", ":quit" ] -> pure ()
         | otherwise -> do -- Interpret it as a query
-          mSolution <- lift $
+          mOutput <- lift $
             S.runStage (mkReplEnv baseSol $ prefix <> input) (S.solved baseSol)
-          HLine.outputStrLn $ case mSolution of
-            Just (solution,_) -> render $ displayTuples (KB.toList solution)
+          HLine.outputStrLn $ case mOutput of
+            Just output ->
+              case output of
+                S.Simple  sol _ -> render $ displayTuples (KB.toList sol)
+                S.Tracked sol _ -> render $ displayTuples (KB.toList (E.peel sol))
             Nothing  -> "Ill-formed query. Try again."
           loop baseSol
 
@@ -109,7 +121,7 @@ prettyPrint :: PPOptions Stage -> IO ()
 prettyPrint PPOptions{..} = do
   bs <- BS.fromStrict . encodeUtf8 <$> readFile _file
   let stageEnv =
-        S.StageEnv (S.Textual (Src.File _file) bs S.SProgram) S.AllPreds []
+        S.StageEnv (S.Textual (Src.File _file) bs S.SProgram) S.AllPreds [] False
   case _stage of
     VanillaLex        -> print         =<< succeedOrDie stageEnv S.lex
     VanillaParse      -> putStrLn . pp =<< succeedOrDie stageEnv S.parse

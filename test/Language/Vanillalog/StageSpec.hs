@@ -31,7 +31,10 @@ runSrc srcPath = do
   bs <- readSrc srcPath
   let stageEnv = S.defaultStageEnv
         { S._input = S.Textual (Src.File srcPath) bs S.SProgram }
-  fmap fst <$> S.runStage stageEnv (S.solved mempty)
+  mOutput <- S.runStage stageEnv (S.solved mempty)
+  pure $ (<$> mOutput) $ \case
+    S.Simple solution _ -> solution
+    S.Tracked{} -> panic "Tests are not run in the provenance mode."
 
 testSolving :: FilePath -> SpecWith ()
 testSolving srcPath = do

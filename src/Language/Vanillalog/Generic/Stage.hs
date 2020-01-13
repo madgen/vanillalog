@@ -45,10 +45,11 @@ data StageEnv decl hop bop = StageEnv
   { _input          :: Input decl hop bop
   , _keepPredicates :: KeepPredicates
   , _reservedNames  :: ReservedNames
+  , _provenance     :: Bool
   }
 
 defaultStageEnv :: StageEnv decl hop bop
-defaultStageEnv = StageEnv (Textual None "" SProgram) OnlyQueryPreds []
+defaultStageEnv = StageEnv (Textual None "" SProgram) OnlyQueryPreds [] False
 
 runStage :: StageEnv decl hop bop -> Stage decl hop bop a -> IO (Maybe a)
 runStage env@StageEnv{..} = Log.runLoggerT loggerEnv . (`runReaderT` env) . _unStageT

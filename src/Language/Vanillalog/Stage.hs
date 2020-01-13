@@ -1,10 +1,14 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE MonoLocalBinds #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE FlexibleContexts #-}
+
 
 module Language.Vanillalog.Stage
-  ( lex
+  ( EvaluationOutput(..)
+  , lex
   , parse
   , foreignEmbedded
   , namedQueries
@@ -21,13 +25,15 @@ import Protolude
 
 import qualified Language.Exalog.Core as E
 import           Language.Exalog.Renamer (rename)
+import qualified Language.Exalog.KnowledgeBase.Knowledge as KB
 import qualified Language.Exalog.KnowledgeBase.Set as KB
+import qualified Language.Exalog.Logger as Log
+import           Language.Exalog.Provenance ()
+import           Language.Exalog.RangeRestriction (fixRangeRestriction)
 import qualified Language.Exalog.Solver as Solver
 import           Language.Exalog.SrcLoc (span, SrcSpan(NoSpan))
-import           Language.Exalog.RangeRestriction (fixRangeRestriction)
-import           Language.Exalog.WellModing (fixModing)
 import           Language.Exalog.Stratification (stratify)
-import qualified Language.Exalog.Logger as Log
+import           Language.Exalog.WellModing (fixModing)
 
 import           Language.Vanillalog.AST
 import qualified Language.Vanillalog.Foreign as FFI
@@ -40,6 +46,10 @@ import qualified Language.Vanillalog.Generic.Parser.Lexeme as L
 import           Language.Vanillalog.Generic.Transformation.Query (nameQueries)
 import qualified Language.Vanillalog.Generic.Transformation.EmbedForeign as FFI
 import           Language.Vanillalog.Transformation.Normaliser (normalise)
+
+data EvaluationOutput =
+    Simple (KB.Set 'E.ABase) [ E.PredicateBox 'E.ABase ]
+  | Tracked (KB.Set ('E.AProvenance 'E.ABase)) [ E.PredicateBox ('E.AProvenance 'E.ABase) ]
 
 lex :: Stage Void (Const Void) Op [ L.Lexeme (Lexer.Token Text) ]
 lex = do
@@ -102,15 +112,31 @@ stratified = do
   pr' <- lift $ stratify $ E.decorate pr
   pure (pr', sol)
 
-solved :: KB.Set 'E.ABase -> Stage Void (Const Void) Op (KB.Set 'E.ABase, [ E.PredicateBox 'E.ABase ])
+solved :: KB.Set 'E.ABase -> Stage Void (Const Void) Op EvaluationOutput
 solved baseEDB = do
   (program, initEDB) <- stratified
-  keepPredicates <- _keepPredicates <$> ask
   let edb = baseEDB <> initEDB
-  lift $ case keepPredicates of
-    OnlyQueryPreds -> (,E._queries   program) <$> Solver.solve program edb
-    AllPreds       -> (,E.predicates program) <$> Solver.solve (mkEveryPredQueriable program) edb
+
+  provenanceIsActive <- _provenance <$> ask
+  if provenanceIsActive
+    then uncurry Tracked <$> run (E.decorate program) (E.decorate edb)
+    else uncurry Simple  <$> run program edb
   where
-  mkEveryPredQueriable :: E.Program 'E.ABase -> E.Program 'E.ABase
+  mkEveryPredQueriable :: (E.Identifiable (E.PredicateAnn ann) id)
+                       => E.Program ann -> E.Program ann
   mkEveryPredQueriable pr@E.Program{..} =
     E.Program{_queries = E.predicates pr,..}
+
+  run :: ( E.Identifiable (E.PredicateAnn ann) id1
+         , E.Identifiable (E.KnowledgeAnn ann) id2
+         , E.SpannableAST ann
+         , KB.KnowledgeMaker ann
+         )
+      => E.Program ann
+      -> KB.Set ann
+      -> Stage Void (Const Void) Op (KB.Set ann, [ E.PredicateBox ann ])
+  run pr edb = do
+    keepPredicates <- _keepPredicates <$> ask
+    lift $ case keepPredicates of
+      OnlyQueryPreds -> (,E._queries   pr) <$> Solver.solve pr edb
+      AllPreds       -> (,E.predicates pr) <$> Solver.solve (mkEveryPredQueriable pr) edb

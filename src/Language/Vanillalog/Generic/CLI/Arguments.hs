@@ -6,8 +6,10 @@ import Protolude
 
 import Options.Applicative
 
-newtype RunOptions = RunOptions
-  { _file :: FilePath }
+data RunOptions = RunOptions
+  { _file       :: FilePath
+  , _provenance :: Bool
+  }
 
 newtype ReplOptions = ReplOptions
   { _mFile :: Maybe FilePath }
@@ -25,6 +27,12 @@ fileParser = strOption
  <> help "Input file"
   )
 
+provenanceParser :: Parser Bool
+provenanceParser = switch
+  ( long "provenance"
+ <> help "Activate provenance tracking"
+  )
+
 stageFlag' :: stage -> [ Char ] -> [ Char ] -> Parser stage
 stageFlag' stage longName helpMsg = flag' stage (long longName <> help helpMsg)
 
@@ -32,7 +40,7 @@ fromStageParser :: Parser stage -> Parser (PPOptions stage)
 fromStageParser stageParser = PPOptions <$> fileParser <*> stageParser
 
 runOptions :: Parser RunOptions
-runOptions = RunOptions <$> fileParser
+runOptions = RunOptions <$> fileParser <*> provenanceParser
 
 replOptions :: Parser ReplOptions
 replOptions = ReplOptions <$> optional fileParser
