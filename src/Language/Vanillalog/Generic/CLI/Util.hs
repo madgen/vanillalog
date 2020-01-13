@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Language.Vanillalog.Generic.CLI.Util
   ( succeedOrDie
@@ -18,11 +19,10 @@ import           Data.Text (pack)
 import qualified Language.Exalog.Core as E
 import           Language.Exalog.Pretty (pp)
 import           Language.Exalog.Pretty.Helper (Pretty, prettyC, pretty)
-import qualified Language.Exalog.Logger as L
 import qualified Language.Exalog.KnowledgeBase.Class as KB
 import qualified Language.Exalog.KnowledgeBase.Knowledge as KB
 import qualified Language.Exalog.KnowledgeBase.Set as KB
-import           Language.Exalog.SrcLoc (span, SrcSpan)
+import           Language.Exalog.SrcLoc (span, SrcSpan(..))
 
 import           Language.Vanillalog.AST
 import qualified Language.Vanillalog.Generic.AST as AG
@@ -45,24 +45,12 @@ display program queries kb = do
       [] -> panic "Empty knowledge base"
       (KB.Knowledge _ pred _ : _) -> do
         -- Generated query heads contain the span of the overall query
-        let querySpan = span pred
-        mQuery <- findQueryM program querySpan
-
-        case mQuery of
-          Just query -> do
-            putStrLn $ pp query
-            putStrLn $ pack . render . displayTuples $ kb'
-          Nothing -> pure ()
+        printRelationTitle pred program
+        putStrLn $ pack . render . displayTuples $ kb'
 
   forM_ emptyPreds $ \(E.PredicateBox pred) -> do
-    let querySpan = span pred
-    mQuery <- findQueryM program querySpan
-
-    case mQuery of
-      Just query -> do
-        putStrLn $ pp query
-        putStrLn $ pack . render . displayTuples $ []
-      Nothing -> pure ()
+    printRelationTitle pred program
+    putStrLn $ pack . render . displayTuples $ []
   where
   kbs :: [ [ KB.Knowledge 'E.ABase ] ]
   kbs = groupBy
@@ -77,11 +65,16 @@ display program queries kb = do
     \\
     (nub . sort . KB.map (\(KB.Knowledge _ pred _) -> E.PredicateBox pred) $ kb)
 
-findQueryM :: AG.Program decl hop bop -> SrcSpan -> IO (Maybe (AG.Query hop bop))
-findQueryM program querySpan = L.runLoggerT (L.LoggerEnv Nothing) $
+printRelationTitle :: Pretty (hop 'Nullary) => Pretty (hop 'Unary) => Pretty (hop 'Binary)
+                   => Pretty (bop 'Nullary) => Pretty (bop 'Unary) => Pretty (bop 'Binary)
+                   => HasPrecedence hop => HasPrecedence bop
+                   => E.Predicate n 'E.ABase -> AG.Program decl hop bop -> IO ()
+printRelationTitle pred program = do
+  let querySpan = span pred
+  putStr $ "[" <> pp pred <> "] "
   case findQuery program querySpan of
-    Just query -> pure query
-    Nothing    -> L.scream querySpan "This query cannot be found."
+    Just query -> putStrLn $ pp query
+    Nothing    -> putStrLn @Text ""
 
 findQuery :: AG.Program decl hop bop -> SrcSpan -> Maybe (AG.Query hop bop)
 findQuery pr s = find ((== s) . span) (AG.queries pr)
