@@ -10,7 +10,10 @@ data RunOptions = RunOptions
   { _file              :: FilePath
   , _provenance        :: Bool
   , _keepAllPredicates :: Bool
+  , _output            :: Output
   }
+
+data Output = Pretty | JSON
 
 newtype ReplOptions = ReplOptions
   { _mFile :: Maybe FilePath }
@@ -40,6 +43,12 @@ localityParser = switch
  <> help "Retains results of all predicates"
   )
 
+outputParser :: Parser Output
+outputParser = flag Pretty JSON
+  ( long "json"
+ <> help "Outputs JSON instead of pretty printing results"
+  )
+
 stageFlag' :: stage -> [ Char ] -> [ Char ] -> Parser stage
 stageFlag' stage longName helpMsg = flag' stage (long longName <> help helpMsg)
 
@@ -47,7 +56,11 @@ fromStageParser :: Parser stage -> Parser (PPOptions stage)
 fromStageParser stageParser = PPOptions <$> fileParser <*> stageParser
 
 runOptions :: Parser RunOptions
-runOptions = RunOptions <$> fileParser <*> provenanceParser <*> localityParser
+runOptions = RunOptions
+         <$> fileParser
+         <*> provenanceParser
+         <*> localityParser
+         <*> outputParser
 
 replOptions :: Parser ReplOptions
 replOptions = ReplOptions <$> optional fileParser

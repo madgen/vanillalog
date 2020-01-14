@@ -8,12 +8,15 @@ module Main where
 import Protolude hiding (pred)
 
 import qualified Data.ByteString.Lazy.Char8 as BS
+import           Data.Aeson (toEncodingList)
+import           Data.Aeson.Encoding (encodingToLazyByteString)
 
 import Text.PrettyPrint (render)
 
 import qualified System.Console.Haskeline as HLine
 
 import Options.Applicative hiding (command, header)
+
 
 import qualified Language.Exalog.Core as E
 import           Language.Exalog.Pretty ()
@@ -63,9 +66,11 @@ run RunOptions{..} = do
   ast <- succeedOrDie stageEnv S.parse
   evalOutput <- succeedOrDie stageEnv (S.solved mempty)
 
-  case evalOutput of
-    S.Simple  sol qPreds -> display ast qPreds sol
-    S.Tracked sol qPreds -> display ast (E.peel <$> qPreds) (E.peel sol)
+  case (_output, evalOutput) of
+    (Pretty, S.Simple  sol qPreds) -> display ast qPreds sol
+    (Pretty, S.Tracked sol qPreds) -> display ast (E.peel <$> qPreds) (E.peel sol)
+    (JSON, S.Simple sol _)  -> putStrLn $ encodingToLazyByteString $ toEncodingList $ KB.toList sol
+    (JSON, S.Tracked sol _) -> putStrLn $ encodingToLazyByteString $ toEncodingList $ KB.toList sol
 
 repl :: ReplOptions -> IO ()
 repl ReplOptions{..} = do

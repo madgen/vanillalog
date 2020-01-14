@@ -6,18 +6,18 @@
 packages:
 - completed:
     cabal-file:
-      size: 5031
-      sha256: f3fd275d3c4429743c62af8fa6fd2a84b817491b08dfb415d9ec38c330e3fcf3
+      size: 5232
+      sha256: ddb265d24794e828c1c5c036c33a2d9a778b67c189f3e1d787f81f2cfbad5ad2
     name: exalog-engine
     version: 0.1.0.0
     git: https://github.com/madgen/exalog.git
     pantry-tree:
       size: 4119
-      sha256: 2c473ed7b101919c85b7e90d05a7723baa558dae759ea8040acb16aba7750516
-    commit: 85a2bda00d84b1fad878a6ea161d5eb7c2e419fe
+      sha256: 87401adbfb93b478405a20ba4f2a881e33411944c6ccbd39e4c997c342128886
+    commit: 844e2c163c9ce0de40a6461df271807b7d0a1e67
   original:
     git: https://github.com/madgen/exalog.git
-    commit: 85a2bda00d84b1fad878a6ea161d5eb7c2e419fe
+    commit: 844e2c163c9ce0de40a6461df271807b7d0a1e67
 snapshots:
 - completed:
     size: 529130
