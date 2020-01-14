@@ -21,6 +21,7 @@ import Protolude hiding (head)
 import GHC.TypeLits (sameNat)
 
 import           Data.Functor.Foldable (Base, para)
+import           Data.List (nub)
 import qualified Data.List.NonEmpty as NE
 import           Data.Singletons (withSomeSing)
 import           Data.Singletons.TypeLits (SNat, withKnownNat)
@@ -65,7 +66,7 @@ instance ( Compilable (Clause hop bop)
     facts'   = [ _fact   s | StSentence s@SFact{}   <- _statements ]
     queries' = [ _query  s | StSentence s@SQuery{}  <- _statements ]
 
-    queryPreds = map (E.predicateBox . E._head)
+    queryPreds = nub . sort . map (E.predicateBox . E._head)
 
 instance Compilable (Fact hop) where
   type Output (Fact hop) = L.Logger (KB.Knowledge 'E.ABase)
