@@ -30,7 +30,7 @@ module Language.Vanillalog.Generic.Foreign
 
 import Protolude hiding (subtract)
 
-import Control.Monad.Trans.Except (except, withExceptT)
+import Control.Monad.Trans.Except (except)
 
 import qualified Data.Csv as CSV
 import qualified Data.Text as T

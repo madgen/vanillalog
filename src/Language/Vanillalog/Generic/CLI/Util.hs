@@ -9,11 +9,9 @@ module Language.Vanillalog.Generic.CLI.Util
 
 import Protolude hiding (pred)
 
-import System.Exit (exitFailure)
-
 import Text.PrettyPrint hiding ((<>))
 
-import           Data.List (nub, sort, (\\))
+import           Data.List (nub, (\\))
 import           Data.Text (pack)
 
 import qualified Language.Exalog.Core as E
