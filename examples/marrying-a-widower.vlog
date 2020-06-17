@@ -1,0 +1,14 @@
+married("you", "widower").
+married("widower's daughter", "your father").
+married(Partner1, Partner2) :- married(Partner2, Partner1).
+
+father("your father", "you").
+father(Father, Child) :- mother(Mother, Child), married(Mother, Father).
+
+mother("widower", "widower's daughter").
+mother(Mother, Child) :- father(Father, Child), married(Mother, Father).
+
+parent(Parent, Child) :- mother(Parent, Child); father(Parent, Child).
+
+grandfather(GFather, GChild) :- father(GFather, Parent), parent(Parent, GChild).
+grandmother(GMother, GChild) :- mother(GMother, Parent), parent(Parent, GChild).
