@@ -5,22 +5,19 @@
 
 packages:
 - completed:
-    cabal-file:
-      size: 5232
-      sha256: ddb265d24794e828c1c5c036c33a2d9a778b67c189f3e1d787f81f2cfbad5ad2
     name: exalog-engine
     version: 0.1.0.0
     git: https://github.com/madgen/exalog.git
     pantry-tree:
-      size: 4119
-      sha256: 508658895c603381fa9e4ed9a99b139b7000e3378abec9eb9cb25bfb2611981a
-    commit: bbc81013dd273fc2ce6e7e3ea6374793b5799d85
+      size: 4179
+      sha256: 4afdbe8f739189f5e8acbc91cd5453e3ef3f0c790365a102e8082e633827df1d
+    commit: 7788900a8229704a94e5d75bd6ae70c640d30fa3
   original:
     git: https://github.com/madgen/exalog.git
-    commit: bbc81013dd273fc2ce6e7e3ea6374793b5799d85
+    commit: 7788900a8229704a94e5d75bd6ae70c640d30fa3
 snapshots:
 - completed:
-    size: 529130
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/nightly/2019/9/16.yaml
-    sha256: a8c2355f4f1c46896e5c32aa0b576bbacf0677ff8a164333fa29733d39c3cf4f
-  original: nightly-2019-09-16
+    size: 494638
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/15/11.yaml
+    sha256: 5747328cdcbb8fe9c96fc048b5566167c80dd176a41b52d3b363058e3cc1dc5d
+  original: lts-15.11

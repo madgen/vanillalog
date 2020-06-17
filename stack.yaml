@@ -1,5 +1,5 @@
-resolver: nightly-2019-09-16
+resolver: lts-15.11
 
 extra-deps:
 - git: https://github.com/madgen/exalog.git
-  commit: bbc81013dd273fc2ce6e7e3ea6374793b5799d85
+  commit: 7788900a8229704a94e5d75bd6ae70c640d30fa3
