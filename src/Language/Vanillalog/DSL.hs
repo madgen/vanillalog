@@ -23,10 +23,10 @@ import           Language.Vanillalog.Generic.DSL as GDSL
 
 type Datalog = GenericDatalogT Void (Const Void) Op (S.StageT Void (Const Void) Op Log.Logger)
 
-runDatalog :: Datalog -> IO (Maybe (KB.Set 'E.ABase))
-runDatalog datalog = S.runStage S.defaultStageEnv $ do
+runDatalog :: KB.Set 'E.ABase -> Datalog -> IO (Maybe (KB.Set 'E.ABase))
+runDatalog kb datalog = S.runStage S.defaultStageEnv $ do
   program <- genDatalogT datalog
-  output <- local (\s -> s {S._input = S.AST program}) $ solved mempty
+  output <- local (\s -> s {S._input = S.AST program}) $ solved kb
   case output of
     Simple solution _ -> pure solution
     Tracked{} -> lift $
