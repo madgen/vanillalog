@@ -11,19 +11,13 @@ module Language.Vanillalog.Generic.DSL
   ( GenericDatalogT
   , genDatalogT
     -- * Predicate maker
-  , mkPredicate0
-  , mkPredicate1
-  , mkPredicate2
-  , mkPredicate3
-  , mkPredicate4
-  , mkPredicate5
-  , mkPredicate6
+  , predicate
     -- * Term constructor
   , var
   , text
   , int
     -- * Sentence constructor
-  , (|-)
+  , (-|)
   , (|>)
   , StatementKind(..)
   ) where
@@ -43,26 +37,29 @@ atom predSym terms = SAtom NoSpan $ AtomicFormula
   , _terms = terms
   }
 
-mkPredicate0 :: PredicateSymbol -> Subgoal op Term
-mkPredicate0 predSym = atom predSym [ ]
+class Predicatable a where
+  predicate :: PredicateSymbol -> a -> Subgoal op Term
 
-mkPredicate1 :: PredicateSymbol -> Term -> Subgoal op Term
-mkPredicate1 predSym t = atom predSym [ t ]
+instance Predicatable () where
+  predicate predSym () = atom predSym [ ]
 
-mkPredicate2 :: PredicateSymbol -> (Term,Term) -> Subgoal op Term
-mkPredicate2 predSym (t1,t2) = atom predSym [ t1, t2 ]
+instance Predicatable Term where
+  predicate predSym term = atom predSym [ term ]
 
-mkPredicate3 :: PredicateSymbol -> (Term,Term,Term) -> Subgoal op Term
-mkPredicate3 predSym (t1,t2,t3) = atom predSym [ t1, t2, t3 ]
+instance Predicatable (Term, Term) where
+  predicate predSym (t1,t2) = atom predSym [ t1, t2 ]
 
-mkPredicate4 :: PredicateSymbol -> (Term,Term,Term,Term) -> Subgoal op Term
-mkPredicate4 predSym (t1,t2,t3,t4) = atom predSym [ t1, t2, t3, t4 ]
+instance Predicatable (Term, Term, Term) where
+  predicate predSym (t1,t2,t3) = atom predSym [ t1, t2, t3 ]
 
-mkPredicate5 :: PredicateSymbol -> (Term,Term,Term,Term,Term) -> Subgoal op Term
-mkPredicate5 predSym (t1,t2,t3,t4,t5) = atom predSym [ t1, t2, t3, t4, t5 ]
+instance Predicatable (Term, Term, Term, Term) where
+  predicate predSym (t1,t2,t3,t4) = atom predSym [ t1, t2, t3, t4 ]
 
-mkPredicate6 :: PredicateSymbol -> (Term,Term,Term,Term,Term,Term) -> Subgoal op Term
-mkPredicate6 predSym (t1,t2,t3,t4,t5,t6) = atom predSym [ t1, t2, t3, t4, t5, t6 ]
+instance Predicatable (Term, Term, Term, Term, Term) where
+  predicate predSym (t1,t2,t3,t4,t5) = atom predSym [ t1, t2, t3, t4, t5 ]
+
+instance Predicatable (Term, Term, Term, Term, Term, Term) where
+  predicate predSym (t1,t2,t3,t4,t5,t6) = atom predSym [ t1, t2, t3, t4, t5, t6 ]
 
 var :: Text -> Term
 var name = TVar $ Var NoSpan name
@@ -79,10 +76,10 @@ genDatalogT :: Monad m
             => GenericDatalogT decl hop bop m -> m (Program decl hop bop)
 genDatalogT = (Program NoSpan <$>) . (`execStateT` [])
 
-infix 1 |-
-(|-) :: Monad m
+infix 1 -|
+(-|) :: Monad m
      => Subgoal hop Term -> Subgoal bop Term -> GenericDatalogT decl hop bop m
-head |- body = modify ((StSentence $ SClause $ Clause NoSpan head body) :)
+head -| body = modify ((StSentence $ SClause $ Clause NoSpan head body) :)
 
 data SKind = Q | F
 data StatementKind :: SKind -> Type where

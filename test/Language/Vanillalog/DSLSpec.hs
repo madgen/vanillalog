@@ -20,8 +20,8 @@ import Language.Vanillalog.DSL
 
 ancestorPr :: Datalog
 ancestorPr = do
-  let adviser  = mkPredicate2 "adviser"
-  let ancestor = mkPredicate2 "ancestor"
+  let adviser  = predicate "adviser"
+  let ancestor = predicate "ancestor"
   let (x,y,t) = (var "X", var "Y", var "T")
   let descendant = var "Descendant"
 
@@ -30,8 +30,8 @@ ancestorPr = do
   Fact|> adviser("Alonzo Church","Stephen Kleene")
   Fact|> adviser("Oswald Veblen","Alonzo Church")
 
-  ancestor(x,y) |- adviser(x,y)
-  ancestor(x,y) |- adviser(x,t) /\ ancestor(t,y)
+  ancestor(x,y) -| adviser(x,y)
+  ancestor(x,y) -| adviser(x,t) /\ ancestor(t,y)
 
   Query|> ancestor("Oswald Veblen",descendant)
 
