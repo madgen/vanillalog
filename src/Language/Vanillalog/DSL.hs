@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 
 module Language.Vanillalog.DSL
-  ( Datalog
+  ( Vanillalog
   , runDatalog
   , (/\)
   , (\/)
@@ -21,16 +21,17 @@ import qualified Language.Vanillalog.Generic.Stage as S
 import           Language.Vanillalog.AST
 import           Language.Vanillalog.Generic.DSL as GDSL
 
-type Datalog = GenericDatalogT Void (Const Void) Op (S.StageT Void (Const Void) Op Log.Logger)
+type Vanillalog = GenericDatalog Void (Const Void) Op
 
-runDatalog :: KB.Set 'E.ABase -> Datalog -> IO (Maybe (KB.Set 'E.ABase))
-runDatalog kb datalog = S.runStage S.defaultStageEnv $ do
-  program <- genDatalogT datalog
+runDatalog :: KB.Set 'E.ABase -> Vanillalog -> IO (Maybe (KB.Set 'E.ABase))
+runDatalog kb vanillalog = S.runStage S.defaultStageEnv $ do
   output <- local (\s -> s {S._input = S.AST program}) $ solved kb
   case output of
     Simple solution _ -> pure solution
     Tracked{} -> lift $
       Log.scream NoSpan "The DSL cannot be run in the provenance mode."
+  where
+  program = genDatalog vanillalog
 
 infixl 3 /\
 (/\) :: Subgoal Op Term -> Subgoal Op Term -> Subgoal Op Term

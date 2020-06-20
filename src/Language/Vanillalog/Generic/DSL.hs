@@ -8,8 +8,8 @@
 {-# LANGUAGE FunctionalDependencies #-}
 
 module Language.Vanillalog.Generic.DSL
-  ( GenericDatalogT
-  , genDatalogT
+  ( GenericDatalog
+  , genDatalog
     -- * Predicate maker
   , predicate
     -- * Term constructor
@@ -74,15 +74,13 @@ int literal = TSym $ SymInt NoSpan literal
 wildcard :: Term
 wildcard = TWild NoSpan
 
-type GenericDatalogT decl hop bop m = StateT [ Statement decl hop bop ] m ()
+type GenericDatalog decl hop bop = State [ Statement decl hop bop ] ()
 
-genDatalogT :: Monad m
-            => GenericDatalogT decl hop bop m -> m (Program decl hop bop)
-genDatalogT = (Program NoSpan <$>) . (`execStateT` [])
+genDatalog :: GenericDatalog decl hop bop -> Program decl hop bop
+genDatalog = Program NoSpan . (`execState` [])
 
 infix 1 -|
-(-|) :: Monad m
-     => Subgoal hop Term -> Subgoal bop Term -> GenericDatalogT decl hop bop m
+(-|) :: Subgoal hop Term -> Subgoal bop Term -> GenericDatalog decl hop bop
 head -| body = modify ((StSentence $ SClause $ Clause NoSpan head body) :)
 
 data SKind = Q | F
@@ -91,9 +89,8 @@ data StatementKind :: SKind -> Type where
   Fact  :: StatementKind 'F
 
 infix 1 |>
-class Statementable typ op hop bop | typ hop bop -> op where
-  (|>) :: Monad m
-       => StatementKind typ -> Subgoal op Term -> GenericDatalogT decl hop bop m
+class Statementable ty op hop bop | ty hop bop -> op where
+  (|>) :: StatementKind ty -> Subgoal op Term -> GenericDatalog decl hop bop
 
 instance Statementable 'Q op hop op where
   Language.Vanillalog.Generic.DSL.Query |> body = modify

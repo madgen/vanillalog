@@ -18,7 +18,7 @@ import qualified Language.Exalog.SrcLoc as Src
 
 import Language.Vanillalog.DSL
 
-ancestorPr :: Datalog
+ancestorPr :: Vanillalog
 ancestorPr = do
   let adviser  = predicate "adviser"
   let ancestor = predicate "ancestor"
