@@ -9,6 +9,7 @@ module Language.Vanillalog.DSL
   -- Reexports
   , module GDSL
   , S.Locality(..)
+  , Term
   ) where
 
 import Protolude
