@@ -16,6 +16,7 @@ module Language.Vanillalog.Generic.DSL
   , var
   , text
   , int
+  , wildcard
     -- * Sentence constructor
   , (-|)
   , (|>)
@@ -69,6 +70,9 @@ text literal = TSym $ SymText NoSpan literal
 
 int :: Int -> Term
 int literal = TSym $ SymInt NoSpan literal
+
+wildcard :: Term
+wildcard = TWild NoSpan
 
 type GenericDatalogT decl hop bop m = StateT [ Statement decl hop bop ] m ()
 
