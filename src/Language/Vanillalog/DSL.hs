@@ -6,7 +6,9 @@ module Language.Vanillalog.DSL
   , (/\)
   , (\/)
   , neg
+  -- Reexports
   , module GDSL
+  , S.Locality(..)
   ) where
 
 import Protolude
@@ -23,9 +25,12 @@ import           Language.Vanillalog.Generic.DSL as GDSL
 
 type Vanillalog = GenericDatalog Void (Const Void) Op
 
-runDatalog :: KB.Set 'E.ABase -> Vanillalog -> IO (Maybe (KB.Set 'E.ABase))
-runDatalog kb vanillalog = S.runStage S.defaultStageEnv $ do
-  output <- local (\s -> s {S._input = S.AST program}) $ solved kb
+runDatalog :: S.Locality
+           -> KB.Set 'E.ABase
+           -> Vanillalog
+           -> IO (Maybe (KB.Set 'E.ABase))
+runDatalog locality kb vanillalog = S.runStage S.defaultStageEnv $ do
+  output <- local (\s -> s {S._input = S.AST program, S._locality = locality}) $ solved kb
   case output of
     Simple solution _ -> pure solution
     Tracked{} -> lift $

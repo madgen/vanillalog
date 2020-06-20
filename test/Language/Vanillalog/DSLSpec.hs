@@ -51,5 +51,5 @@ spec :: Spec
 spec =
   describe "DSL" $
     it "runs ancestor program" $ do
-      output <- runDatalog mempty ancestorPr
+      output <- runDatalog Local mempty ancestorPr
       output `shouldBe` Just expectedAncestors
