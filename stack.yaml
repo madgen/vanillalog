@@ -2,4 +2,4 @@ resolver: lts-15.11
 
 extra-deps:
 - git: https://github.com/madgen/exalog.git
-  commit: 7788900a8229704a94e5d75bd6ae70c640d30fa3
+  commit: 7d169b066c5c08f2b8e44f5e078df264731ac177
